@@ -1,0 +1,15 @@
+:root {
+  --cleansync-primary: #2563eb;
+  --cleansync-primary-soft: #dbeafe;
+  --cleansync-accent: #facc15;
+  --cleansync-bg: #f8fafc;
+  --cleansync-border: #e2e8f0;
+}
+
+.dark {
+  --cleansync-primary: #60a5fa;
+  --cleansync-primary-soft: #1e293b;
+  --cleansync-accent: #fbbf24;
+  --cleansync-bg: #0f172a;
+  --cleansync-border: #1e293b;
+}
