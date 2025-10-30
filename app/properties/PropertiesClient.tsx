@@ -89,7 +89,7 @@ export function PropertiesClient({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-[#EFF6E0]">Properties</h2>
-          <p className="mt-1 text-sm text-[#EFF6E0]/70">
+          <p className="mt-1 text-base text-[#EFF6E0]/70">
             Manage each rental and its connected calendar feed.
           </p>
         </div>

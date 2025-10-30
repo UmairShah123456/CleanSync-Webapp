@@ -58,7 +58,7 @@ export default async function LogsPage() {
     <AppShell email={user.email}>
       <div className="animate-fadeIn">
         <h2 className="text-2xl font-semibold text-[#EFF6E0]">Sync activity</h2>
-        <p className="mt-1 text-sm text-[#EFF6E0]/70">
+        <p className="mt-1 text-[#EFF6E0]/70">
           Review what changed during each background sync.
         </p>
       </div>
