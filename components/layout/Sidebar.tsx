@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { useState } from "react";
+import Image from "next/image";
 import {
   HomeIcon,
   CalendarIcon,
@@ -37,23 +38,16 @@ export function Sidebar({ email }: { email?: string | null }) {
   return (
     <aside className="hidden w-64 flex-shrink-0 bg-gradient-to-b from-[#01161E] to-[#124559] p-6 md:flex md:flex-col">
       {/* Logo Section */}
-      <div className="mb-8 flex items-center gap-2">
+      <div className="mb-8 flex items-end gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#124559]/50">
-          <svg
-            className="h-5 w-5 text-[#EFF6E0]"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
+          <Image
+            src="/staysync-logo.svg"
+            alt="CleanSync logo"
+            width={26}
+            height={26}
+          />
         </div>
-        <span className="text-xl font-semibold text-[#EFF6E0]">CleanSync</span>
+        <Image src="/CleanSync.svg" alt="CleanSync" width={143} height={29} />
       </div>
 
       {/* Navigation */}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { getSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { useState } from "react";
@@ -18,8 +19,8 @@ export function Topbar({ email }: { email?: string | null }) {
 
   return (
     <header className="flex items-center justify-between border-b border-[#124559]/30 bg-[#01161E] px-4 lg:px-5 py-4">
-      <div>
-        <h1 className="text-lg font-semibold text-[#EFF6E0]">CleanSync</h1>
+      <div className="flex items-center gap-3">
+        <Image src="/CleanSync.svg" alt="CleanSync" width={156} height={34} />
         <p className="text-sm text-[#EFF6E0]/70">
           Automated turnovers for your rentals
         </p>

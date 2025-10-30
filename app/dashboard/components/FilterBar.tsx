@@ -56,6 +56,7 @@ export function FilterBar({
         {/* Property Dropdown */}
         <div className="relative flex-1">
           <select
+            suppressHydrationWarning
             value={filters.propertyId ?? ""}
             onChange={(e) =>
               updateFilters((prev) => ({
@@ -78,6 +79,7 @@ export function FilterBar({
         {/* Date Range Dropdown */}
         <div className="relative flex-1">
           <select
+            suppressHydrationWarning
             value={dateRange}
             onChange={(e) => {
               const val = e.target.value;
@@ -137,6 +139,7 @@ export function FilterBar({
         {/* Job Status Dropdown */}
         <div className="relative flex-1">
           <select
+            suppressHydrationWarning
             value={filters.status ?? ""}
             onChange={(e) =>
               updateFilters((prev) => ({
