@@ -7,6 +7,7 @@ import { useState } from "react";
 
 export type CleanRow = {
   id: string;
+  property_id: string;
   property_name: string;
   scheduled_for: string;
   status: string;

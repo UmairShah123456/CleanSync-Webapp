@@ -16,7 +16,7 @@ export default async function DashboardPage() {
 
   const { data: propertiesData } = await supabase
     .from("properties")
-    .select("id, name")
+    .select("id, name, checkout_time")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -55,7 +55,7 @@ export default async function DashboardPage() {
     );
   }
 
-  const initialCleans = cleans.map((clean) => ({
+  const initialCleans = cleans.map((clean: any) => ({
     id: clean.id,
     booking_uid: clean.booking_uid,
     property_id: clean.property_id,
@@ -73,6 +73,7 @@ export default async function DashboardPage() {
       properties={properties.map((property) => ({
         id: property.id,
         name: property.name,
+        checkout_time: property.checkout_time || "10:00",
       }))}
       initialCleans={initialCleans}
     />

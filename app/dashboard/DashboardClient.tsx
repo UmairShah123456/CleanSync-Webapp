@@ -31,7 +31,24 @@ async function fetchCleansWithFilters(filters: FilterState) {
   return (await response.json()) as CleanRow[];
 }
 
-const calculateMetrics = (cleans: CleanRow[]) => {
+// Helper function to parse time string "HH:MM" to minutes since midnight
+const timeToMinutes = (timeStr: string): number => {
+  const [hours, minutes] = timeStr.split(":").map(Number);
+  return (hours || 0) * 60 + (minutes || 0);
+};
+
+// Helper function to extract time from ISO string and format as "HH:MM"
+const extractTimeFromISO = (isoString: string): string => {
+  const date = new Date(isoString);
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  return `${hours}:${minutes}`;
+};
+
+const calculateMetrics = (
+  cleans: CleanRow[],
+  propertyCheckoutTimes: Map<string, string>
+) => {
   const now = Date.now();
   const inThirtyDays = now + 30 * 24 * 60 * 60 * 1000;
 
@@ -52,12 +69,22 @@ const calculateMetrics = (cleans: CleanRow[]) => {
     if (clean.status === "cancelled") {
       issues += 1;
     }
-    if (
-      clean.notes?.includes("⚠️") ||
-      clean.notes?.toLowerCase().includes("late")
-    ) {
-      lateCheckouts += 1;
+
+    // Check if checkout time is late (manually overridden to be later than property standard)
+    if (clean.property_id) {
+      const propertyStandardTime =
+        propertyCheckoutTimes.get(clean.property_id) || "10:00";
+      const cleanCheckoutTime = extractTimeFromISO(clean.scheduled_for);
+
+      const standardMinutes = timeToMinutes(propertyStandardTime);
+      const cleanMinutes = timeToMinutes(cleanCheckoutTime);
+
+      // If clean's checkout time is later than property's standard time, it's a late checkout
+      if (cleanMinutes > standardMinutes) {
+        lateCheckouts += 1;
+      }
     }
+
     if (clean.status === "completed" && scheduled < now - 24 * 60 * 60 * 1000) {
       paymentsDue += 1;
     }
@@ -72,7 +99,7 @@ export function DashboardClient({
   initialCleans,
 }: {
   email?: string | null;
-  properties: { id: string; name: string }[];
+  properties: { id: string; name: string; checkout_time?: string | null }[];
   initialCleans: CleanRow[];
 }) {
   const [cleans, setCleans] = useState(initialCleans);
@@ -82,7 +109,19 @@ export function DashboardClient({
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const metrics = useMemo(() => calculateMetrics(cleans), [cleans]);
+  // Create a map of property IDs to their checkout times
+  const propertyCheckoutTimes = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const property of properties) {
+      map.set(property.id, property.checkout_time || "10:00");
+    }
+    return map;
+  }, [properties]);
+
+  const metrics = useMemo(
+    () => calculateMetrics(cleans, propertyCheckoutTimes),
+    [cleans, propertyCheckoutTimes]
+  );
 
   const handleFilterChange = useCallback(async (nextFilters: FilterState) => {
     setFilters(nextFilters);
