@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import {
   HomeIcon,
@@ -12,6 +12,7 @@ import {
   ChartBarIcon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { getSupabaseBrowserClient } from "@/lib/supabaseClient";
 
@@ -23,10 +24,24 @@ const navItems = [
   { href: "/settings", label: "Settings", icon: Cog6ToothIcon },
 ];
 
-export function Sidebar({ email }: { email?: string | null }) {
+export function Sidebar({
+  email,
+  onClose,
+}: {
+  email?: string | null;
+  onClose?: () => void;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    if (onClose) {
+      onClose();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -35,8 +50,22 @@ export function Sidebar({ email }: { email?: string | null }) {
     router.replace("/login");
   };
 
+  const handleLinkClick = () => {
+    if (onClose) {
+      onClose();
+    }
+  };
+
   return (
-    <aside className="hidden w-64 flex-shrink-0 bg-gradient-to-b from-[#01161E] to-[#124559] p-6 md:flex md:flex-col">
+    <aside className="h-full w-64 flex-shrink-0 bg-gradient-to-b from-[#01161E] to-[#124559] p-6 flex flex-col md:relative">
+      {/* Mobile Close Button */}
+      <button
+        onClick={onClose}
+        className="mb-6 md:hidden self-end rounded-lg p-2 text-[#EFF6E0]/70 hover:bg-[#124559]/40 hover:text-[#EFF6E0] transition-colors"
+        aria-label="Close menu"
+      >
+        <XMarkIcon className="h-6 w-6" />
+      </button>
       {/* Logo Section */}
       <div className="mb-8 flex items-end gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#124559]/50">
@@ -59,6 +88,7 @@ export function Sidebar({ email }: { email?: string | null }) {
             <Link
               key={item.href}
               href={item.href}
+              onClick={handleLinkClick}
               className={clsx(
                 "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
                 active

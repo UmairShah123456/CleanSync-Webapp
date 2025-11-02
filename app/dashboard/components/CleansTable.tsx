@@ -169,256 +169,577 @@ export function CleansTable({
   }
 
   return (
-    <div className="rounded-xl bg-[#124559] p-6 border border-[#124559]/50 animate-fadeIn">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-[#598392]/30">
-              <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
-                Property
-              </th>
-              <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
-                Clean Date
-              </th>
-              <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
-                Checkout Time
-              </th>
-              <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
-                Check-in / Check-out
-              </th>
-              <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
-                Notes
-              </th>
-              <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
-                Status
-              </th>
-              <th className="py-3 text-right text-xs font-bold uppercase tracking-wider text-[#598392]">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#598392]/20">
-            {cleans.map((clean) => {
-              const status = clean.status.toLowerCase();
-              const isCancelled = status === "cancelled";
-              const isCompleted = status === "completed";
-              const isScheduled = status === "scheduled";
-
-              return (
-                <tr
+    <div
+      className="rounded-xl bg-[#124559] border border-[#124559]/50 animate-fadeIn"
+      style={{ overflow: "visible" }}
+    >
+      {/* Desktop Table View */}
+      <div className="hidden md:block p-6">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-[#598392]/30">
+                <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
+                  Property
+                </th>
+                <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
+                  Clean Date
+                </th>
+                <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
+                  Checkout Time
+                </th>
+                <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
+                  Check-in / Check-out
+                </th>
+                <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
+                  Notes
+                </th>
+                <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
+                  Status
+                </th>
+                <th className="py-3 text-right text-xs font-bold uppercase tracking-wider text-[#598392]">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#598392]/20">
+              {cleans.map((clean) => (
+                <DesktopTableRow
                   key={clean.id}
-                  className={clsx(
-                    "transition-colors duration-200",
-                    isCancelled
-                      ? "bg-[#2a1f2e]/30 opacity-75 hover:bg-[#2a1f2e]/40"
-                      : isCompleted
-                      ? "bg-[#1a2530]/40 opacity-80 hover:bg-[#1a2530]/50"
-                      : "hover:bg-[#124559]/50"
-                  )}
-                >
-                  <td className="py-4">
-                    <div className="flex flex-col">
-                      <span
-                        className={clsx(
-                          "font-medium",
-                          isCancelled
-                            ? "text-[#EFF6E0]/50 line-through"
-                            : isCompleted
-                            ? "text-[#EFF6E0]/60"
-                            : "text-[#EFF6E0]"
-                        )}
-                      >
-                        {clean.property_name}
-                      </span>
-                      {clean.property_unit && (
-                        <span
-                          className={clsx(
-                            "text-xs mt-0.5",
-                            isCancelled
-                              ? "text-[#EFF6E0]/40 line-through"
-                              : isCompleted
-                              ? "text-[#EFF6E0]/50"
-                              : "text-[#EFF6E0]/70"
-                          )}
-                        >
-                          {clean.property_unit}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td
-                    className={clsx(
-                      "py-4 text-sm font-bold",
-                      isCancelled
-                        ? "text-[#EFF6E0]/50"
-                        : isCompleted
-                        ? "text-[#EFF6E0]/60"
-                        : "text-[#EFF6E0]/70"
-                    )}
-                  >
-                    {formatDateOnly(clean.scheduled_for)}
-                  </td>
-                  <td className="py-4">
-                    <input
-                      type="time"
-                      defaultValue={getDefaultTime(clean.scheduled_for)}
-                      suppressHydrationWarning
-                      onChange={(e) => {
-                        const timeValue = e.target.value;
-                        setTimeValues((prev) => ({
-                          ...prev,
-                          [clean.id]: timeValue,
-                        }));
-                        handleTimeChange(clean.id, timeValue);
-                      }}
-                      disabled={editingTimeId === clean.id || isCancelled}
-                      className={clsx(
-                        "w-full max-w-[120px] rounded-lg bg-[#124559]/60 px-3 py-1.5 text-sm text-[#EFF6E0] focus:outline-none focus:ring-2 focus:ring-[#598392] border border-[#124559]/50",
-                        "[&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:invert",
-                        editingTimeId === clean.id && "opacity-50 cursor-wait",
-                        isCancelled && "opacity-30 cursor-not-allowed"
-                      )}
-                      title="Checkout time (defaults to 10:00 AM)"
-                    />
-                  </td>
-                  <td
-                    className={clsx(
-                      "py-4 text-sm",
-                      isCancelled
-                        ? "text-[#EFF6E0]/50"
-                        : isCompleted
-                        ? "text-[#EFF6E0]/60"
-                        : "text-[#EFF6E0]/70"
-                    )}
-                  >
-                    <div className="flex flex-col">
-                      <span>
-                        <span
-                          className={clsx(
-                            isCancelled
-                              ? "text-[#598392]/50"
-                              : isCompleted
-                              ? "text-[#598392]/60"
-                              : "text-[#598392]"
-                          )}
-                        >
-                          Check-in:
-                        </span>{" "}
-                        {clean.checkin ? formatDateTime(clean.checkin) : "—"}
-                      </span>
-                      <span>
-                        <span
-                          className={clsx(
-                            isCancelled
-                              ? "text-[#598392]/50"
-                              : isCompleted
-                              ? "text-[#598392]/60"
-                              : "text-[#598392]"
-                          )}
-                        >
-                          Check-out:
-                        </span>{" "}
-                        {clean.checkout ? formatDateTime(clean.checkout) : "—"}
-                      </span>
-                    </div>
-                  </td>
-                  <td
-                    className={clsx(
-                      "py-4 text-sm",
-                      isCancelled
-                        ? "text-[#EFF6E0]/50"
-                        : isCompleted
-                        ? "text-[#EFF6E0]/60"
-                        : "text-[#EFF6E0]/70"
-                    )}
-                  >
-                    {isSameDayCheckIn(clean) ? (
-                      <span className="mr-2 align-middle">
-                        🔄 Same-day check-in
-                      </span>
-                    ) : null}
-                    {clean.notes && getDisplayNotes(clean.notes) ? (
-                      <span className="align-middle">
-                        {getDisplayNotes(clean.notes)}
-                      </span>
-                    ) : !isSameDayCheckIn(clean) ? (
-                      <span className="align-middle">—</span>
-                    ) : null}
-                  </td>
-                  <td className="py-4 relative z-10">
-                    <select
-                      value={clean.status}
-                      onChange={(e) =>
-                        handleStatusChange(clean.id, e.target.value)
-                      }
-                      disabled={updatingStatusId === clean.id}
-                      suppressHydrationWarning
-                      className={clsx(
-                        "rounded-full px-3 py-1 text-xs font-medium border-0 outline-none transition-colors duration-200",
-                        updatingStatusId === clean.id
-                          ? "cursor-wait opacity-50"
-                          : "cursor-pointer",
-                        "focus:ring-2 focus:ring-[#598392] focus:ring-offset-2 focus:ring-offset-[#124559]",
-                        "hover:opacity-90"
-                      )}
-                      style={{
-                        backgroundColor:
-                          status === "scheduled"
-                            ? "#AEC3B0"
-                            : status === "completed"
-                            ? "transparent"
-                            : status === "cancelled"
-                            ? "#ef4444"
-                            : "#124559",
-                        color:
-                          status === "scheduled"
-                            ? "#01161E"
-                            : status === "completed"
-                            ? "#EFF6E0"
-                            : status === "cancelled"
-                            ? "white"
-                            : "#EFF6E0",
-                        border:
-                          status === "completed" ? "1px solid #EFF6E0" : "none",
-                        pointerEvents:
-                          updatingStatusId === clean.id ? "none" : "auto",
-                      }}
-                    >
-                      <option value="scheduled">Scheduled</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </td>
-                  <td className="py-4">
-                    <div className="flex items-center justify-end">
-                      <button
-                        onClick={() => handleDelete(clean.id)}
-                        className={clsx(
-                          "transition-colors duration-200",
-                          isCancelled || deletingId === clean.id
-                            ? "cursor-not-allowed"
-                            : ""
-                        )}
-                        disabled={isCancelled || deletingId === clean.id}
-                        title="Delete clean"
-                      >
-                        <TrashIcon
-                          className={clsx(
-                            "h-5 w-5",
-                            isCancelled || deletingId === clean.id
-                              ? "text-[#EFF6E0]/30"
-                              : "text-[#EFF6E0]"
-                          )}
-                        />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  clean={clean}
+                  deletingId={deletingId}
+                  updatingStatusId={updatingStatusId}
+                  editingTimeId={editingTimeId}
+                  timeValues={timeValues}
+                  setTimeValues={setTimeValues}
+                  handleDelete={handleDelete}
+                  handleStatusChange={handleStatusChange}
+                  handleTimeChange={handleTimeChange}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3 p-3" style={{ overflow: "visible" }}>
+        {cleans.map((clean) => (
+          <MobileCard
+            key={clean.id}
+            clean={clean}
+            deletingId={deletingId}
+            updatingStatusId={updatingStatusId}
+            editingTimeId={editingTimeId}
+            timeValues={timeValues}
+            setTimeValues={setTimeValues}
+            handleDelete={handleDelete}
+            handleStatusChange={handleStatusChange}
+            handleTimeChange={handleTimeChange}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DesktopTableRow({
+  clean,
+  deletingId,
+  updatingStatusId,
+  editingTimeId,
+  timeValues,
+  setTimeValues,
+  handleDelete,
+  handleStatusChange,
+  handleTimeChange,
+}: {
+  clean: CleanRow;
+  deletingId: string | null;
+  updatingStatusId: string | null;
+  editingTimeId: string | null;
+  timeValues: Record<string, string>;
+  setTimeValues: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  handleDelete: (id: string) => Promise<void>;
+  handleStatusChange: (id: string, status: string) => Promise<void>;
+  handleTimeChange: (id: string, time: string) => Promise<void>;
+}) {
+  const status = clean.status.toLowerCase();
+  const isCancelled = status === "cancelled";
+  const isCompleted = status === "completed";
+
+  const formatDateOnly = (value: string | Date): string => {
+    const date = value instanceof Date ? value : new Date(value);
+    return new Intl.DateTimeFormat("en-GB", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    }).format(date);
+  };
+
+  const getDefaultTime = (scheduledFor: string): string => {
+    const date = new Date(scheduledFor);
+    if (date.getHours() === 0 && date.getMinutes() === 0) {
+      return "10:00";
+    }
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    return `${hours}:${minutes}`;
+  };
+
+  return (
+    <tr
+      className={clsx(
+        "transition-colors duration-200",
+        isCancelled
+          ? "bg-[#2a1f2e]/30 opacity-75 hover:bg-[#2a1f2e]/40"
+          : isCompleted
+          ? "bg-[#1a2530]/40 opacity-80 hover:bg-[#1a2530]/50"
+          : "hover:bg-[#124559]/50"
+      )}
+    >
+      <td className="py-4">
+        <div className="flex flex-col">
+          <span
+            className={clsx(
+              "font-medium",
+              isCancelled
+                ? "text-[#EFF6E0]/50 line-through"
+                : isCompleted
+                ? "text-[#EFF6E0]/60"
+                : "text-[#EFF6E0]"
+            )}
+          >
+            {clean.property_name}
+          </span>
+          {clean.property_unit && (
+            <span
+              className={clsx(
+                "text-xs mt-0.5",
+                isCancelled
+                  ? "text-[#EFF6E0]/40 line-through"
+                  : isCompleted
+                  ? "text-[#EFF6E0]/50"
+                  : "text-[#EFF6E0]/70"
+              )}
+            >
+              {clean.property_unit}
+            </span>
+          )}
+        </div>
+      </td>
+      <td
+        className={clsx(
+          "py-4 text-sm font-bold",
+          isCancelled
+            ? "text-[#EFF6E0]/50"
+            : isCompleted
+            ? "text-[#EFF6E0]/60"
+            : "text-[#EFF6E0]/70"
+        )}
+      >
+        {formatDateOnly(clean.scheduled_for)}
+      </td>
+      <td className="py-4">
+        <input
+          type="time"
+          defaultValue={getDefaultTime(clean.scheduled_for)}
+          suppressHydrationWarning
+          onChange={(e) => {
+            const timeValue = e.target.value;
+            setTimeValues((prev) => ({
+              ...prev,
+              [clean.id]: timeValue,
+            }));
+            handleTimeChange(clean.id, timeValue);
+          }}
+          disabled={editingTimeId === clean.id || isCancelled}
+          className={clsx(
+            "w-full max-w-[120px] rounded-lg bg-[#124559]/60 px-3 py-1.5 text-sm text-[#EFF6E0] focus:outline-none focus:ring-2 focus:ring-[#598392] border border-[#124559]/50",
+            "[&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:invert",
+            editingTimeId === clean.id && "opacity-50 cursor-wait",
+            isCancelled && "opacity-30 cursor-not-allowed"
+          )}
+          title="Checkout time (defaults to 10:00 AM)"
+        />
+      </td>
+      <td
+        className={clsx(
+          "py-4 text-sm",
+          isCancelled
+            ? "text-[#EFF6E0]/50"
+            : isCompleted
+            ? "text-[#EFF6E0]/60"
+            : "text-[#EFF6E0]/70"
+        )}
+      >
+        <div className="flex flex-col">
+          <span>
+            <span
+              className={clsx(
+                isCancelled
+                  ? "text-[#598392]/50"
+                  : isCompleted
+                  ? "text-[#598392]/60"
+                  : "text-[#598392]"
+              )}
+            >
+              Check-in:
+            </span>{" "}
+            {clean.checkin ? formatDateTime(clean.checkin) : "—"}
+          </span>
+          <span>
+            <span
+              className={clsx(
+                isCancelled
+                  ? "text-[#598392]/50"
+                  : isCompleted
+                  ? "text-[#598392]/60"
+                  : "text-[#598392]"
+              )}
+            >
+              Check-out:
+            </span>{" "}
+            {clean.checkout ? formatDateTime(clean.checkout) : "—"}
+          </span>
+        </div>
+      </td>
+      <td
+        className={clsx(
+          "py-4 text-sm",
+          isCancelled
+            ? "text-[#EFF6E0]/50"
+            : isCompleted
+            ? "text-[#EFF6E0]/60"
+            : "text-[#EFF6E0]/70"
+        )}
+      >
+        {isSameDayCheckIn(clean) ? (
+          <span className="mr-2 align-middle">🔄 Same-day check-in</span>
+        ) : null}
+        {clean.notes && getDisplayNotes(clean.notes) ? (
+          <span className="align-middle">{getDisplayNotes(clean.notes)}</span>
+        ) : !isSameDayCheckIn(clean) ? (
+          <span className="align-middle">—</span>
+        ) : null}
+      </td>
+      <td className="py-4 relative z-10">
+        <select
+          value={clean.status}
+          onChange={(e) => handleStatusChange(clean.id, e.target.value)}
+          disabled={updatingStatusId === clean.id}
+          suppressHydrationWarning
+          className={clsx(
+            "rounded-full px-3 py-1 text-xs font-medium border-0 outline-none transition-colors duration-200",
+            updatingStatusId === clean.id
+              ? "cursor-wait opacity-50"
+              : "cursor-pointer",
+            "focus:ring-2 focus:ring-[#598392] focus:ring-offset-2 focus:ring-offset-[#124559]",
+            "hover:opacity-90"
+          )}
+          style={{
+            backgroundColor:
+              status === "scheduled"
+                ? "#AEC3B0"
+                : status === "completed"
+                ? "transparent"
+                : status === "cancelled"
+                ? "#ef4444"
+                : "#124559",
+            color:
+              status === "scheduled"
+                ? "#01161E"
+                : status === "completed"
+                ? "#EFF6E0"
+                : status === "cancelled"
+                ? "white"
+                : "#EFF6E0",
+            border: status === "completed" ? "1px solid #EFF6E0" : "none",
+            pointerEvents: updatingStatusId === clean.id ? "none" : "auto",
+          }}
+        >
+          <option value="scheduled">Scheduled</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </td>
+      <td className="py-4">
+        <div className="flex items-center justify-end">
+          <button
+            onClick={() => handleDelete(clean.id)}
+            className={clsx(
+              "transition-colors duration-200",
+              isCancelled || deletingId === clean.id ? "cursor-not-allowed" : ""
+            )}
+            disabled={isCancelled || deletingId === clean.id}
+            title="Delete clean"
+          >
+            <TrashIcon
+              className={clsx(
+                "h-5 w-5",
+                isCancelled || deletingId === clean.id
+                  ? "text-[#EFF6E0]/30"
+                  : "text-[#EFF6E0]"
+              )}
+            />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+function MobileCard({
+  clean,
+  deletingId,
+  updatingStatusId,
+  editingTimeId,
+  timeValues,
+  setTimeValues,
+  handleDelete,
+  handleStatusChange,
+  handleTimeChange,
+}: {
+  clean: CleanRow;
+  deletingId: string | null;
+  updatingStatusId: string | null;
+  editingTimeId: string | null;
+  timeValues: Record<string, string>;
+  setTimeValues: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  handleDelete: (id: string) => Promise<void>;
+  handleStatusChange: (id: string, status: string) => Promise<void>;
+  handleTimeChange: (id: string, time: string) => Promise<void>;
+}) {
+  const status = clean.status.toLowerCase();
+  const isCancelled = status === "cancelled";
+  const isCompleted = status === "completed";
+
+  const formatDateOnly = (value: string | Date): string => {
+    const date = value instanceof Date ? value : new Date(value);
+    return new Intl.DateTimeFormat("en-GB", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    }).format(date);
+  };
+
+  const getDefaultTime = (scheduledFor: string): string => {
+    const date = new Date(scheduledFor);
+    if (date.getHours() === 0 && date.getMinutes() === 0) {
+      return "10:00";
+    }
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    return `${hours}:${minutes}`;
+  };
+
+  return (
+    <div
+      className={clsx(
+        "rounded-lg p-3 border transition-colors duration-200 relative",
+        isCancelled
+          ? "bg-[#2a1f2e]/30 border-[#2a1f2e]/50 opacity-75"
+          : isCompleted
+          ? "bg-[#1a2530]/40 border-[#1a2530]/50 opacity-80"
+          : "bg-[#124559]/30 border-[#124559]/50"
+      )}
+      style={{ overflow: "visible" }}
+    >
+      {/* Header: Property and Actions */}
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex-1 min-w-0">
+          <div
+            className={clsx(
+              "font-semibold text-sm truncate",
+              isCancelled
+                ? "text-[#EFF6E0]/50 line-through"
+                : isCompleted
+                ? "text-[#EFF6E0]/60"
+                : "text-[#EFF6E0]"
+            )}
+          >
+            {clean.property_name}
+          </div>
+          {clean.property_unit && (
+            <div
+              className={clsx(
+                "text-xs mt-0.5",
+                isCancelled
+                  ? "text-[#EFF6E0]/40 line-through"
+                  : isCompleted
+                  ? "text-[#EFF6E0]/50"
+                  : "text-[#EFF6E0]/70"
+              )}
+            >
+              {clean.property_unit}
+            </div>
+          )}
+        </div>
+        <button
+          onClick={() => handleDelete(clean.id)}
+          className={clsx(
+            "ml-2 shrink-0 transition-colors duration-200",
+            isCancelled || deletingId === clean.id ? "cursor-not-allowed" : ""
+          )}
+          disabled={isCancelled || deletingId === clean.id}
+          title="Delete clean"
+        >
+          <TrashIcon
+            className={clsx(
+              "h-4 w-4",
+              isCancelled || deletingId === clean.id
+                ? "text-[#EFF6E0]/30"
+                : "text-[#EFF6E0]"
+            )}
+          />
+        </button>
+      </div>
+
+      {/* Clean Date - Bold */}
+      <div className="mb-2">
+        <div
+          className={clsx(
+            "text-sm font-bold",
+            isCancelled
+              ? "text-[#EFF6E0]/50"
+              : isCompleted
+              ? "text-[#EFF6E0]/60"
+              : "text-[#EFF6E0]"
+          )}
+        >
+          {formatDateOnly(clean.scheduled_for)}
+        </div>
+      </div>
+
+      {/* Checkout Time and Status Row */}
+      <div className="flex items-start gap-3 mb-2">
+        <div className="flex-1 min-w-0">
+          <label className="text-xs text-[#598392] mb-1.5 block">
+            Checkout Time
+          </label>
+          <input
+            type="time"
+            defaultValue={getDefaultTime(clean.scheduled_for)}
+            suppressHydrationWarning
+            onChange={(e) => {
+              const timeValue = e.target.value;
+              setTimeValues((prev) => ({
+                ...prev,
+                [clean.id]: timeValue,
+              }));
+              handleTimeChange(clean.id, timeValue);
+            }}
+            disabled={editingTimeId === clean.id || isCancelled}
+            className={clsx(
+              "w-full rounded-lg bg-[#124559]/60 px-2.5 py-2 text-xs text-[#EFF6E0] focus:outline-none focus:ring-2 focus:ring-[#598392] border border-[#124559]/50",
+              "[&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:invert",
+              editingTimeId === clean.id && "opacity-50 cursor-wait",
+              isCancelled && "opacity-30 cursor-not-allowed"
+            )}
+            title="Checkout time"
+          />
+        </div>
+        <div className="flex-1 min-w-0 relative z-10">
+          <label className="text-xs text-[#598392] mb-1.5 block">Status</label>
+          <select
+            value={clean.status}
+            onChange={(e) => handleStatusChange(clean.id, e.target.value)}
+            disabled={updatingStatusId === clean.id}
+            suppressHydrationWarning
+            className={clsx(
+              "w-full rounded-full px-2.5 py-2 text-xs font-medium border-0 outline-none transition-colors duration-200 appearance-none",
+              updatingStatusId === clean.id
+                ? "cursor-wait opacity-50"
+                : "cursor-pointer",
+              "focus:ring-2 focus:ring-[#598392]"
+            )}
+            style={{
+              backgroundColor:
+                status === "scheduled"
+                  ? "#AEC3B0"
+                  : status === "completed"
+                  ? "transparent"
+                  : status === "cancelled"
+                  ? "#ef4444"
+                  : "#124559",
+              color:
+                status === "scheduled"
+                  ? "#01161E"
+                  : status === "completed"
+                  ? "#EFF6E0"
+                  : status === "cancelled"
+                  ? "white"
+                  : "#EFF6E0",
+              border: status === "completed" ? "1px solid #EFF6E0" : "none",
+              pointerEvents: updatingStatusId === clean.id ? "none" : "auto",
+            }}
+          >
+            <option value="scheduled">Scheduled</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Check-in / Check-out */}
+      {(clean.checkin || clean.checkout) && (
+        <div className="mb-2 space-y-1">
+          {clean.checkin && (
+            <div className="text-xs">
+              <span className="text-[#598392]">Check-in: </span>
+              <span
+                className={clsx(
+                  isCancelled
+                    ? "text-[#EFF6E0]/50"
+                    : isCompleted
+                    ? "text-[#EFF6E0]/60"
+                    : "text-[#EFF6E0]/70"
+                )}
+              >
+                {formatDateTime(clean.checkin)}
+              </span>
+            </div>
+          )}
+          {clean.checkout && (
+            <div className="text-xs">
+              <span className="text-[#598392]">Check-out: </span>
+              <span
+                className={clsx(
+                  isCancelled
+                    ? "text-[#EFF6E0]/50"
+                    : isCompleted
+                    ? "text-[#EFF6E0]/60"
+                    : "text-[#EFF6E0]/70"
+                )}
+              >
+                {formatDateTime(clean.checkout)}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Notes */}
+      {(isSameDayCheckIn(clean) ||
+        (clean.notes && getDisplayNotes(clean.notes))) && (
+        <div
+          className={clsx(
+            "text-xs pt-2 border-t border-[#598392]/20",
+            isCancelled
+              ? "text-[#EFF6E0]/50"
+              : isCompleted
+              ? "text-[#EFF6E0]/60"
+              : "text-[#EFF6E0]/70"
+          )}
+        >
+          {isSameDayCheckIn(clean) && (
+            <span className="mr-2">🔄 Same-day check-in</span>
+          )}
+          {clean.notes && getDisplayNotes(clean.notes) && (
+            <span>{getDisplayNotes(clean.notes)}</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -427,7 +748,6 @@ function isSameDayCheckIn(clean: {
   notes?: string | null;
   scheduled_for: string;
 }) {
-  // Heuristic detection based on notes keywords or flag markers
   const text = (clean.notes || "").toLowerCase();
   if (
     text.includes("same-day") ||
@@ -437,7 +757,6 @@ function isSameDayCheckIn(clean: {
   ) {
     return true;
   }
-  // Also treat the warning emoji marker as a same-day indicator if present
   if ((clean.notes || "").includes("⚠️")) {
     return true;
   }
@@ -446,15 +765,11 @@ function isSameDayCheckIn(clean: {
 
 function getDisplayNotes(notes?: string | null) {
   let t = notes || "";
-  // Remove the entire same-day check-in phrase (with or without emoji, case insensitive)
   t = t.replace(/⚠️\s*Same-day check-in\.?/gi, "");
   t = t.replace(/⚠️\s*Same day check-in\.?/gi, "");
-  // Also remove if without emoji
   t = t.replace(/\bSame-day check-in\.?/gi, "");
   t = t.replace(/\bSame day check-in\.?/gi, "");
-  // Remove any remaining warning emoji
   t = t.replaceAll("⚠️", "");
-  // Collapse extra whitespace and trim
   t = t.replace(/\s{2,}/g, " ").trim();
   return t || "";
 }
