@@ -1,7 +1,14 @@
 "use client";
 
 import { formatDateTime } from "@/lib/utils";
-import { TrashIcon } from "@heroicons/react/24/outline";
+import {
+  TrashIcon,
+  ChevronDownIcon,
+  CalendarIcon,
+  MapPinIcon,
+  ClockIcon,
+  DocumentTextIcon,
+} from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import { useState } from "react";
 
@@ -223,20 +230,25 @@ export function CleansTable({
       </div>
 
       {/* Mobile Card View */}
-      <div className="md:hidden space-y-3 p-3" style={{ overflow: "visible" }}>
-        {cleans.map((clean) => (
-          <MobileCard
-            key={clean.id}
-            clean={clean}
-            deletingId={deletingId}
-            updatingStatusId={updatingStatusId}
-            editingTimeId={editingTimeId}
-            timeValues={timeValues}
-            setTimeValues={setTimeValues}
-            handleDelete={handleDelete}
-            handleStatusChange={handleStatusChange}
-            handleTimeChange={handleTimeChange}
-          />
+      <div className="md:hidden p-3" style={{ overflow: "visible" }}>
+        {cleans.map((clean, index) => (
+          <div key={clean.id}>
+            <MobileCard
+              clean={clean}
+              deletingId={deletingId}
+              updatingStatusId={updatingStatusId}
+              editingTimeId={editingTimeId}
+              timeValues={timeValues}
+              setTimeValues={setTimeValues}
+              handleDelete={handleDelete}
+              handleStatusChange={handleStatusChange}
+              handleTimeChange={handleTimeChange}
+            />
+            {/* Divider between cards */}
+            {index < cleans.length - 1 && (
+              <div className="h-px bg-[#598392]/30 mx-2 my-2" />
+            )}
+          </div>
         ))}
       </div>
     </div>
@@ -536,34 +548,47 @@ function MobileCard({
   return (
     <div
       className={clsx(
-        "rounded-lg p-3 border transition-colors duration-200 relative",
+        "rounded-lg p-2 border-2 transition-colors duration-200 relative mb-4",
         isCancelled
-          ? "bg-[#2a1f2e]/30 border-[#2a1f2e]/50 opacity-75"
+          ? "bg-[#2a1f2e]/30 border-[#2a1f2e]/60 opacity-75"
           : isCompleted
-          ? "bg-[#1a2530]/40 border-[#1a2530]/50 opacity-80"
-          : "bg-[#124559]/30 border-[#124559]/50"
+          ? "bg-[#1a2530]/40 border-[#1a2530]/60 opacity-80"
+          : "bg-[#124559]/30 border-[#124559]/60"
       )}
       style={{ overflow: "visible" }}
     >
-      {/* Header: Property and Actions */}
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex-1 min-w-0">
-          <div
-            className={clsx(
-              "font-semibold text-sm truncate",
-              isCancelled
-                ? "text-[#EFF6E0]/50 line-through"
-                : isCompleted
-                ? "text-[#EFF6E0]/60"
-                : "text-[#EFF6E0]"
-            )}
-          >
-            {clean.property_name}
+      {/* Top Row: Property Name, Clean Date, Status Dropdown */}
+      <div className="flex items-start justify-between">
+        {/* Left: Property Name and Clean Date */}
+        <div className="flex-1 min-w-0 pr-2">
+          <div className="flex items-center gap-1.5">
+            <MapPinIcon
+              className={clsx(
+                "h-4 w-4 shrink-0",
+                isCancelled
+                  ? "text-[#EFF6E0]/50"
+                  : isCompleted
+                  ? "text-[#EFF6E0]/60"
+                  : "text-[#EFF6E0]/80"
+              )}
+            />
+            <div
+              className={clsx(
+                "font-semibold text-sm",
+                isCancelled
+                  ? "text-[#EFF6E0]/50 line-through"
+                  : isCompleted
+                  ? "text-[#EFF6E0]/60"
+                  : "text-[#EFF6E0]"
+              )}
+            >
+              {clean.property_name}
+            </div>
           </div>
           {clean.property_unit && (
             <div
               className={clsx(
-                "text-xs mt-0.5",
+                "text-xs mt-0.5 ml-6",
                 isCancelled
                   ? "text-[#EFF6E0]/40 line-through"
                   : isCompleted
@@ -574,170 +599,151 @@ function MobileCard({
               {clean.property_unit}
             </div>
           )}
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <CalendarIcon
+              className={clsx(
+                "h-4 w-4 shrink-0",
+                isCancelled
+                  ? "text-[#EFF6E0]/50"
+                  : isCompleted
+                  ? "text-[#EFF6E0]/60"
+                  : "text-[#EFF6E0]/80"
+              )}
+            />
+            <div
+              className={clsx(
+                "font-semibold text-sm",
+                isCancelled
+                  ? "text-[#EFF6E0]/50"
+                  : isCompleted
+                  ? "text-[#EFF6E0]/60"
+                  : "text-[#EFF6E0]"
+              )}
+            >
+              {formatDateOnly(clean.scheduled_for)}
+            </div>
+          </div>
         </div>
-        <button
-          onClick={() => handleDelete(clean.id)}
-          className={clsx(
-            "ml-2 shrink-0 transition-colors duration-200",
-            isCancelled || deletingId === clean.id ? "cursor-not-allowed" : ""
-          )}
-          disabled={isCancelled || deletingId === clean.id}
-          title="Delete clean"
-        >
-          <TrashIcon
+        {/* Right: Status Dropdown */}
+        <div className="shrink-0">
+          <div className="relative z-10">
+            <select
+              value={clean.status}
+              onChange={(e) => handleStatusChange(clean.id, e.target.value)}
+              disabled={updatingStatusId === clean.id}
+              suppressHydrationWarning
+              className={clsx(
+                "rounded-full pl-2.5 pr-7 py-1.5 text-xs font-medium border-0 outline-none transition-colors duration-200 appearance-none",
+                updatingStatusId === clean.id
+                  ? "cursor-wait opacity-50"
+                  : "cursor-pointer",
+                "focus:ring-2 focus:ring-[#598392]"
+              )}
+              style={{
+                backgroundColor:
+                  status === "scheduled"
+                    ? "#AEC3B0"
+                    : status === "completed"
+                    ? "transparent"
+                    : status === "cancelled"
+                    ? "#ef4444"
+                    : "#124559",
+                color:
+                  status === "scheduled"
+                    ? "#01161E"
+                    : status === "completed"
+                    ? "#EFF6E0"
+                    : status === "cancelled"
+                    ? "white"
+                    : "#EFF6E0",
+                border: status === "completed" ? "1px solid #EFF6E0" : "none",
+                pointerEvents: updatingStatusId === clean.id ? "none" : "auto",
+                minWidth: "90px",
+                maxWidth: "110px",
+              }}
+            >
+              <option value="scheduled">Scheduled</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <ChevronDownIcon className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-current opacity-70" />
+          </div>
+        </div>
+      </div>
+
+      {/* Checkout Time Input - Below Top Row */}
+      <div className="mt-1.5">
+        <div className="flex items-center gap-1.5">
+          <ClockIcon
             className={clsx(
-              "h-4 w-4",
-              isCancelled || deletingId === clean.id
-                ? "text-[#EFF6E0]/30"
-                : "text-[#EFF6E0]"
+              "h-4 w-4 shrink-0",
+              isCancelled
+                ? "text-[#EFF6E0]/50"
+                : isCompleted
+                ? "text-[#EFF6E0]/60"
+                : "text-[#EFF6E0]/80"
             )}
           />
-        </button>
-      </div>
-
-      {/* Clean Date - Bold */}
-      <div className="mb-2">
-        <div
-          className={clsx(
-            "text-sm font-bold",
-            isCancelled
-              ? "text-[#EFF6E0]/50"
-              : isCompleted
-              ? "text-[#EFF6E0]/60"
-              : "text-[#EFF6E0]"
-          )}
-        >
-          {formatDateOnly(clean.scheduled_for)}
+          <div className="relative flex-1">
+            <input
+              type="time"
+              defaultValue={getDefaultTime(clean.scheduled_for)}
+              suppressHydrationWarning
+              onChange={(e) => {
+                const timeValue = e.target.value;
+                setTimeValues((prev) => ({
+                  ...prev,
+                  [clean.id]: timeValue,
+                }));
+                handleTimeChange(clean.id, timeValue);
+              }}
+              disabled={editingTimeId === clean.id || isCancelled}
+              className={clsx(
+                "w-full rounded-lg bg-[#124559]/70 text-sm font-semibold text-[#EFF6E0] focus:outline-none focus:ring-2 focus:ring-[#598392] border border-[#124559]/70 text-left",
+                "[&::-webkit-calendar-picker-indicator]:hidden",
+                editingTimeId === clean.id && "opacity-50 cursor-wait",
+                isCancelled && "opacity-30 cursor-not-allowed"
+              )}
+              title="Checkout time"
+              style={{
+                textAlign: "left",
+              }}
+            />
+          </div>
         </div>
       </div>
-
-      {/* Checkout Time and Status Row */}
-      <div className="flex items-start gap-3 mb-2">
-        <div className="flex-1 min-w-0">
-          <label className="text-xs text-[#598392] mb-1.5 block">
-            Checkout Time
-          </label>
-          <input
-            type="time"
-            defaultValue={getDefaultTime(clean.scheduled_for)}
-            suppressHydrationWarning
-            onChange={(e) => {
-              const timeValue = e.target.value;
-              setTimeValues((prev) => ({
-                ...prev,
-                [clean.id]: timeValue,
-              }));
-              handleTimeChange(clean.id, timeValue);
-            }}
-            disabled={editingTimeId === clean.id || isCancelled}
-            className={clsx(
-              "w-full rounded-lg bg-[#124559]/60 px-2.5 py-2 text-xs text-[#EFF6E0] focus:outline-none focus:ring-2 focus:ring-[#598392] border border-[#124559]/50",
-              "[&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:invert",
-              editingTimeId === clean.id && "opacity-50 cursor-wait",
-              isCancelled && "opacity-30 cursor-not-allowed"
-            )}
-            title="Checkout time"
-          />
-        </div>
-        <div className="flex-1 min-w-0 relative z-10">
-          <label className="text-xs text-[#598392] mb-1.5 block">Status</label>
-          <select
-            value={clean.status}
-            onChange={(e) => handleStatusChange(clean.id, e.target.value)}
-            disabled={updatingStatusId === clean.id}
-            suppressHydrationWarning
-            className={clsx(
-              "w-full rounded-full px-2.5 py-2 text-xs font-medium border-0 outline-none transition-colors duration-200 appearance-none",
-              updatingStatusId === clean.id
-                ? "cursor-wait opacity-50"
-                : "cursor-pointer",
-              "focus:ring-2 focus:ring-[#598392]"
-            )}
-            style={{
-              backgroundColor:
-                status === "scheduled"
-                  ? "#AEC3B0"
-                  : status === "completed"
-                  ? "transparent"
-                  : status === "cancelled"
-                  ? "#ef4444"
-                  : "#124559",
-              color:
-                status === "scheduled"
-                  ? "#01161E"
-                  : status === "completed"
-                  ? "#EFF6E0"
-                  : status === "cancelled"
-                  ? "white"
-                  : "#EFF6E0",
-              border: status === "completed" ? "1px solid #EFF6E0" : "none",
-              pointerEvents: updatingStatusId === clean.id ? "none" : "auto",
-            }}
-          >
-            <option value="scheduled">Scheduled</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Check-in / Check-out */}
-      {(clean.checkin || clean.checkout) && (
-        <div className="mb-2 space-y-1">
-          {clean.checkin && (
-            <div className="text-xs">
-              <span className="text-[#598392]">Check-in: </span>
-              <span
-                className={clsx(
-                  isCancelled
-                    ? "text-[#EFF6E0]/50"
-                    : isCompleted
-                    ? "text-[#EFF6E0]/60"
-                    : "text-[#EFF6E0]/70"
-                )}
-              >
-                {formatDateTime(clean.checkin)}
-              </span>
-            </div>
-          )}
-          {clean.checkout && (
-            <div className="text-xs">
-              <span className="text-[#598392]">Check-out: </span>
-              <span
-                className={clsx(
-                  isCancelled
-                    ? "text-[#EFF6E0]/50"
-                    : isCompleted
-                    ? "text-[#EFF6E0]/60"
-                    : "text-[#EFF6E0]/70"
-                )}
-              >
-                {formatDateTime(clean.checkout)}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Notes */}
       {(isSameDayCheckIn(clean) ||
         (clean.notes && getDisplayNotes(clean.notes))) && (
-        <div
-          className={clsx(
-            "text-xs pt-2 border-t border-[#598392]/20",
-            isCancelled
-              ? "text-[#EFF6E0]/50"
-              : isCompleted
-              ? "text-[#EFF6E0]/60"
-              : "text-[#EFF6E0]/70"
-          )}
-        >
-          {isSameDayCheckIn(clean) && (
-            <span className="mr-2">🔄 Same-day check-in</span>
-          )}
-          {clean.notes && getDisplayNotes(clean.notes) && (
-            <span>{getDisplayNotes(clean.notes)}</span>
-          )}
+        <div className="flex items-end gap-1.5 mt-1.5">
+          <DocumentTextIcon
+            className={clsx(
+              "h-4 w-4 shrink-0 mt-0.5",
+              isCancelled
+                ? "text-[#EFF6E0]/50"
+                : isCompleted
+                ? "text-[#EFF6E0]/60"
+                : "text-[#EFF6E0]/80"
+            )}
+          />
+          <div
+            className={clsx(
+              "text-xs font-semibold flex-1",
+              isCancelled
+                ? "text-[#EFF6E0]/50"
+                : isCompleted
+                ? "text-[#EFF6E0]/60"
+                : "text-[#EFF6E0]/80"
+            )}
+          >
+            {isSameDayCheckIn(clean) && (
+              <span className="mr-2">Same-day check-in</span>
+            )}
+            {clean.notes && getDisplayNotes(clean.notes) && (
+              <span>{getDisplayNotes(clean.notes)}</span>
+            )}
+          </div>
         </div>
       )}
     </div>
