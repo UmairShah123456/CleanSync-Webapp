@@ -699,10 +699,15 @@ function MobileCard({
               }}
               disabled={editingTimeId === clean.id || isCancelled}
               className={clsx(
-                "w-full rounded-lg bg-[#124559]/70 text-sm font-semibold text-[#EFF6E0] focus:outline-none focus:ring-2 focus:ring-[#598392] border border-[#124559]/70 text-left",
+                "w-full rounded-lg text-sm font-semibold text-[#EFF6E0] focus:outline-none focus:ring-2 focus:ring-[#598392] text-left",
                 "[&::-webkit-calendar-picker-indicator]:hidden",
+                isCancelled
+                  ? "bg-[#2a1f2e]/40 border border-[#2a1f2e]/60 opacity-30"
+                  : isCompleted
+                  ? "bg-[#1a2530]/40 border border-[#1a2530]/60"
+                  : "bg-[#124559]/70 border border-[#124559]/70",
                 editingTimeId === clean.id && "opacity-50 cursor-wait",
-                isCancelled && "opacity-30 cursor-not-allowed"
+                isCancelled && "cursor-not-allowed"
               )}
               title="Checkout time"
               style={{

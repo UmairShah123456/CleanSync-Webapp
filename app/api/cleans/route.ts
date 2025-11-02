@@ -87,6 +87,46 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  if (!data || data.length === 0) {
+    return NextResponse.json([]);
+  }
+
+  // Automatically mark cleans as completed if their scheduled date has passed
+  const now = new Date();
+  const cleansToComplete = data.filter((clean: any) => {
+    if (clean.status !== "scheduled") {
+      return false;
+    }
+    const scheduledDate = new Date(clean.scheduled_for);
+    return scheduledDate < now;
+  });
+
+  if (cleansToComplete.length > 0) {
+    const cleanIdsToComplete = cleansToComplete.map((clean: any) => clean.id);
+
+    // Batch update all cleans that should be completed
+    const { error: updateError } = await supabase
+      .from("cleans")
+      .update({
+        status: "completed",
+        updated_at: new Date().toISOString(),
+      })
+      .in("id", cleanIdsToComplete)
+      .eq("status", "scheduled"); // Only update if still scheduled (safety check)
+
+    if (updateError) {
+      console.error("Error auto-completing cleans:", updateError);
+      // Don't fail the request, just log the error
+    } else {
+      // Update the local data array with the new statuses
+      data.forEach((clean: any) => {
+        if (cleanIdsToComplete.includes(clean.id)) {
+          clean.status = "completed";
+        }
+      });
+    }
+  }
+
   const response = (data ?? []).map((clean: any) => ({
     id: clean.id,
     booking_uid: clean.booking_uid,

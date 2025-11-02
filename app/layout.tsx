@@ -50,6 +50,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} min-h-screen bg-slate-50 antialiased`}
+        suppressHydrationWarning
       >
         <HeroUIProvider>{children}</HeroUIProvider>
       </body>

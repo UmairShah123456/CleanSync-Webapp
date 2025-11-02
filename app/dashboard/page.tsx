@@ -33,6 +33,46 @@ export default async function DashboardPage() {
       .order("scheduled_for", { ascending: true });
 
     cleans = data ?? [];
+
+    // Automatically mark cleans as completed if their scheduled date has passed
+    if (cleans.length > 0) {
+      const now = new Date();
+      const cleansToComplete = cleans.filter((clean: any) => {
+        if (clean.status !== "scheduled") {
+          return false;
+        }
+        const scheduledDate = new Date(clean.scheduled_for);
+        return scheduledDate < now;
+      });
+
+      if (cleansToComplete.length > 0) {
+        const cleanIdsToComplete = cleansToComplete.map(
+          (clean: any) => clean.id
+        );
+
+        // Batch update all cleans that should be completed
+        const { error: updateError } = await supabase
+          .from("cleans")
+          .update({
+            status: "completed",
+            updated_at: new Date().toISOString(),
+          })
+          .in("id", cleanIdsToComplete)
+          .eq("status", "scheduled"); // Only update if still scheduled (safety check)
+
+        if (updateError) {
+          console.error("Error auto-completing cleans:", updateError);
+          // Don't fail the request, just log the error
+        } else {
+          // Update the local cleans array with the new statuses
+          cleans.forEach((clean: any) => {
+            if (cleanIdsToComplete.includes(clean.id)) {
+              clean.status = "completed";
+            }
+          });
+        }
+      }
+    }
   }
 
   const propertyLookup = new Map(
