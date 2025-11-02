@@ -6,36 +6,44 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
-  // Verify the request has the correct authorization token
-  const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-
   // Vercel Cron sends this header - only Vercel can send this
   const isVercelCron = request.headers.get("x-vercel-cron") === "1";
 
-  if (!cronSecret) {
-    console.error("CRON_SECRET environment variable is not set");
-    return NextResponse.json(
-      { error: "Cron job not configured" },
-      { status: 500 }
-    );
-  }
+  // During Vercel's deployment validation, they check if the endpoint exists
+  // Return early with success for validation (when x-vercel-cron is not present)
+  // This allows Vercel to validate the cron path without requiring auth
+  if (!isVercelCron) {
+    // Check if this is likely a validation check (no auth headers)
+    const authHeader = request.headers.get("authorization");
+    const cronSecret = process.env.CRON_SECRET;
+    const url = new URL(request.url);
+    const providedSecret =
+      authHeader?.replace("Bearer ", "") ||
+      request.headers.get("x-cron-secret") ||
+      url.searchParams.get("secret");
 
-  // Get secret from multiple sources (for flexibility with different cron services)
-  const url = new URL(request.url);
-  const providedSecret =
-    authHeader?.replace("Bearer ", "") ||
-    request.headers.get("x-cron-secret") ||
-    url.searchParams.get("secret"); // Query parameter (for Vercel Cron convenience)
+    // If no secret is provided and CRON_SECRET is set, this might be a validation check
+    // Allow it to pass validation, but don't run the actual sync
+    if (!providedSecret) {
+      // This is likely Vercel's validation check - return success
+      return NextResponse.json({
+        message: "Cron endpoint is ready",
+        status: "ok",
+        note: "Actual sync requires authentication",
+      });
+    }
 
-  // For Vercel Cron, trust the x-vercel-cron header (only Vercel can send this)
-  // For other cron services, require the secret
-  if (isVercelCron) {
-    // Vercel Cron is trusted - the x-vercel-cron header can only be set by Vercel
-    console.log("Vercel cron request authenticated via x-vercel-cron header");
-  } else if (!providedSecret || providedSecret !== cronSecret) {
-    // For non-Vercel requests, require the secret
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // If secret is provided but doesn't match, return unauthorized
+    if (cronSecret && providedSecret !== cronSecret) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // If CRON_SECRET is not set at all, warn but allow (for initial setup)
+    if (!cronSecret) {
+      console.warn(
+        "CRON_SECRET environment variable is not set - cron job may not be secure"
+      );
+    }
   }
 
   const adminClient = getServiceSupabaseClient();
