@@ -10,6 +10,7 @@ export type Property = {
   id: string;
   name: string;
   ical_url: string;
+  checkout_time?: string | null;
   created_at?: string;
 };
 
@@ -123,7 +124,11 @@ export function PropertyList({
       >
         {editing ? (
           <PropertyForm
-            initial={{ name: editing.name, ical_url: editing.ical_url }}
+            initial={{
+              name: editing.name,
+              ical_url: editing.ical_url,
+              checkout_time: editing.checkout_time || "10:00",
+            }}
             onSubmit={handleUpdate}
             submitting={updating}
           />

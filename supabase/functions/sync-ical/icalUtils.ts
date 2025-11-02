@@ -5,6 +5,7 @@ export type PropertyRecord = {
   id: string;
   name: string;
   ical_url: string;
+  checkout_time?: string | null;
 };
 
 type BookingRecord = {
@@ -81,14 +82,22 @@ const ensureClean = async (
   supabase: SupabaseClient,
   propertyId: string,
   event: CalendarEvent,
-  sameDay: boolean
+  sameDay: boolean,
+  checkoutTime?: string | null
 ) => {
-  const scheduledFor = scheduleFromCheckout(event.end);
+  // Use property's checkout time or default to 10:00 AM
+  const defaultTime = checkoutTime || "10:00";
+  const [hours, minutes] = defaultTime.split(":").map(Number);
+
+  const checkoutDate = new Date(event.end);
+  checkoutDate.setHours(hours || 10, minutes || 0, 0, 0);
+  // Set scheduled_for to the checkout time (no 1 hour delay)
+  const scheduledFor = checkoutDate.toISOString();
   const notes = sameDay ? SAME_DAY_NOTE : null;
 
   const { data, error } = await supabase
     .from("cleans")
-    .select("id")
+    .select("id, status")
     .eq("booking_uid", event.uid)
     .maybeSingle();
 
@@ -115,14 +124,33 @@ const ensureClean = async (
     return;
   }
 
+  // If the clean was manually deleted by the user, don't recreate it
+  if (data.status === "deleted") {
+    return;
+  }
+
+  // Don't override manually set statuses (completed, cancelled) - only update scheduled ones
+  const shouldUpdateStatus = data.status === "scheduled";
+
+  const updateData: {
+    scheduled_for: string;
+    notes: string | null;
+    status?: string;
+    updated_at: string;
+  } = {
+    scheduled_for: scheduledFor,
+    notes,
+    updated_at: new Date().toISOString(),
+  };
+
+  // Only update status if it's currently scheduled
+  if (shouldUpdateStatus) {
+    updateData.status = "scheduled";
+  }
+
   const { error: updateError } = await supabase
     .from("cleans")
-    .update({
-      scheduled_for: scheduledFor,
-      notes,
-      status: "scheduled",
-      updated_at: new Date().toISOString(),
-    })
+    .update(updateData)
     .eq("id", data.id);
 
   if (updateError) {
@@ -141,9 +169,7 @@ const cancelBookingAndClean = async (supabase: SupabaseClient, uid: string) => {
     .eq("uid", uid);
 
   if (bookingError) {
-    throw new Error(
-      `Failed to cancel booking ${uid}: ${bookingError.message}`
-    );
+    throw new Error(`Failed to cancel booking ${uid}: ${bookingError.message}`);
   }
 
   const { error: cleanError } = await supabase
@@ -162,10 +188,7 @@ const cancelBookingAndClean = async (supabase: SupabaseClient, uid: string) => {
   }
 };
 
-const hasSameDayTurnover = (
-  event: CalendarEvent,
-  events: CalendarEvent[]
-) => {
+const hasSameDayTurnover = (event: CalendarEvent, events: CalendarEvent[]) => {
   return events.some(
     (other) => other.uid !== event.uid && isSameDay(other.start, event.end)
   );
@@ -216,17 +239,35 @@ export const syncProperty = async (
 
     if (!existing) {
       await upsertBooking(supabase, property.id, event);
-      await ensureClean(supabase, property.id, event, sameDay);
+      await ensureClean(
+        supabase,
+        property.id,
+        event,
+        sameDay,
+        property.checkout_time
+      );
       added += 1;
       continue;
     }
 
     if (bookingChanged(existing, event)) {
       await upsertBooking(supabase, property.id, event);
-      await ensureClean(supabase, property.id, event, sameDay);
+      await ensureClean(
+        supabase,
+        property.id,
+        event,
+        sameDay,
+        property.checkout_time
+      );
       updated += 1;
     } else if (sameDay) {
-      await ensureClean(supabase, property.id, event, sameDay);
+      await ensureClean(
+        supabase,
+        property.id,
+        event,
+        sameDay,
+        property.checkout_time
+      );
     }
   }
 
@@ -253,5 +294,9 @@ export const syncProperty = async (
     );
   }
 
-  return { bookingsAdded: added, bookingsUpdated: updated, bookingsRemoved: removed };
+  return {
+    bookingsAdded: added,
+    bookingsUpdated: updated,
+    bookingsRemoved: removed,
+  };
 };

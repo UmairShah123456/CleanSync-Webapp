@@ -121,7 +121,7 @@ export function DashboardClient({
         <DashboardHeader />
 
         {/* Metric Cards */}
-        <div className="grid grid-cols-1 gap-4 overflow-x-auto sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 overflow-x-auto sm:grid-cols-2">
           <MetricCard
             value={metrics.upcoming}
             label="Upcoming Cleanings"
@@ -129,22 +129,10 @@ export function DashboardClient({
             delay={0}
           />
           <MetricCard
-            value={metrics.issues}
-            label="Issues to Resolve"
-            subtext="Requires attention"
-            delay={100}
-          />
-          <MetricCard
             value={metrics.lateCheckouts}
             label="Late Checkouts"
             subtext="Needs immediate action"
-            delay={200}
-          />
-          <MetricCard
-            value={metrics.paymentsDue}
-            label="Payments Due"
-            subtext="Pending payment"
-            delay={300}
+            delay={100}
           />
         </div>
 
@@ -170,7 +158,17 @@ export function DashboardClient({
             Loading cleans...
           </div>
         ) : (
-          <CleansTable cleans={cleans} />
+          <CleansTable
+            cleans={cleans}
+            onDelete={async (id) => {
+              const fresh = await fetchCleansWithFilters(filters);
+              setCleans(fresh);
+            }}
+            onStatusUpdate={async () => {
+              const fresh = await fetchCleansWithFilters(filters);
+              setCleans(fresh);
+            }}
+          />
         )}
       </div>
     </AppShell>

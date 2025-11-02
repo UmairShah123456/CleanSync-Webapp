@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
+import { HeroUIProvider } from "@heroui/react";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -50,7 +51,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} min-h-screen bg-slate-50 antialiased`}
       >
-        {children}
+        <HeroUIProvider>{children}</HeroUIProvider>
       </body>
     </html>
   );

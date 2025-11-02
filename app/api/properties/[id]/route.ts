@@ -8,17 +8,15 @@ export async function PATCH(
   const supabase = await getServerSupabaseClient();
   const { id } = await context.params;
   const body = await request.json();
-  const { name, ical_url } = body ?? {};
+  const { name, ical_url, checkout_time } = body ?? {};
 
   const updatePayload: Record<string, string> = {};
   if (name) updatePayload.name = name;
   if (ical_url) updatePayload.ical_url = ical_url;
+  if (checkout_time !== undefined) updatePayload.checkout_time = checkout_time;
 
   if (Object.keys(updatePayload).length === 0) {
-    return NextResponse.json(
-      { error: "Nothing to update." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
   }
 
   const {
@@ -27,10 +25,7 @@ export async function PATCH(
   } = await supabase.auth.getUser();
 
   if (userError) {
-    return NextResponse.json(
-      { error: userError.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: userError.message }, { status: 500 });
   }
 
   if (!user) {
@@ -65,10 +60,7 @@ export async function DELETE(
   } = await supabase.auth.getUser();
 
   if (userError) {
-    return NextResponse.json(
-      { error: userError.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: userError.message }, { status: 500 });
   }
 
   if (!user) {

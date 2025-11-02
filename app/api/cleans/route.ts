@@ -68,6 +68,9 @@ export async function GET(request: NextRequest) {
 
   if (status) {
     query = query.eq("status", status);
+  } else {
+    // Exclude deleted cleans by default unless explicitly requested
+    query = query.neq("status", "deleted");
   }
 
   if (from) {

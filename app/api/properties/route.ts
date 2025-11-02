@@ -11,10 +11,7 @@ export async function GET() {
   } = await supabase.auth.getUser();
 
   if (userError) {
-    return NextResponse.json(
-      { error: userError.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: userError.message }, { status: 500 });
   }
 
   if (!user) {
@@ -37,7 +34,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const supabase = await getServerSupabaseClient();
   const body = await request.json();
-  const { name, ical_url } = body ?? {};
+  const { name, ical_url, checkout_time } = body ?? {};
 
   if (!name || !ical_url) {
     return NextResponse.json(
@@ -52,10 +49,7 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
 
   if (userError) {
-    return NextResponse.json(
-      { error: userError.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: userError.message }, { status: 500 });
   }
 
   if (!user) {
@@ -67,6 +61,7 @@ export async function POST(request: Request) {
     .insert({
       name,
       ical_url,
+      checkout_time: checkout_time || "10:00",
       user_id: user.id,
     })
     .select()

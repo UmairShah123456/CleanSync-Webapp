@@ -1,0 +1,187 @@
+/* Dark theme date picker styles */
+.dark-date-picker {
+  --rdp-cell-size: 40px;
+  --rdp-accent-color: #598392;
+  --rdp-background-color: #124559;
+}
+
+.dark-date-picker .rdp {
+  margin: 0;
+  font-family: inherit;
+}
+
+.dark-date-picker .rdp-months {
+  display: flex;
+  justify-content: center;
+}
+
+.dark-date-picker .rdp-month {
+  margin: 0;
+}
+
+.dark-date-picker .rdp-table {
+  width: 100%;
+  max-width: none;
+  border-collapse: collapse;
+}
+
+.dark-date-picker .rdp-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  margin-bottom: 0.5rem;
+  color: #EFF6E0 !important;
+  font-weight: 600;
+}
+
+.dark-date-picker .rdp-caption_label {
+  color: #EFF6E0 !important;
+}
+
+.dark-date-picker .rdp-nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.dark-date-picker .rdp-button_reset {
+  background: transparent;
+  border: none;
+  padding: 0.25rem;
+  border-radius: 0.375rem;
+  color: #EFF6E0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dark-date-picker .rdp-button_reset:hover {
+  background: rgba(18, 69, 89, 0.8);
+  color: #EFF6E0;
+}
+
+.dark-date-picker .rdp-button_reset:focus-visible {
+  outline: 2px solid #598392;
+  outline-offset: 2px;
+}
+
+.dark-date-picker .rdp-head_cell {
+  color: #EFF6E0 !important;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 0.5rem 0;
+}
+
+.dark-date-picker .rdp-cell {
+  padding: 2px;
+}
+
+.dark-date-picker .rdp-day {
+  width: var(--rdp-cell-size);
+  height: var(--rdp-cell-size);
+  margin: 0;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #EFF6E0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.dark-date-picker .rdp-day:hover:not(.rdp-day_disabled):not(.rdp-day_selected):not(.rdp-day_outside) {
+  background: rgba(18, 69, 89, 0.8);
+  color: #EFF6E0;
+}
+
+.dark-date-picker .rdp-day:focus-visible:not(.rdp-day_disabled) {
+  outline: 2px solid #598392;
+  outline-offset: 2px;
+}
+
+.dark-date-picker .rdp-day_today:not(.rdp-day_selected) {
+  font-weight: 700;
+  border: 1px solid #598392;
+}
+
+.dark-date-picker .rdp-day_selected:not(.rdp-day_range_middle) {
+  background: #598392 !important;
+  color: #01161E !important;
+  font-weight: 600;
+}
+
+.dark-date-picker .rdp-day_selected:hover:not(.rdp-day_range_middle) {
+  background: #598392 !important;
+  color: #01161E !important;
+}
+
+/* Range selection styles - react-day-picker v9+ automatically applies these modifiers */
+/* Use attribute selectors to catch all range states */
+.dark-date-picker .rdp-day[aria-selected="true"] {
+  background: #598392 !important;
+  color: #01161E !important;
+  font-weight: 600;
+}
+
+/* Range start - first selected date */
+.dark-date-picker .rdp-day_range_start,
+.dark-date-picker [data-range="start"] {
+  background: #598392 !important;
+  color: #01161E !important;
+  font-weight: 600;
+  border-top-left-radius: 0.5rem !important;
+  border-bottom-left-radius: 0.5rem !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* Range end - last selected date */
+.dark-date-picker .rdp-day_range_end,
+.dark-date-picker [data-range="end"] {
+  background: #598392 !important;
+  color: #01161E !important;
+  font-weight: 600;
+  border-top-right-radius: 0.5rem !important;
+  border-bottom-right-radius: 0.5rem !important;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+/* Range middle - dates between start and end */
+.dark-date-picker .rdp-day_range_middle,
+.dark-date-picker [data-range="middle"] {
+  background: rgba(89, 131, 146, 0.5) !important;
+  color: #EFF6E0 !important;
+  border-radius: 0 !important;
+}
+
+/* Ensure selected days in range are visible */
+.dark-date-picker .rdp-day[aria-selected="true"].rdp-day_range_start,
+.dark-date-picker .rdp-day[aria-selected="true"].rdp-day_range_end {
+  background: #598392 !important;
+  color: #01161E !important;
+}
+
+.dark-date-picker .rdp-day[aria-selected="true"].rdp-day_range_middle {
+  background: rgba(89, 131, 146, 0.5) !important;
+  color: #EFF6E0 !important;
+}
+
+/* Single selection (not in range mode) */
+.dark-date-picker .rdp-day_selected:not(.rdp-day_range_start):not(.rdp-day_range_end):not(.rdp-day_range_middle) {
+  background: #598392 !important;
+  color: #01161E !important;
+  font-weight: 600;
+}
+
+.dark-date-picker .rdp-day_outside {
+  color: rgba(239, 246, 224, 0.3);
+}
+
+.dark-date-picker .rdp-day_disabled {
+  color: rgba(239, 246, 224, 0.2);
+  cursor: not-allowed;
+}
+
