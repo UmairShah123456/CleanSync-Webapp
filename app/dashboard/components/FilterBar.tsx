@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import clsx from "clsx";
 import { ChevronDownIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
-import { DateRangePicker } from "@/components/ui/DateRangePicker";
 import type { FilterState } from "@/components/forms/FilterForm";
 
 export function FilterBar({
@@ -21,10 +20,6 @@ export function FilterBar({
 }) {
   const [filters, setFilters] = useState<FilterState>({});
   const [dateRange, setDateRange] = useState<string>("");
-  const [customRange, setCustomRange] = useState<{
-    from?: Date;
-    to?: Date;
-  } | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
   const updateFilters = (updater: (prev: FilterState) => FilterState) => {
@@ -37,7 +32,6 @@ export function FilterBar({
   const handleReset = () => {
     setFilters({});
     setDateRange("");
-    setCustomRange(null);
   };
 
   // Propagate filter changes to parent AFTER render commit to avoid setState during render
@@ -91,7 +85,6 @@ export function FilterBar({
               const val = e.target.value;
               setDateRange(val);
               if (!val) {
-                setCustomRange(null);
                 updateFilters((prev) => ({
                   ...prev,
                   from: undefined,
@@ -99,11 +92,6 @@ export function FilterBar({
                 }));
                 return;
               }
-              if (val === "custom") {
-                // Custom option selected - don't update filters yet, wait for date inputs
-                return;
-              }
-              setCustomRange(null);
               const now = new Date();
               let from: string | undefined;
               let to: string | undefined;
@@ -144,48 +132,9 @@ export function FilterBar({
             <option value="today">Today</option>
             <option value="week">This Week</option>
             <option value="month">This Month</option>
-            <option value="custom">Custom Range</option>
           </select>
           <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EFF6E0]/70" />
         </div>
-
-        {/* Custom Date Range Input */}
-        {dateRange === "custom" && (
-          <div className="flex-1">
-            <DateRangePicker
-              value={customRange || undefined}
-              onChange={(range) => {
-                setCustomRange(range || null);
-                if (range?.from && range?.to) {
-                  const fromDate = new Date(range.from);
-                  fromDate.setHours(0, 0, 0, 0);
-                  const toDate = new Date(range.to);
-                  toDate.setHours(23, 59, 59, 999);
-                  updateFilters((prev) => ({
-                    ...prev,
-                    from: fromDate.toISOString(),
-                    to: toDate.toISOString(),
-                  }));
-                } else if (range?.from) {
-                  const fromDate = new Date(range.from);
-                  fromDate.setHours(0, 0, 0, 0);
-                  updateFilters((prev) => ({
-                    ...prev,
-                    from: fromDate.toISOString(),
-                    to: undefined,
-                  }));
-                } else {
-                  updateFilters((prev) => ({
-                    ...prev,
-                    from: undefined,
-                    to: undefined,
-                  }));
-                }
-              }}
-              placeholder="Select date range"
-            />
-          </div>
-        )}
 
         {/* Job Status Dropdown */}
         <div className="relative flex-1">

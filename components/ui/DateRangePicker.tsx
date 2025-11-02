@@ -4,7 +4,6 @@ import * as React from "react";
 import { DateRangePicker as HeroDateRangePicker } from "@heroui/react";
 import type { RangeValue } from "@heroui/react";
 import { CalendarDate } from "@internationalized/date";
-import { I18nProvider } from "@react-aria/i18n";
 import clsx from "clsx";
 
 type DateRangePickerProps = {
@@ -80,15 +79,13 @@ export function DateRangePicker({
   };
 
   return (
-    <I18nProvider locale="en-GB">
-      <div className={clsx("relative w-full", className)}>
-        <HeroDateRangePicker
-          label={placeholder}
-          value={rangeValue}
-          onChange={handleChange}
-          isDisabled={disabled}
-        />
-      </div>
-    </I18nProvider>
+    <div className={clsx("relative w-full", className)}>
+      <HeroDateRangePicker
+        label={placeholder}
+        value={rangeValue}
+        onChange={handleChange}
+        isDisabled={disabled}
+      />
+    </div>
   );
 }

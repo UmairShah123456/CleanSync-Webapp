@@ -6,6 +6,7 @@ import { DashboardHeader } from "./components/DashboardHeader";
 import { MetricCard } from "./components/MetricCard";
 import { CleansTable, type CleanRow } from "./components/CleansTable";
 import { FilterBar } from "./components/FilterBar";
+import { Loader } from "@/components/ui/Loader";
 import type { FilterState } from "@/components/forms/FilterForm";
 
 async function fetchCleansWithFilters(filters: FilterState) {
@@ -154,8 +155,8 @@ export function DashboardClient({
 
         {/* Loading State */}
         {loading ? (
-          <div className="flex items-center justify-center rounded-xl bg-[#124559] p-12 text-sm text-[#EFF6E0]/70 border border-[#124559]/50">
-            Loading cleans...
+          <div className="flex items-center justify-center rounded-xl bg-[#124559] p-12 border border-[#124559]/50">
+            <Loader />
           </div>
         ) : (
           <CleansTable
