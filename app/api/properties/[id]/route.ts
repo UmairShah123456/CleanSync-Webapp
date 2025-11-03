@@ -8,12 +8,15 @@ export async function PATCH(
   const supabase = await getServerSupabaseClient();
   const { id } = await context.params;
   const body = await request.json();
-  const { name, ical_url, checkout_time } = body ?? {};
+  const { name, ical_url, checkout_time, cleaner } = body ?? {};
 
-  const updatePayload: Record<string, string> = {};
+  const updatePayload: Record<string, any> = {};
   if (name) updatePayload.name = name;
   if (ical_url) updatePayload.ical_url = ical_url;
   if (checkout_time !== undefined) updatePayload.checkout_time = checkout_time;
+  if (cleaner !== undefined) {
+    updatePayload.cleaner = cleaner?.trim() || null;
+  }
 
   if (Object.keys(updatePayload).length === 0) {
     return NextResponse.json({ error: "Nothing to update." }, { status: 400 });

@@ -21,6 +21,23 @@ export function FilterBar({
   const [filters, setFilters] = useState<FilterState>({});
   const [dateRange, setDateRange] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
+  const [cleaners, setCleaners] = useState<string[]>([]);
+
+  // Fetch cleaners on mount
+  useEffect(() => {
+    const fetchCleaners = async () => {
+      try {
+        const response = await fetch("/api/cleaners");
+        if (response.ok) {
+          const data = await response.json();
+          setCleaners(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch cleaners:", err);
+      }
+    };
+    fetchCleaners();
+  }, []);
 
   const updateFilters = (updater: (prev: FilterState) => FilterState) => {
     setFilters((prev) => {
@@ -132,6 +149,29 @@ export function FilterBar({
             <option value="today">Today</option>
             <option value="week">This Week</option>
             <option value="month">This Month</option>
+          </select>
+          <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EFF6E0]/70" />
+        </div>
+
+        {/* Cleaner Dropdown */}
+        <div className="relative flex-1">
+          <select
+            suppressHydrationWarning
+            value={filters.cleaner ?? ""}
+            onChange={(e) =>
+              updateFilters((prev) => ({
+                ...prev,
+                cleaner: e.target.value || undefined,
+              }))
+            }
+            className="w-full appearance-none rounded-full bg-[#124559]/40 px-4 py-2 text-sm text-[#EFF6E0] focus:outline-none focus:ring-2 focus:ring-[#598392] border border-[#124559]/50"
+          >
+            <option value="">All Cleaners</option>
+            {cleaners.map((cleaner) => (
+              <option key={cleaner} value={cleaner}>
+                {cleaner}
+              </option>
+            ))}
           </select>
           <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EFF6E0]/70" />
         </div>
@@ -292,6 +332,29 @@ export function FilterBar({
                 <option value="today">Today</option>
                 <option value="week">This Week</option>
                 <option value="month">This Month</option>
+              </select>
+              <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EFF6E0]/70" />
+            </div>
+
+            {/* Cleaner Dropdown */}
+            <div className="relative">
+              <select
+                suppressHydrationWarning
+                value={filters.cleaner ?? ""}
+                onChange={(e) =>
+                  updateFilters((prev) => ({
+                    ...prev,
+                    cleaner: e.target.value || undefined,
+                  }))
+                }
+                className="w-full appearance-none rounded-full bg-[#124559]/40 px-4 py-2 text-sm text-[#EFF6E0] focus:outline-none focus:ring-2 focus:ring-[#598392] border border-[#124559]/50"
+              >
+                <option value="">All Cleaners</option>
+                {cleaners.map((cleaner) => (
+                  <option key={cleaner} value={cleaner}>
+                    {cleaner}
+                  </option>
+                ))}
               </select>
               <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EFF6E0]/70" />
             </div>

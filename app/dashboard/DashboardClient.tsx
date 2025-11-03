@@ -16,6 +16,7 @@ async function fetchCleansWithFilters(filters: FilterState) {
   if (filters.status) params.append("status", filters.status);
   if (filters.from) params.append("from", filters.from);
   if (filters.to) params.append("to", filters.to);
+  if (filters.cleaner) params.append("cleaner", filters.cleaner);
 
   const query = params.toString();
   const endpoint = query ? `/api/cleans?${query}` : "/api/cleans";

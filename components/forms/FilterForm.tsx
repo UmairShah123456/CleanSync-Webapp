@@ -10,6 +10,7 @@ export type FilterState = {
   status?: string;
   from?: string;
   to?: string;
+  cleaner?: string;
 };
 
 export function FilterForm({

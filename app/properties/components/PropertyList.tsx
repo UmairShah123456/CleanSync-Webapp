@@ -11,6 +11,7 @@ export type Property = {
   name: string;
   ical_url: string;
   checkout_time?: string | null;
+  cleaner?: string | null;
   created_at?: string;
 };
 
@@ -128,6 +129,7 @@ export function PropertyList({
               name: editing.name,
               ical_url: editing.ical_url,
               checkout_time: editing.checkout_time || "10:00",
+              cleaner: editing.cleaner || "",
             }}
             onSubmit={handleUpdate}
             submitting={updating}

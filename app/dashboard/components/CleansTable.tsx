@@ -8,6 +8,7 @@ import {
   MapPinIcon,
   ClockIcon,
   DocumentTextIcon,
+  UserIcon,
 } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import { useState } from "react";
@@ -23,6 +24,7 @@ export type CleanRow = {
   property_unit?: string;
   checkin?: string | null;
   checkout?: string | null;
+  cleaner?: string | null;
 };
 
 export function CleansTable({
@@ -194,6 +196,9 @@ export function CleansTable({
                 </th>
                 <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
                   Checkout Time
+                </th>
+                <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
+                  Cleaner
                 </th>
                 <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
                   Check-in / Check-out
@@ -374,6 +379,18 @@ function DesktopTableRow({
           )}
           title="Checkout time (defaults to 10:00 AM)"
         />
+      </td>
+      <td
+        className={clsx(
+          "py-4 text-sm",
+          isCancelled
+            ? "text-[#EFF6E0]/50"
+            : isCompleted
+            ? "text-[#EFF6E0]/60"
+            : "text-[#EFF6E0]/70"
+        )}
+      >
+        {clean.cleaner || "—"}
       </td>
       <td
         className={clsx(
@@ -704,7 +721,7 @@ function MobileCard({
                 isCancelled
                   ? "bg-[#2a1f2e]/40 border border-[#2a1f2e]/60 opacity-30"
                   : isCompleted
-                  ? "bg-[#1a2530]/40 border border-[#1a2530]/60"
+                  ? "bg-[#1a2530]/40 border-[#1a2530]/60 opacity-80"
                   : "bg-[#124559]/70 border border-[#124559]/70",
                 editingTimeId === clean.id && "opacity-50 cursor-wait",
                 isCancelled && "cursor-not-allowed"
@@ -717,6 +734,34 @@ function MobileCard({
           </div>
         </div>
       </div>
+
+      {/* Cleaner - Below Checkout Time */}
+      {clean.cleaner && (
+        <div className="flex items-center gap-1.5 mt-1.5">
+          <UserIcon
+            className={clsx(
+              "h-4 w-4 shrink-0",
+              isCancelled
+                ? "text-[#EFF6E0]/50"
+                : isCompleted
+                ? "text-[#EFF6E0]/60"
+                : "text-[#EFF6E0]/80"
+            )}
+          />
+          <div
+            className={clsx(
+              "font-semibold text-sm",
+              isCancelled
+                ? "text-[#EFF6E0]/50"
+                : isCompleted
+                ? "text-[#EFF6E0]/60"
+                : "text-[#EFF6E0]"
+            )}
+          >
+            {clean.cleaner}
+          </div>
+        </div>
+      )}
 
       {/* Notes */}
       {(isSameDayCheckIn(clean) ||
@@ -734,12 +779,12 @@ function MobileCard({
           />
           <div
             className={clsx(
-              "text-xs font-semibold flex-1",
+              "text-sm font-semibold flex-1",
               isCancelled
                 ? "text-[#EFF6E0]/50"
                 : isCompleted
                 ? "text-[#EFF6E0]/60"
-                : "text-[#EFF6E0]/80"
+                : "text-[#EFF6E0]"
             )}
           >
             {isSameDayCheckIn(clean) && (

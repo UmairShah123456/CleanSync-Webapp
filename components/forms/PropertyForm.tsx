@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
@@ -8,6 +8,7 @@ export type PropertyPayload = {
   name: string;
   ical_url: string;
   checkout_time?: string;
+  cleaner?: string;
 };
 
 export function PropertyForm({
@@ -24,9 +25,43 @@ export function PropertyForm({
       name: "",
       ical_url: "",
       checkout_time: "10:00",
+      cleaner: "",
     }
   );
   const [error, setError] = useState<string | null>(null);
+  const [existingCleaners, setExistingCleaners] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+
+  // Fetch existing cleaners on mount
+  useEffect(() => {
+    const fetchCleaners = async () => {
+      try {
+        const response = await fetch("/api/cleaners");
+        if (response.ok) {
+          const cleaners = await response.json();
+          setExistingCleaners(cleaners);
+        }
+      } catch (err) {
+        // Silently fail - user can still type new names
+        console.error("Failed to fetch cleaners:", err);
+      }
+    };
+    fetchCleaners();
+  }, []);
+
+  // Filter suggestions based on input
+  useEffect(() => {
+    if (formState.cleaner && showSuggestions) {
+      const input = formState.cleaner.toLowerCase().trim();
+      const filtered = existingCleaners.filter((cleaner) =>
+        cleaner.toLowerCase().includes(input)
+      );
+      setFilteredSuggestions(filtered);
+    } else {
+      setFilteredSuggestions([]);
+    }
+  }, [formState.cleaner, existingCleaners, showSuggestions]);
 
   const handleChange =
     (field: keyof PropertyPayload) =>
@@ -108,6 +143,49 @@ export function PropertyForm({
         <p className="text-xs text-slate-500">
           Default checkout time for cleans from this property (e.g., 10:00 for
           10 AM)
+        </p>
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-slate-700" htmlFor="cleaner">
+          Cleaner
+        </label>
+        <div className="relative">
+          <Input
+            id="cleaner"
+            placeholder="Enter cleaner name"
+            value={formState.cleaner || ""}
+            onChange={(e) => {
+              handleChange("cleaner")(e);
+              setShowSuggestions(true);
+            }}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => {
+              // Delay hiding suggestions to allow clicking on them
+              setTimeout(() => setShowSuggestions(false), 200);
+            }}
+            list="cleaner-suggestions"
+          />
+          {showSuggestions && filteredSuggestions.length > 0 && (
+            <ul className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-auto">
+              {filteredSuggestions.map((cleaner, index) => (
+                <li
+                  key={index}
+                  className="px-4 py-2 hover:bg-slate-100 cursor-pointer text-sm text-slate-700"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setFormState((prev) => ({ ...prev, cleaner }));
+                    setShowSuggestions(false);
+                  }}
+                >
+                  {cleaner}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <p className="text-xs text-slate-500">
+          Assign a cleaner to this property. Existing cleaners will appear as
+          suggestions.
         </p>
       </div>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}

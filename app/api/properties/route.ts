@@ -34,7 +34,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const supabase = await getServerSupabaseClient();
   const body = await request.json();
-  const { name, ical_url, checkout_time } = body ?? {};
+  const { name, ical_url, checkout_time, cleaner } = body ?? {};
 
   if (!name || !ical_url) {
     return NextResponse.json(
@@ -56,14 +56,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const insertData: Record<string, any> = {
+    name,
+    ical_url,
+    checkout_time: checkout_time || "10:00",
+    user_id: user.id,
+  };
+
+  if (cleaner !== undefined) {
+    insertData.cleaner = cleaner.trim() || null;
+  }
+
   const { data, error } = await supabase
     .from("properties")
-    .insert({
-      name,
-      ical_url,
-      checkout_time: checkout_time || "10:00",
-      user_id: user.id,
-    })
+    .insert(insertData)
     .select()
     .single();
 

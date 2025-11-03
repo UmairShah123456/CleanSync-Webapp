@@ -16,7 +16,7 @@ export default async function DashboardPage() {
 
   const { data: propertiesData } = await supabase
     .from("properties")
-    .select("id, name, checkout_time")
+    .select("id, name, checkout_time, cleaner")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -78,6 +78,9 @@ export default async function DashboardPage() {
   const propertyLookup = new Map(
     properties.map((property) => [property.id, property.name])
   );
+  const propertyCleanerLookup = new Map(
+    properties.map((property) => [property.id, property.cleaner])
+  );
 
   // Fetch related booking check-in/out times for these cleans
   let bookingMap = new Map<
@@ -105,6 +108,7 @@ export default async function DashboardPage() {
     notes: clean.notes,
     checkin: bookingMap.get(clean.booking_uid)?.checkin ?? null,
     checkout: bookingMap.get(clean.booking_uid)?.checkout ?? null,
+    cleaner: propertyCleanerLookup.get(clean.property_id) ?? null,
   }));
 
   return (

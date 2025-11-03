@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
   const { data: properties, error: propertiesError } = await supabase
     .from("properties")
-    .select("id, name")
+    .select("id, name, cleaner")
     .eq("user_id", user.id);
 
   if (propertiesError) {
@@ -39,6 +39,9 @@ export async function GET(request: NextRequest) {
   const propertyIds = properties.map((property) => property.id);
   const propertyLookup = new Map(
     properties.map((property) => [property.id, property.name])
+  );
+  const propertyCleanerLookup = new Map(
+    properties.map((property) => [property.id, property.cleaner])
   );
 
   let query = supabase
@@ -61,6 +64,7 @@ export async function GET(request: NextRequest) {
   const status = searchParams.get("status");
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+  const cleaner = searchParams.get("cleaner");
 
   if (propertyId) {
     query = query.eq("property_id", propertyId);
@@ -79,6 +83,19 @@ export async function GET(request: NextRequest) {
 
   if (to) {
     query = query.lte("scheduled_for", to);
+  }
+
+  // Filter by cleaner - get property IDs that have the matching cleaner
+  if (cleaner) {
+    const propertyIdsWithCleaner = properties
+      .filter((p) => p.cleaner === cleaner)
+      .map((p) => p.id);
+    if (propertyIdsWithCleaner.length > 0) {
+      query = query.in("property_id", propertyIdsWithCleaner);
+    } else {
+      // No properties match this cleaner, return empty result
+      return NextResponse.json([]);
+    }
   }
 
   const { data, error } = await query;
@@ -137,6 +154,7 @@ export async function GET(request: NextRequest) {
     notes: clean.notes,
     checkin: clean.bookings?.checkin ?? null,
     checkout: clean.bookings?.checkout ?? null,
+    cleaner: propertyCleanerLookup.get(clean.property_id) ?? null,
   }));
 
   return NextResponse.json(response);
