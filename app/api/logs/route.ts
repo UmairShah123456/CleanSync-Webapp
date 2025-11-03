@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   const supabase = await getServerSupabaseClient();
   const searchParams = request.nextUrl.searchParams;
-  
+
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = parseInt(searchParams.get("limit") || "15", 10);
   const offset = (page - 1) * limit;
@@ -17,10 +17,7 @@ export async function GET(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (userError) {
-    return NextResponse.json(
-      { error: userError.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: userError.message }, { status: 500 });
   }
 
   if (!user) {
@@ -63,10 +60,7 @@ export async function GET(request: NextRequest) {
     .in("property_id", propertyIds);
 
   if (countError) {
-    return NextResponse.json(
-      { error: countError.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: countError.message }, { status: 500 });
   }
 
   const totalCount = count ?? 0;
@@ -74,7 +68,9 @@ export async function GET(request: NextRequest) {
   // Get paginated data
   const { data, error } = await supabase
     .from("sync_logs")
-    .select("id, property_id, run_at, bookings_added, bookings_removed, bookings_updated")
+    .select(
+      "id, property_id, run_at, bookings_added, bookings_removed, bookings_updated"
+    )
     .in("property_id", propertyIds)
     .order("run_at", { ascending: false })
     .range(offset, offset + limit - 1);
