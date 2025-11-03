@@ -39,7 +39,7 @@ export function MetricCard({
 
   return (
     <div
-      className="rounded-xl bg-[#124559] p-6 shadow-md transition-all duration-200 hover:scale-[1.02] hover:shadow-lg border border-[#124559]/50 animate-fadeIn"
+      className="rounded-xl bg-[#124559] p-6 shadow-md transition-all duration-200 hover:scale-[1.02] hover:shadow-lg border border-[#124559]/50 animate-fadeIn overflow-hidden"
       style={{ animationDelay: `${delay}ms` }}
     >
       <p className="text-4xl font-bold text-[#EFF6E0]">{displayValue}</p>

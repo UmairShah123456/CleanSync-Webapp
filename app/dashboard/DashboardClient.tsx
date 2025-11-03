@@ -215,7 +215,7 @@ export function DashboardClient({
         <DashboardHeader />
 
         {/* Metric Cards */}
-        <div className="grid grid-cols-1 gap-4 overflow-x-auto sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 overflow-hidden sm:grid-cols-2">
           <MetricCard
             value={metrics.upcoming}
             label="Upcoming Cleanings"

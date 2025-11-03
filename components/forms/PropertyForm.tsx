@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
 
 export type PropertyPayload = {
   name: string;
@@ -95,62 +93,68 @@ export function PropertyForm({
   };
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
+    <form className="space-y-5" onSubmit={handleSubmit}>
       <div className="space-y-2">
         <label
-          className="text-sm font-medium text-slate-700"
+          className="text-sm font-medium text-[#EFF6E0]/80"
           htmlFor="property-name"
         >
           Property name
         </label>
-        <Input
+        <input
           id="property-name"
           placeholder="Manchester Apartment"
           value={formState.name}
           onChange={handleChange("name")}
           required
+          className="w-full rounded-lg border border-[#124559]/50 bg-white px-4 py-2.5 text-sm text-[#01161E] placeholder:text-[#01161E]/50 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392] transition-colors duration-200"
         />
       </div>
       <div className="space-y-2">
         <label
-          className="text-sm font-medium text-slate-700"
+          className="text-sm font-medium text-[#EFF6E0]/80"
           htmlFor="property-ical"
         >
           iCal feed URL
         </label>
-        <Input
+        <input
           id="property-ical"
           placeholder="https://.../calendar.ics"
           value={formState.ical_url}
           onChange={handleChange("ical_url")}
           required
+          className="w-full rounded-lg border border-[#124559]/50 bg-white px-4 py-2.5 text-sm text-[#01161E] placeholder:text-[#01161E]/50 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392] transition-colors duration-200"
         />
       </div>
       <div className="space-y-2">
         <label
-          className="text-sm font-medium text-slate-700"
+          className="text-sm font-medium text-[#EFF6E0]/80"
           htmlFor="checkout-time"
         >
           Standard Checkout Time
         </label>
-        <Input
+        <input
           id="checkout-time"
           type="time"
           value={formState.checkout_time || "10:00"}
           onChange={handleChange("checkout_time")}
           placeholder="10:00"
+          className="w-full rounded-lg border border-[#124559]/50 bg-white px-4 py-2.5 text-sm text-[#01161E] placeholder:text-[#01161E]/50 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392] transition-colors duration-200 [color-scheme:light]"
         />
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[#EFF6E0]/50">
           Default checkout time for cleans from this property (e.g., 10:00 for
           10 AM)
         </p>
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700" htmlFor="cleaner">
+        <label
+          className="text-sm font-medium text-[#EFF6E0]/80"
+          htmlFor="cleaner"
+        >
           Cleaner
         </label>
-        <div className="relative">
-          <Input
+        <div className="relative z-50">
+          <input
             id="cleaner"
             placeholder="Enter cleaner name"
             value={formState.cleaner || ""}
@@ -163,14 +167,14 @@ export function PropertyForm({
               // Delay hiding suggestions to allow clicking on them
               setTimeout(() => setShowSuggestions(false), 200);
             }}
-            list="cleaner-suggestions"
+            className="w-full rounded-lg border border-[#124559]/50 bg-white px-4 py-2.5 text-sm text-[#01161E] placeholder:text-[#01161E]/50 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392] transition-colors duration-200"
           />
           {showSuggestions && filteredSuggestions.length > 0 && (
-            <ul className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-auto">
+            <ul className="absolute z-[100] w-full mt-1 bg-white border border-[#124559]/50 rounded-lg shadow-xl max-h-60 overflow-auto">
               {filteredSuggestions.map((cleaner, index) => (
                 <li
                   key={index}
-                  className="px-4 py-2 hover:bg-slate-100 cursor-pointer text-sm text-slate-700"
+                  className="px-4 py-2 hover:bg-[#598392]/20 cursor-pointer text-sm text-[#01161E] transition-colors duration-200"
                   onMouseDown={(e) => {
                     e.preventDefault();
                     setFormState((prev) => ({ ...prev, cleaner }));
@@ -183,16 +187,24 @@ export function PropertyForm({
             </ul>
           )}
         </div>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[#EFF6E0]/50">
           Assign a cleaner to this property. Existing cleaners will appear as
           suggestions.
         </p>
       </div>
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? (
+        <div className="rounded-lg bg-red-500/20 border border-red-500/50 p-3 text-sm text-red-300">
+          {error}
+        </div>
+      ) : null}
       <div className="flex justify-end gap-3">
-        <Button variant="primary" type="submit" disabled={submitting}>
+        <button
+          type="submit"
+          disabled={submitting}
+          className="rounded-lg bg-gradient-to-r from-[#124559] to-[#598392] px-4 py-2.5 text-sm font-medium text-[#EFF6E0] shadow-md transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        >
           {submitting ? "Saving..." : "Save property"}
-        </Button>
+        </button>
       </div>
     </form>
   );
