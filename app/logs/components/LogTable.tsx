@@ -9,7 +9,21 @@ export type LogRow = {
   bookings_updated: number;
 };
 
-export function LogTable({ logs }: { logs: LogRow[] }) {
+export function LogTable({
+  logs,
+  loading,
+}: {
+  logs: LogRow[];
+  loading?: boolean;
+}) {
+  if (loading) {
+    return (
+      <div className="rounded-xl bg-[#124559] p-12 border border-[#124559]/50 text-center">
+        <p className="text-sm text-[#EFF6E0]/70">Loading logs...</p>
+      </div>
+    );
+  }
+
   if (!logs.length) {
     return (
       <div className="rounded-xl border border-dashed border-[#598392]/30 bg-[#124559] p-12 text-center text-sm text-[#EFF6E0]/70">

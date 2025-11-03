@@ -210,7 +210,7 @@ export function FilterBar({
           <button
             onClick={onSync}
             disabled={syncing}
-            className="flex items-center gap-2 rounded-full bg-gradient-to-r from-[#124559] to-[#598392] px-4 py-2 text-sm font-medium text-[#EFF6E0] shadow-md transition-all duration-200 hover:shadow-lg disabled:opacity-50"
+            className="flex items-center gap-2 rounded-full bg-gradient-to-r from-[#124559] to-[#598392] px-4 py-2 text-sm font-medium text-[#EFF6E0] shadow-md transition-all duration-200 hover:shadow-lg disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
             <ArrowPathIcon
               className={clsx("h-4 w-4", syncing && "animate-spin")}
@@ -237,7 +237,7 @@ export function FilterBar({
           <button
             onClick={onSync}
             disabled={syncing}
-            className="flex items-center gap-2 rounded-full bg-gradient-to-r from-[#124559] to-[#598392] px-4 py-2 text-sm font-medium text-[#EFF6E0]"
+            className="flex items-center gap-2 rounded-full bg-gradient-to-r from-[#124559] to-[#598392] px-4 py-2 text-sm font-medium text-[#EFF6E0] cursor-pointer disabled:cursor-not-allowed"
           >
             <ArrowPathIcon
               className={clsx("h-4 w-4", syncing && "animate-spin")}

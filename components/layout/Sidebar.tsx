@@ -90,7 +90,7 @@ export function Sidebar({
               href={item.href}
               onClick={handleLinkClick}
               className={clsx(
-                "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+                "group flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium transition-all duration-200",
                 active
                   ? "bg-[#124559]/70 text-[#EFF6E0]"
                   : "text-[#EFF6E0]/70 hover:bg-[#124559]/40 hover:text-[#EFF6E0]"
@@ -98,7 +98,7 @@ export function Sidebar({
             >
               <Icon
                 className={clsx(
-                  "h-5 w-5 transition-transform duration-200 group-hover:scale-110",
+                  "h-6 w-6 transition-transform duration-200 group-hover:scale-110",
                   active ? "text-[#EFF6E0]" : "text-[#EFF6E0]/70"
                 )}
               />
@@ -133,9 +133,9 @@ export function Sidebar({
         <button
           onClick={handleSignOut}
           disabled={signingOut}
-          className="mt-2 w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-[#EFF6E0]/70 transition-colors duration-200 hover:bg-[#124559]/40 hover:text-[#EFF6E0] disabled:opacity-50 flex items-center gap-2"
+          className="mt-2 w-full rounded-lg px-4 py-3 text-left text-base font-medium text-[#EFF6E0]/70 transition-colors duration-200 hover:bg-[#124559]/40 hover:text-[#EFF6E0] disabled:opacity-50 flex items-center gap-3"
         >
-          <ArrowRightOnRectangleIcon className="h-5 w-5" />
+          <ArrowRightOnRectangleIcon className="h-6 w-6" />
           {signingOut ? "Signing out..." : "Sign out"}
         </button>
       </div>

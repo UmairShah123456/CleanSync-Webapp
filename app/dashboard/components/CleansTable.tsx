@@ -498,7 +498,9 @@ function DesktopTableRow({
             onClick={() => handleDelete(clean.id)}
             className={clsx(
               "transition-colors duration-200",
-              isCancelled || deletingId === clean.id ? "cursor-not-allowed" : ""
+              isCancelled || deletingId === clean.id
+                ? "cursor-not-allowed"
+                : "cursor-pointer"
             )}
             disabled={isCancelled || deletingId === clean.id}
             title="Delete clean"

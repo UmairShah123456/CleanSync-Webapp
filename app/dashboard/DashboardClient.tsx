@@ -8,6 +8,7 @@ import { CleansTable, type CleanRow } from "./components/CleansTable";
 import { FilterBar } from "./components/FilterBar";
 import { Loader } from "@/components/ui/Loader";
 import type { FilterState } from "@/components/forms/FilterForm";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 
 async function fetchCleansWithFilters(filters: FilterState) {
   const params = new URLSearchParams();
@@ -109,6 +110,8 @@ export function DashboardClient({
   const [syncing, setSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [syncMessageVisible, setSyncMessageVisible] = useState(true);
 
   // Create a map of property IDs to their checkout times
   const propertyCheckoutTimes = useMemo(() => {
@@ -141,20 +144,70 @@ export function DashboardClient({
   const handleSync = useCallback(async () => {
     setSyncing(true);
     setError(null);
+    setSyncMessage(null);
+    setSyncMessageVisible(true);
+
+    // Track cleans count before sync
+    const cleansBeforeSync = cleans.length;
+
     try {
       const response = await fetch("/api/sync", { method: "POST" });
       if (!response.ok) {
         throw new Error("Sync failed");
       }
+
+      const syncData = await response.json();
+
+      // Calculate total cleans added across all properties
+      let totalAdded = 0;
+      if (syncData.results && Array.isArray(syncData.results)) {
+        totalAdded = syncData.results.reduce(
+          (sum: number, result: any) => sum + (result.bookingsAdded || 0),
+          0
+        );
+      }
+
       setLastSynced(new Date());
       const fresh = await fetchCleansWithFilters(filters);
       setCleans(fresh);
+
+      // Determine sync message with playful tone
+      if (totalAdded === 0) {
+        setSyncMessage("All caught up! 🎉 Everything is ready to go!");
+      } else {
+        const messages =
+          totalAdded === 1
+            ? [
+                "Woohoo! 🎊 1 new clean is ready to go!",
+                "Fresh new clean coming your way! ✨",
+                "You've got 1 new cleaning scheduled! 🧹",
+              ]
+            : [
+                `Awesome! 🚀 ${totalAdded} new cleans just arrived!`,
+                `Wow! ${totalAdded} new cleans are ready to rock! 🎸`,
+                `Fantastic! ${totalAdded} fresh cleans are in! 🎯`,
+              ];
+        // Pick a random playful message
+        const randomMessage =
+          messages[Math.floor(Math.random() * messages.length)];
+        setSyncMessage(randomMessage);
+      }
+
+      // Start fade out animation after 3 seconds
+      setSyncMessageVisible(true);
+      setTimeout(() => {
+        setSyncMessageVisible(false);
+        // Remove message after fade out completes
+        setTimeout(() => {
+          setSyncMessage(null);
+        }, 300); // Fade duration
+      }, 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to sync calendar.");
     } finally {
       setSyncing(false);
     }
-  }, [filters]);
+  }, [filters, cleans.length]);
 
   return (
     <AppShell email={email}>
@@ -193,12 +246,47 @@ export function DashboardClient({
           </div>
         )}
 
+        {/* Sync Status */}
+        {syncing && (
+          <div className="flex flex-col items-center justify-center rounded-xl bg-[#124559] p-12 border border-[#124559]/50 space-y-2">
+            <p className="text-lg text-[#EFF6E0]">
+              🚀 Fetching your latest cleans... Almost there!
+            </p>
+            <Loader />
+          </div>
+        )}
+
+        {/* Sync Complete Message */}
+        {!syncing && syncMessage && (
+          <div
+            className={`relative rounded-xl bg-[#124559] p-12 border border-[#124559]/50 text-center transition-opacity duration-300 ${
+              syncMessageVisible ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <button
+              onClick={() => {
+                setSyncMessageVisible(false);
+                setTimeout(() => {
+                  setSyncMessage(null);
+                }, 300);
+              }}
+              className="absolute top-4 right-4 text-[#EFF6E0]/70 hover:text-[#EFF6E0] transition-colors duration-200"
+              aria-label="Close message"
+            >
+              <XMarkIcon className="h-5 w-5" />
+            </button>
+            <p className="text-lg font-semibold text-[#EFF6E0] pr-8">
+              {syncMessage}
+            </p>
+          </div>
+        )}
+
         {/* Loading State */}
-        {loading ? (
+        {loading && !syncing ? (
           <div className="flex items-center justify-center rounded-xl bg-[#124559] p-12 border border-[#124559]/50">
             <Loader />
           </div>
-        ) : (
+        ) : !syncing ? (
           <CleansTable
             cleans={cleans}
             onDelete={async (id) => {
@@ -210,7 +298,7 @@ export function DashboardClient({
               setCleans(fresh);
             }}
           />
-        )}
+        ) : null}
       </div>
     </AppShell>
   );

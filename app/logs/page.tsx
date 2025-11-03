@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSupabaseClient } from "@/lib/db";
 import { AppShell } from "@/components/layout/AppShell";
-import { LogTable } from "./components/LogTable";
+import { LogsClient } from "./LogsClient";
 import type { LogRow } from "./components/LogTable";
 
 export const revalidate = 0;
@@ -38,6 +38,17 @@ export default async function LogsPage() {
   );
   const propertyIds = properties.map((property) => property.id);
 
+  // Get total count
+  const { count } = await supabase
+    .from("sync_logs")
+    .select("*", { count: "exact", head: true })
+    .in("property_id", propertyIds);
+
+  const totalCount = count ?? 0;
+  const limit = 15; // Default page size
+  const page = 1;
+
+  // Get first page of logs
   const { data: logsData } = await supabase
     .from("sync_logs")
     .select(
@@ -45,7 +56,7 @@ export default async function LogsPage() {
     )
     .in("property_id", propertyIds)
     .order("run_at", { ascending: false })
-    .limit(50);
+    .range(0, limit - 1);
 
   const logs = logsData ?? [];
 
@@ -53,6 +64,13 @@ export default async function LogsPage() {
     ...log,
     property_name: propertyLookup.get(log.property_id) ?? "Unknown property",
   }));
+
+  const pagination = {
+    page,
+    limit,
+    total: totalCount,
+    totalPages: Math.ceil(totalCount / limit),
+  };
 
   return (
     <AppShell email={user.email}>
@@ -62,7 +80,7 @@ export default async function LogsPage() {
           Review what changed during each background sync.
         </p>
       </div>
-      <LogTable logs={tableRows} />
+      <LogsClient initialLogs={tableRows} initialPagination={pagination} />
     </AppShell>
   );
 }
