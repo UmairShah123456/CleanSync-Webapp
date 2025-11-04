@@ -248,18 +248,31 @@ export function DashboardClient({
 
         {/* Sync Status */}
         {syncing && (
-          <div className="flex flex-col items-center justify-center rounded-xl bg-[#124559] p-12 border border-[#124559]/50 space-y-2">
-            <p className="text-lg text-[#EFF6E0]">
-              🚀 Fetching your latest cleans... Almost there!
-            </p>
-            <Loader />
-          </div>
+          <>
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#598392]/40 bg-[#124559]/40 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-[#EFF6E0]/70">
+                <span className="h-2 w-2 rounded-full bg-[#9AD1D4] animate-pulse" />
+                Sync in progress
+              </div>
+              <p className="text-2xl font-semibold text-[#EFF6E0]">
+                Fetching your latest cleans
+              </p>
+              <p className="max-w-xl text-sm text-[#EFF6E0]/70">
+                We’re pulling fresh bookings across every calendar. Hang tight—
+                your dashboard will refresh automatically.
+              </p>
+              <Loader />
+              <p className="text-xs font-medium uppercase tracking-[0.35em] text-[#EFF6E0]/50">
+                CleanSync is updating
+              </p>
+            </div>
+          </>
         )}
 
         {/* Sync Complete Message */}
         {!syncing && syncMessage && (
           <div
-            className={`relative rounded-xl bg-[#124559] p-12 border border-[#124559]/50 text-center transition-opacity duration-300 ${
+            className={`relative mt-6 flex flex-col items-center gap-4 text-center transition-opacity duration-300 ${
               syncMessageVisible ? "opacity-100" : "opacity-0"
             }`}
           >
@@ -270,12 +283,16 @@ export function DashboardClient({
                   setSyncMessage(null);
                 }, 300);
               }}
-              className="absolute top-4 right-4 text-[#EFF6E0]/70 hover:text-[#EFF6E0] transition-colors duration-200"
-              aria-label="Close message"
+              className="absolute right-0 top-0 text-[#EFF6E0]/70 transition-transform duration-200 hover:scale-110 hover:text-[#EFF6E0]"
+              aria-label="Dismiss sync message"
             >
               <XMarkIcon className="h-5 w-5" />
             </button>
-            <p className="text-lg font-semibold text-[#EFF6E0] pr-8">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#598392]/40 bg-[#124559]/40 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-[#EFF6E0]/70">
+              <span className="h-2 w-2 rounded-full bg-[#9AD1D4]" />
+              Sync complete
+            </div>
+            <p className="max-w-2xl text-lg font-semibold text-[#EFF6E0]">
               {syncMessage}
             </p>
           </div>
