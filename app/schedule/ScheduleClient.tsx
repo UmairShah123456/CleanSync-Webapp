@@ -464,9 +464,8 @@ function TimelineView({
           const propertyCleans = cleansByProperty.get(property.id) ?? [];
           const color = propertyColors.get(property.id) ?? PROPERTY_COLORS[0];
           const indicator = hexToRgba(color, 0.9);
-          // Create a darker version for better text contrast (but lighter than container)
-          const pillBackground = hexToRgba(color, 0.92);
-          const pillBorder = hexToRgba(color, 0.95);
+          const pillBackground = hexToRgba(color, 0.4);
+          const pillBorder = hexToRgba(color, 0.7);
 
           return (
             <div
@@ -640,8 +639,8 @@ function CalendarView({
                       key={clean.id}
                       className="rounded-full border px-3 py-1 text-[0.65rem] font-medium text-white"
                       style={{
-                        backgroundColor: hexToRgba(color, 0.92),
-                        borderColor: hexToRgba(color, 0.95),
+                        backgroundColor: hexToRgba(color, 0.55),
+                        borderColor: hexToRgba(color, 0.85),
                       }}
                     >
                       <div className="flex items-center justify-between gap-2">

@@ -5,7 +5,7 @@ import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
 export type PropertyPayload = {
   name: string;
   ical_url: string;
-  checkout_time?: string;
+  checkout_time: string;
   cleaner?: string;
 };
 
@@ -13,10 +13,12 @@ export function PropertyForm({
   initial,
   onSubmit,
   submitting,
+  onCancel,
 }: {
   initial?: PropertyPayload;
   onSubmit: (payload: PropertyPayload) => Promise<void>;
   submitting?: boolean;
+  onCancel?: () => void;
 }) {
   const [formState, setFormState] = useState<PropertyPayload>(
     initial ?? {
@@ -41,7 +43,6 @@ export function PropertyForm({
           setExistingCleaners(cleaners);
         }
       } catch (err) {
-        // Silently fail - user can still type new names
         console.error("Failed to fetch cleaners:", err);
       }
     };
@@ -71,18 +72,15 @@ export function PropertyForm({
     event.preventDefault();
     setError(null);
 
-    if (!formState.name || !formState.ical_url) {
-      setError("Please provide both a property name and an iCal URL.");
+    if (!formState.name || !formState.ical_url || !formState.checkout_time) {
+      setError("Please provide a property name, iCal URL, and checkout time.");
       return;
     }
 
-    // Validate checkout_time format if provided
-    if (formState.checkout_time) {
-      const timePattern = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-      if (!timePattern.test(formState.checkout_time)) {
-        setError("Checkout time must be in HH:MM format (e.g., 10:00).");
-        return;
-      }
+    const timePattern = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timePattern.test(formState.checkout_time)) {
+      setError("Checkout time must be in HH:MM format (e.g., 10:00).");
+      return;
     }
 
     try {
@@ -93,115 +91,153 @@ export function PropertyForm({
   };
 
   return (
-    <form className="space-y-5" onSubmit={handleSubmit}>
-      <div className="space-y-2">
-        <label
-          className="text-sm font-medium text-[#EFF6E0]/80"
-          htmlFor="property-name"
-        >
-          Property name
-        </label>
-        <input
-          id="property-name"
-          placeholder="Manchester Apartment"
-          value={formState.name}
-          onChange={handleChange("name")}
-          required
-          className="w-full rounded-lg border border-[#124559]/50 bg-white px-4 py-2.5 text-sm text-[#01161E] placeholder:text-[#01161E]/50 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392] transition-colors duration-200"
-        />
-      </div>
-      <div className="space-y-2">
-        <label
-          className="text-sm font-medium text-[#EFF6E0]/80"
-          htmlFor="property-ical"
-        >
-          iCal feed URL
-        </label>
-        <input
-          id="property-ical"
-          placeholder="https://.../calendar.ics"
-          value={formState.ical_url}
-          onChange={handleChange("ical_url")}
-          required
-          className="w-full rounded-lg border border-[#124559]/50 bg-white px-4 py-2.5 text-sm text-[#01161E] placeholder:text-[#01161E]/50 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392] transition-colors duration-200"
-        />
-      </div>
-      <div className="space-y-2">
-        <label
-          className="text-sm font-medium text-[#EFF6E0]/80"
-          htmlFor="checkout-time"
-        >
-          Standard Checkout Time
-        </label>
-        <input
-          id="checkout-time"
-          type="time"
-          value={formState.checkout_time || "10:00"}
-          onChange={handleChange("checkout_time")}
-          placeholder="10:00"
-          className="w-full rounded-lg border border-[#124559]/50 bg-white px-4 py-2.5 text-sm text-[#01161E] placeholder:text-[#01161E]/50 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392] transition-colors duration-200 [color-scheme:light]"
-        />
-        <p className="text-xs text-[#EFF6E0]/50">
-          Default checkout time for cleans from this property (e.g., 10:00 for
-          10 AM)
+    <form className="space-y-6" onSubmit={handleSubmit}>
+      <section className="rounded-2xl border border-[#124559]/40 bg-[#01161E]/50 px-5 py-4">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#EFF6E0]/60">
+          Property Details
         </p>
-      </div>
-      <div className="space-y-2">
-        <label
-          className="text-sm font-medium text-[#EFF6E0]/80"
-          htmlFor="cleaner"
-        >
-          Cleaner
-        </label>
-        <div className="relative z-50">
+        <p className="mt-2 text-sm text-[#EFF6E0]/60">
+          Connect the reservation feed, standard checkout window, and the
+          cleaner responsible for turnovers so CleanSync can automate your
+          schedule.
+        </p>
+      </section>
+
+      <div className="space-y-5">
+        <div className="space-y-2">
+          <label
+            className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/60"
+            htmlFor="property-name"
+          >
+            <span>Property name</span>
+            <span className="rounded-full bg-[#124559]/50 px-2 py-0.5 text-[0.6rem] font-semibold text-[#EFF6E0]/70">
+              Required
+            </span>
+          </label>
           <input
-            id="cleaner"
-            placeholder="Enter cleaner name"
-            value={formState.cleaner || ""}
-            onChange={(e) => {
-              handleChange("cleaner")(e);
-              setShowSuggestions(true);
-            }}
-            onFocus={() => setShowSuggestions(true)}
-            onBlur={() => {
-              // Delay hiding suggestions to allow clicking on them
-              setTimeout(() => setShowSuggestions(false), 200);
-            }}
-            className="w-full rounded-lg border border-[#124559]/50 bg-white px-4 py-2.5 text-sm text-[#01161E] placeholder:text-[#01161E]/50 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392] transition-colors duration-200"
+            id="property-name"
+            placeholder="Manchester Apartment"
+            value={formState.name}
+            onChange={handleChange("name")}
+            required
+            className="w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/70 px-4 py-3 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/60 transition-colors duration-200"
           />
-          {showSuggestions && filteredSuggestions.length > 0 && (
-            <ul className="absolute z-[100] w-full mt-1 bg-white border border-[#124559]/50 rounded-lg shadow-xl max-h-60 overflow-auto">
-              {filteredSuggestions.map((cleaner, index) => (
-                <li
-                  key={index}
-                  className="px-4 py-2 hover:bg-[#598392]/20 cursor-pointer text-sm text-[#01161E] transition-colors duration-200"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    setFormState((prev) => ({ ...prev, cleaner }));
-                    setShowSuggestions(false);
-                  }}
-                >
-                  {cleaner}
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
-        <p className="text-xs text-[#EFF6E0]/50">
-          Assign a cleaner to this property. Existing cleaners will appear as
-          suggestions.
-        </p>
+
+        <div className="space-y-2">
+          <label
+            className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/60"
+            htmlFor="property-ical"
+          >
+            <span>iCal feed URL</span>
+            <span className="rounded-full bg-[#124559]/50 px-2 py-0.5 text-[0.6rem] font-semibold text-[#EFF6E0]/70">
+              Required
+            </span>
+          </label>
+          <input
+            id="property-ical"
+            placeholder="https://.../calendar.ics"
+            value={formState.ical_url}
+            onChange={handleChange("ical_url")}
+            required
+            className="w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/70 px-4 py-3 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/60 transition-colors duration-200"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label
+            className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/60"
+            htmlFor="checkout-time"
+          >
+            <span>Standard checkout time</span>
+            <span className="rounded-full bg-[#124559]/50 px-2 py-0.5 text-[0.6rem] font-semibold text-[#EFF6E0]/70">
+              Required
+            </span>
+          </label>
+          <input
+            id="checkout-time"
+            type="time"
+            value={formState.checkout_time}
+            onChange={handleChange("checkout_time")}
+            required
+            className="w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/70 px-4 py-3 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/60 transition-colors duration-200"
+          />
+          <p className="text-xs text-[#EFF6E0]/50">
+            We use this time to schedule cleans after checkout. Adjust if a
+            property has a different turnover window.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <label
+            className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/60"
+            htmlFor="cleaner"
+          >
+            <span>Cleaner</span>
+            <span className="rounded-full bg-[#124559]/40 px-2 py-0.5 text-[0.6rem] font-semibold text-[#EFF6E0]/60">
+              Optional
+            </span>
+          </label>
+          <div className="relative z-50">
+            <input
+              id="cleaner"
+              placeholder="Enter cleaner name"
+              value={formState.cleaner || ""}
+              onChange={(event) => {
+                handleChange("cleaner")(event);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => {
+                setTimeout(() => setShowSuggestions(false), 200);
+              }}
+              className="w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/70 px-4 py-3 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/60 transition-colors duration-200"
+            />
+            {showSuggestions && filteredSuggestions.length > 0 && (
+              <ul className="absolute z-[100] mt-1 max-h-56 w-full overflow-auto rounded-xl border border-[#124559]/60 bg-[#01161E]/95 shadow-2xl shadow-[#01161E]/60 backdrop-blur">
+                {filteredSuggestions.map((cleaner, index) => (
+                  <li
+                    key={index}
+                    className="cursor-pointer px-4 py-2 text-sm text-[#EFF6E0] transition-colors duration-200 hover:bg-[#124559]/50"
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      setFormState((prev) => ({ ...prev, cleaner }));
+                      setShowSuggestions(false);
+                    }}
+                  >
+                    {cleaner}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <p className="text-xs text-[#EFF6E0]/50">
+            Assign a cleaner to surface their schedule on dashboards. Start
+            typing to reuse an existing name.
+          </p>
+        </div>
       </div>
+
       {error ? (
-        <div className="rounded-lg bg-red-500/20 border border-red-500/50 p-3 text-sm text-red-300">
+        <div className="rounded-xl border border-red-500/40 bg-red-500/15 p-4 text-sm text-red-200">
           {error}
         </div>
       ) : null}
-      <div className="flex justify-end gap-3">
+
+      <div className="flex justify-end gap-3 pt-2">
+        {onCancel ? (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-full border border-[#124559]/50 px-5 py-2.5 text-sm font-semibold text-[#EFF6E0]/70 transition-colors duration-200 hover:border-[#598392]/60 hover:text-[#EFF6E0]"
+          >
+            Cancel
+          </button>
+        ) : null}
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-lg bg-gradient-to-r from-[#124559] to-[#598392] px-4 py-2.5 text-sm font-medium text-[#EFF6E0] shadow-md transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className="rounded-full bg-gradient-to-r from-[#124559] to-[#598392] px-5 py-2.5 text-sm font-semibold text-[#EFF6E0] shadow-lg shadow-[#01161E]/50 transition-all duration-200 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? "Saving..." : "Save property"}
         </button>

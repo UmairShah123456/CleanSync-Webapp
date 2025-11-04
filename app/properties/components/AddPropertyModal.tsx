@@ -32,7 +32,11 @@ export function AddPropertyModal({
       onClose={onClose}
       footer={null}
     >
-      <PropertyForm onSubmit={handleSubmit} submitting={loading} />
+      <PropertyForm
+        onSubmit={handleSubmit}
+        submitting={loading}
+        onCancel={onClose}
+      />
     </Modal>
   );
 }
