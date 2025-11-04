@@ -1,0 +1,670 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import clsx from "clsx";
+import {
+  addDays,
+  addMonths,
+  eachDayOfInterval,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameDay,
+  isSameMonth,
+  startOfDay,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns";
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import { AppShell } from "@/components/layout/AppShell";
+import { Spinner } from "@/components/ui/Spinner";
+import type { ScheduleClean, ScheduleProperty, ScheduleRange } from "./types";
+
+type ScheduleView = "timeline" | "calendar";
+
+const PROPERTY_COLORS = [
+  "#A7D9C5",
+  "#85C7BF",
+  "#9AD1D4",
+  "#C7E8F3",
+  "#E3F2E8",
+  "#F6D8AE",
+  "#F4E285",
+  "#BFD8B8",
+  "#A3C4F3",
+  "#DAB6FC",
+];
+
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const hexToRgba = (hex: string, alpha: number) => {
+  const sanitized = hex.replace("#", "");
+  const bigint = parseInt(sanitized, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+const formatDateKey = (date: Date) => {
+  return `${date.getFullYear()}-${(date.getMonth() + 1)
+    .toString()
+    .padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`;
+};
+
+const formatTime = (iso: string) => {
+  const date = new Date(iso);
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+};
+
+const createTimelineRange = (startDate: Date): ScheduleRange => {
+  const from = new Date(startDate);
+  from.setHours(0, 0, 0, 0);
+  const to = new Date(from);
+  to.setDate(to.getDate() + 6);
+  to.setHours(23, 59, 59, 999);
+  return { from: from.toISOString(), to: to.toISOString() };
+};
+
+const createCalendarRange = (monthDate: Date): ScheduleRange => {
+  const start = startOfWeek(startOfMonth(monthDate), { weekStartsOn: 0 });
+  start.setHours(0, 0, 0, 0);
+  const end = endOfWeek(endOfMonth(monthDate), { weekStartsOn: 0 });
+  end.setHours(23, 59, 59, 999);
+  return { from: start.toISOString(), to: end.toISOString() };
+};
+
+const isSameLocalDay = (a: Date, b: Date) => {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+};
+
+const EmptyState = () => {
+  return (
+    <div className="rounded-xl border border-dashed border-[#598392]/30 bg-[#124559]/40 p-12 text-center text-sm text-[#EFF6E0]/70">
+      Add a property first to start exploring your schedule. Once synced, every
+      clean will appear on this timeline and calendar.
+    </div>
+  );
+};
+
+export function ScheduleClient({
+  email,
+  properties,
+  initialCleans,
+  initialRange,
+}: {
+  email?: string | null;
+  properties: ScheduleProperty[];
+  initialCleans: ScheduleClean[];
+  initialRange: ScheduleRange;
+}) {
+  const [view, setView] = useState<ScheduleView>("timeline");
+  const [timelineStart, setTimelineStart] = useState(() => {
+    const initial = new Date(initialRange.from);
+    return new Date(
+      initial.getFullYear(),
+      initial.getMonth(),
+      initial.getDate()
+    );
+  });
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const baseline = new Date();
+    return new Date(baseline.getFullYear(), baseline.getMonth(), 1);
+  });
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>("");
+  const [cleans, setCleans] = useState<ScheduleClean[]>(initialCleans);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const propertyColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    properties.forEach((property, index) => {
+      map.set(
+        property.id,
+        PROPERTY_COLORS[index % PROPERTY_COLORS.length] ?? PROPERTY_COLORS[0]
+      );
+    });
+    return map;
+  }, [properties]);
+
+  const handleViewChange = (nextView: ScheduleView) => {
+    if (nextView === view) return;
+    if (nextView === "calendar") {
+      setSelectedMonth(
+        new Date(timelineStart.getFullYear(), timelineStart.getMonth(), 1)
+      );
+    }
+    setView(nextView);
+  };
+
+  const handleToday = () => {
+    if (view === "timeline") {
+      const today = startOfDay(new Date());
+      setTimelineStart(today);
+    } else {
+      const currentMonth = startOfMonth(new Date());
+      setSelectedMonth(currentMonth);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (view === "timeline") {
+      setTimelineStart((prev) => {
+        const next = new Date(prev);
+        next.setDate(next.getDate() - 7);
+        return next;
+      });
+    } else {
+      setSelectedMonth((prev) => addMonths(prev, -1));
+    }
+  };
+
+  const handleNext = () => {
+    if (view === "timeline") {
+      setTimelineStart((prev) => {
+        const next = new Date(prev);
+        next.setDate(next.getDate() + 7);
+        return next;
+      });
+    } else {
+      setSelectedMonth((prev) => addMonths(prev, 1));
+    }
+  };
+
+  const filteredProperties = useMemo(() => {
+    if (!selectedPropertyId) return properties;
+    return properties.filter((property) => property.id === selectedPropertyId);
+  }, [properties, selectedPropertyId]);
+
+  const filteredCleans = useMemo(() => {
+    if (!selectedPropertyId) return cleans;
+    return cleans.filter((clean) => clean.property_id === selectedPropertyId);
+  }, [cleans, selectedPropertyId]);
+
+  const timelineDays = useMemo(() => {
+    return Array.from({ length: 7 }, (_, index) =>
+      addDays(timelineStart, index)
+    );
+  }, [timelineStart]);
+
+  const dateRangeLabel = useMemo(() => {
+    if (view === "timeline") {
+      const startLabel = format(timelineDays[0], "MMM d, yyyy");
+      const endLabel = format(
+        timelineDays[timelineDays.length - 1],
+        "MMM d, yyyy"
+      );
+      return `${startLabel} - ${endLabel}`;
+    }
+    return format(selectedMonth, "MMMM, yyyy");
+  }, [view, timelineDays, selectedMonth]);
+
+  const loadCleansForRange = useCallback(
+    async (range: ScheduleRange, propertyId?: string) => {
+      if (!properties.length) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const params = new URLSearchParams();
+        params.append("from", range.from);
+        params.append("to", range.to);
+        if (propertyId) {
+          params.append("property_id", propertyId);
+        }
+        const response = await fetch(`/api/cleans?${params.toString()}`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to load schedule data");
+        }
+
+        const data = (await response.json()) as ScheduleClean[];
+        setCleans(data);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Unable to load schedule data."
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [properties.length]
+  );
+
+  useEffect(() => {
+    if (!properties.length) return;
+
+    const range =
+      view === "timeline"
+        ? createTimelineRange(timelineStart)
+        : createCalendarRange(selectedMonth);
+
+    loadCleansForRange(range, selectedPropertyId || undefined);
+  }, [
+    loadCleansForRange,
+    properties.length,
+    selectedPropertyId,
+    selectedMonth,
+    timelineStart,
+    view,
+  ]);
+
+  if (!properties.length) {
+    return (
+      <AppShell email={email}>
+        <div>
+          <h1 className="text-2xl font-semibold text-[#EFF6E0]">Schedule</h1>
+          <p className="mt-1 text-base text-[#EFF6E0]/70">
+            Visualise every turnover by adding your first property.
+          </p>
+        </div>
+        <EmptyState />
+      </AppShell>
+    );
+  }
+
+  return (
+    <AppShell email={email}>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-[#EFF6E0]">Schedule</h1>
+          <p className="mt-1 text-base text-[#EFF6E0]/70">
+            Track checkouts across your properties with a responsive timeline or
+            calendar view.
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-[#124559]/50 bg-[#124559]/20 p-6 shadow-lg shadow-[#01161E]/40">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={handleToday}
+                className="rounded-full border border-[#124559]/50 bg-[#124559]/40 px-4 py-2 text-sm font-medium text-[#EFF6E0] transition-colors hover:bg-[#124559]/60"
+              >
+                Today
+              </button>
+              <div className="rounded-full bg-[#124559]/35 px-4 py-2 text-sm font-semibold text-[#EFF6E0]">
+                {dateRangeLabel}
+              </div>
+              <div className="flex overflow-hidden rounded-full border border-[#124559]/50 bg-[#124559]/40">
+                <button
+                  type="button"
+                  onClick={handlePrevious}
+                  className="p-2 text-[#EFF6E0]/80 transition-colors hover:bg-[#124559]/60 hover:text-[#EFF6E0]"
+                >
+                  <ChevronLeftIcon className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="border-l border-[#124559]/60 p-2 text-[#EFF6E0]/80 transition-colors hover:bg-[#124559]/60 hover:text-[#EFF6E0]"
+                >
+                  <ChevronRightIcon className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative">
+                <select
+                  value={selectedPropertyId}
+                  onChange={(event) =>
+                    setSelectedPropertyId(event.target.value)
+                  }
+                  className="w-48 appearance-none rounded-full border border-[#124559]/50 bg-[#01161E]/40 px-4 py-2 text-sm text-[#EFF6E0] focus:outline-none focus:ring-2 focus:ring-[#598392]"
+                >
+                  <option value="">All properties</option>
+                  {properties.map((property) => (
+                    <option key={property.id} value={property.id}>
+                      {property.name}
+                    </option>
+                  ))}
+                </select>
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#EFF6E0]/60">
+                  ▼
+                </span>
+              </div>
+
+              <div className="flex items-center rounded-full bg-[#01161E]/40 p-1">
+                {(["timeline", "calendar"] as ScheduleView[]).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => handleViewChange(mode)}
+                    className={clsx(
+                      "rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150",
+                      mode === view
+                        ? "bg-gradient-to-r from-[#124559] to-[#598392] text-[#EFF6E0] shadow-lg"
+                        : "text-[#EFF6E0]/70 hover:text-[#EFF6E0]"
+                    )}
+                  >
+                    {mode === "timeline" ? "Timeline" : "Calendar"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {error ? (
+            <div className="mt-4 rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200">
+              {error}
+            </div>
+          ) : null}
+
+          <div className="relative mt-6">
+            {loading ? (
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-[#01161E]/70">
+                <Spinner
+                  size="lg"
+                  className="border-[#EFF6E0] border-t-transparent"
+                />
+              </div>
+            ) : null}
+
+            {view === "timeline" ? (
+              <TimelineView
+                properties={filteredProperties}
+                cleans={filteredCleans}
+                days={timelineDays}
+                propertyColors={propertyColorMap}
+              />
+            ) : (
+              <CalendarView
+                month={selectedMonth}
+                cleans={filteredCleans}
+                propertyColors={propertyColorMap}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
+function TimelineView({
+  properties,
+  cleans,
+  days,
+  propertyColors,
+}: {
+  properties: ScheduleProperty[];
+  cleans: ScheduleClean[];
+  days: Date[];
+  propertyColors: Map<string, string>;
+}) {
+  const today = new Date();
+
+  const cleansByProperty = useMemo(() => {
+    const map = new Map<string, ScheduleClean[]>();
+    cleans.forEach((clean) => {
+      if (!map.has(clean.property_id)) {
+        map.set(clean.property_id, []);
+      }
+      map.get(clean.property_id)!.push(clean);
+    });
+    return map;
+  }, [cleans]);
+
+  const columnTemplate = useMemo(() => {
+    return `220px repeat(${days.length}, minmax(120px, 1fr))`;
+  }, [days.length]);
+
+  if (!properties.length) {
+    return (
+      <div className="rounded-xl border border-dashed border-[#598392]/30 bg-[#124559]/10 p-12 text-center text-sm text-[#EFF6E0]/70">
+        No properties match your current filter.
+      </div>
+    );
+  }
+
+  const hasCleans = cleans.length > 0;
+
+  return (
+    <div className="overflow-x-auto">
+      <div
+        className="min-w-[720px] rounded-xl border border-[#124559]/40 bg-[#01161E]/40"
+        style={{ boxShadow: "0 15px 35px rgba(1, 22, 30, 0.35)" }}
+      >
+        <div
+          className="grid border-b border-[#124559]/40 bg-[#124559]/30 text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/70"
+          style={{ gridTemplateColumns: columnTemplate }}
+        >
+          <div className="px-4 py-3 text-left text-[#EFF6E0]">
+            {properties.length}{" "}
+            {properties.length === 1 ? "Property" : "Properties"}
+          </div>
+          {days.map((day) => (
+            <div
+              key={day.toISOString()}
+              className={clsx(
+                "px-4 py-3 text-center text-[#EFF6E0]/80",
+                isSameLocalDay(day, today)
+                  ? "bg-[#EFF6E0]/10 text-[#EFF6E0]"
+                  : ""
+              )}
+            >
+              <div className="text-[0.65rem] tracking-wider">
+                {format(day, "EEE").toUpperCase()}
+              </div>
+              <div className="text-sm font-semibold">
+                {format(day, "d MMM")}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {properties.map((property) => {
+          const propertyCleans = cleansByProperty.get(property.id) ?? [];
+          const color = propertyColors.get(property.id) ?? PROPERTY_COLORS[0];
+          const indicator = hexToRgba(color, 0.9);
+          // Create a darker version for better text contrast (but lighter than container)
+          const pillBackground = hexToRgba(color, 0.92);
+          const pillBorder = hexToRgba(color, 0.95);
+
+          return (
+            <div
+              key={property.id}
+              className="grid border-b border-[#124559]/35 last:border-b-0"
+              style={{ gridTemplateColumns: columnTemplate }}
+            >
+              <div className="flex flex-col gap-1 border-r border-[#124559]/35 px-4 py-4">
+                <div className="flex items-start gap-3">
+                  <span
+                    className="mt-1 inline-block h-8 w-1.5 rounded-full"
+                    style={{ backgroundColor: indicator }}
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-[#EFF6E0]">
+                      {property.name}
+                    </p>
+                    <p className="text-xs text-[#EFF6E0]/60">
+                      Checkout: {property.checkout_time ?? "10:00"}
+                    </p>
+                    {property.cleaner ? (
+                      <p className="text-xs text-[#EFF6E0]/50">
+                        Cleaner: {property.cleaner}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              {days.map((day) => {
+                const cleansForDay = propertyCleans.filter((clean) => {
+                  const scheduled = new Date(clean.scheduled_for);
+                  return isSameLocalDay(scheduled, day);
+                });
+
+                return (
+                  <div
+                    key={`${property.id}-${day.toISOString()}`}
+                    className={clsx(
+                      "min-h-[96px] border-r border-[#124559]/25 p-3",
+                      isSameLocalDay(day, today) ? "bg-[#EFF6E0]/6" : ""
+                    )}
+                  >
+                    <div className="space-y-2">
+                      {cleansForDay.map((clean) => (
+                        <div
+                          key={clean.id}
+                          className="rounded-lg border px-3 py-2 shadow-sm"
+                          style={{
+                            backgroundColor: pillBackground,
+                            borderColor: pillBorder,
+                          }}
+                        >
+                          <div className="flex items-center justify-between text-[0.7rem] font-semibold text-white">
+                            <span className="font-bold drop-shadow-sm">
+                              {formatTime(clean.scheduled_for)}
+                            </span>
+                            <span className="uppercase tracking-wide text-[0.6rem] font-semibold text-white/95">
+                              {clean.status}
+                            </span>
+                          </div>
+                          {clean.notes ? (
+                            <p className="mt-1 text-[0.65rem] font-medium text-white/90">
+                              {clean.notes}
+                            </p>
+                          ) : null}
+                          {clean.checkout ? (
+                            <p className="mt-1 text-[0.6rem] font-medium text-white/90">
+                              Checkout: {formatTime(clean.checkout)}
+                            </p>
+                          ) : null}
+                        </div>
+                      ))}
+                      {cleansForDay.length === 0 ? (
+                        <div className="text-center text-[0.65rem] text-[#EFF6E0]/40">
+                          —
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+
+        {!hasCleans ? (
+          <div className="px-6 py-8 text-center text-sm text-[#EFF6E0]/60">
+            No cleans scheduled for this range.
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function CalendarView({
+  month,
+  cleans,
+  propertyColors,
+}: {
+  month: Date;
+  cleans: ScheduleClean[];
+  propertyColors: Map<string, string>;
+}) {
+  const today = new Date();
+
+  const start = startOfWeek(startOfMonth(month), { weekStartsOn: 0 });
+  const end = endOfWeek(endOfMonth(month), { weekStartsOn: 0 });
+  const calendarDays = eachDayOfInterval({ start, end });
+
+  const cleansByDay = useMemo(() => {
+    const map = new Map<string, ScheduleClean[]>();
+    cleans.forEach((clean) => {
+      const date = new Date(clean.scheduled_for);
+      const key = formatDateKey(date);
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+      map.get(key)!.push(clean);
+    });
+    return map;
+  }, [cleans]);
+
+  return (
+    <div className="rounded-xl border border-[#124559]/40 bg-[#01161E]/40 shadow-lg shadow-[#01161E]/40">
+      <div className="grid grid-cols-7 border-b border-[#124559]/40 bg-[#124559]/30 text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/70">
+        {WEEKDAY_LABELS.map((label) => (
+          <div key={label} className="px-3 py-3 text-center">
+            {label}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7">
+        {calendarDays.map((day) => {
+          const key = formatDateKey(day);
+          const entries = cleansByDay.get(key) ?? [];
+          const isCurrentMonth = isSameMonth(day, month);
+          const isTodayFlag = isSameDay(day, today);
+
+          return (
+            <div
+              key={day.toISOString()}
+              className={clsx(
+                "min-h-[120px] border-b border-r border-[#124559]/25 p-3",
+                isTodayFlag ? "bg-[#EFF6E0]/8" : "",
+                !isCurrentMonth ? "bg-[#01161E]/20 text-[#EFF6E0]/40" : ""
+              )}
+            >
+              <div className="flex items-center justify-between text-xs">
+                <span
+                  className={clsx(
+                    "text-sm font-semibold",
+                    isCurrentMonth ? "text-[#EFF6E0]" : "text-[#EFF6E0]/40"
+                  )}
+                >
+                  {format(day, "MMM d")}
+                </span>
+                {entries.length ? (
+                  <span className="rounded-full bg-[#124559]/40 px-2 py-0.5 text-[0.6rem] font-semibold text-[#EFF6E0]/80">
+                    {entries.length}
+                  </span>
+                ) : null}
+              </div>
+              <div className="mt-2 space-y-2">
+                {entries.map((clean) => {
+                  const color =
+                    propertyColors.get(clean.property_id) ?? PROPERTY_COLORS[0];
+                  return (
+                    <div
+                      key={clean.id}
+                      className="rounded-full border px-3 py-1 text-[0.65rem] font-medium text-white"
+                      style={{
+                        backgroundColor: hexToRgba(color, 0.92),
+                        borderColor: hexToRgba(color, 0.95),
+                      }}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate font-semibold">
+                          {clean.property_name}
+                        </span>
+                        <span className="shrink-0 text-[0.6rem] font-semibold">
+                          {formatTime(clean.scheduled_for)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+                {!entries.length ? (
+                  <p className="text-center text-[0.65rem] text-[#EFF6E0]/30">
+                    No cleans
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
