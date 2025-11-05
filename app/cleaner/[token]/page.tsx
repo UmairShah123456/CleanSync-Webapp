@@ -55,7 +55,9 @@ export default async function CleanerPortalPage({
 
   const { data: propertiesData } = await supabase
     .from("properties")
-    .select("id, name, cleaner, checkout_time")
+    .select(
+      "id, name, cleaner, checkout_time, access_codes, bin_locations, property_address, key_locations"
+    )
     .eq("user_id", cleaner.user_id)
     .ilike("cleaner", cleaner.name);
 
@@ -65,6 +67,10 @@ export default async function CleanerPortalPage({
       name: property.name,
       checkout_time: property.checkout_time ?? "10:00",
       cleaner: property.cleaner ?? null,
+      access_codes: property.access_codes ?? null,
+      bin_locations: property.bin_locations ?? null,
+      property_address: property.property_address ?? null,
+      key_locations: property.key_locations ?? null,
     })
   );
 

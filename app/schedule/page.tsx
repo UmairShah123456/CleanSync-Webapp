@@ -18,7 +18,9 @@ export default async function SchedulePage() {
 
   const { data: propertiesData } = await supabase
     .from("properties")
-    .select("id, name, checkout_time, cleaner")
+    .select(
+      "id, name, checkout_time, cleaner, access_codes, bin_locations, property_address, key_locations"
+    )
     .eq("user_id", user.id)
     .order("created_at", { ascending: true });
 
@@ -28,6 +30,10 @@ export default async function SchedulePage() {
       name: property.name,
       checkout_time: property.checkout_time ?? "10:00",
       cleaner: property.cleaner ?? null,
+      access_codes: property.access_codes ?? null,
+      bin_locations: property.bin_locations ?? null,
+      property_address: property.property_address ?? null,
+      key_locations: property.key_locations ?? null,
     })
   );
 

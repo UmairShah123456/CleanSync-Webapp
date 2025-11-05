@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   CalendarDaysIcon,
   BuildingOffice2Icon,
@@ -10,6 +10,7 @@ import {
   ArrowPathIcon,
   ArrowTopRightOnSquareIcon,
   TrashIcon,
+  CheckIcon,
 } from "@heroicons/react/24/outline";
 import { formatDateTime } from "@/lib/utils";
 import type { CleanerWithAssignments } from "../CleanersClient";
@@ -30,6 +31,18 @@ export function CleanerList({
   const [expandedCleanerDetails, setExpandedCleanerDetails] = useState<
     Set<string>
   >(new Set());
+  const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
+
+  // Auto-dismiss copied message after 2 seconds
+  useEffect(() => {
+    if (copiedLinkId) {
+      const timer = setTimeout(() => {
+        setCopiedLinkId(null);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [copiedLinkId]);
+
   if (!cleaners.length) {
     return (
       <div className="rounded-xl border border-dashed border-[#598392]/30 bg-[#124559] p-12 text-center text-sm text-[#EFF6E0]/70">
@@ -171,7 +184,13 @@ export function CleanerList({
                 Cleaner link
               </p>
               {cleaner.link ? (
-                <div className="mt-2 space-y-2">
+                <div className="relative mt-2 space-y-2">
+                  {copiedLinkId === cleaner.id && (
+                    <div className="absolute right-0 top-0 flex items-center gap-1.5 rounded-full border border-[#598392]/40 bg-[#124559]/60 px-3 py-1 text-xs font-semibold text-[#EFF6E0] shadow-lg z-10">
+                      <CheckIcon className="h-3.5 w-3.5 text-[#9AD1D4]" />
+                      Copied!
+                    </div>
+                  )}
                   <div className="truncate text-sm text-[#EFF6E0]/80">
                     {typeof window !== "undefined"
                       ? `${window.location.origin}/cleaner/${cleaner.link.token}`
@@ -215,7 +234,7 @@ export function CleanerList({
                               navigator.clipboard
                             ) {
                               navigator.clipboard.writeText(url);
-                              alert("Link copied to clipboard.");
+                              setCopiedLinkId(cleaner.id);
                             } else {
                               prompt("Copy link", url);
                             }
@@ -223,7 +242,11 @@ export function CleanerList({
                           className="rounded-full border border-transparent bg-[#124559]/60 p-2 text-[#EFF6E0]/80 transition-colors hover:border-[#598392]/60 hover:bg-[#598392]/30 hover:text-[#EFF6E0]"
                           aria-label="Copy link"
                         >
-                          <ClipboardIcon className="h-5 w-5" />
+                          {copiedLinkId === cleaner.id ? (
+                            <CheckIcon className="h-5 w-5 text-[#9AD1D4]" />
+                          ) : (
+                            <ClipboardIcon className="h-5 w-5" />
+                          )}
                         </button>
                         <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#01161E]/95 px-2 py-1 text-xs font-medium text-[#EFF6E0] opacity-0 shadow-lg transition-opacity duration-200 group-hover/button:opacity-100">
                           Copy link

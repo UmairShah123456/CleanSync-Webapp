@@ -3,6 +3,10 @@ export type ScheduleProperty = {
   name: string;
   checkout_time?: string | null;
   cleaner?: string | null;
+  access_codes?: string | null;
+  bin_locations?: string | null;
+  property_address?: string | null;
+  key_locations?: string | null;
 };
 
 export type ScheduleClean = {

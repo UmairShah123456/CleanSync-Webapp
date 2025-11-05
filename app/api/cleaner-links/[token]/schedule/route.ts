@@ -59,7 +59,9 @@ export async function GET(
     error: propertiesError,
   } = await supabase
     .from("properties")
-    .select("id, name, cleaner, checkout_time")
+    .select(
+      "id, name, cleaner, checkout_time, access_codes, bin_locations, property_address, key_locations"
+    )
     .eq("user_id", cleaner.user_id)
     .ilike("cleaner", cleaner.name);
 
@@ -78,11 +80,8 @@ export async function GET(
   }
 
   const filteredPropertyIds = propertyId ? [propertyId] : propertyIds;
-  const propertyNameLookup = new Map(
-    (propertiesData ?? []).map((property) => [property.id, property.name])
-  );
-  const propertyCleanerLookup = new Map(
-    (propertiesData ?? []).map((property) => [property.id, property.cleaner])
+  const propertyRecords = new Map(
+    (propertiesData ?? []).map((property) => [property.id, property])
   );
 
   const { data: cleansData, error: cleansError } = await supabase
@@ -108,19 +107,21 @@ export async function GET(
     return NextResponse.json({ error: cleansError.message }, { status: 500 });
   }
 
-  const response: ScheduleClean[] = (cleansData ?? []).map((clean: any) => ({
-    id: clean.id,
-    booking_uid: clean.booking_uid,
-    property_id: clean.property_id,
-    property_name:
-      propertyNameLookup.get(clean.property_id) ?? "Unknown property",
-    scheduled_for: clean.scheduled_for,
-    status: clean.status,
-    notes: clean.notes,
-    checkin: clean.bookings?.checkin ?? null,
-    checkout: clean.bookings?.checkout ?? null,
-    cleaner: propertyCleanerLookup.get(clean.property_id) ?? null,
-  }));
+  const response: ScheduleClean[] = (cleansData ?? []).map((clean: any) => {
+    const property = propertyRecords.get(clean.property_id);
+    return {
+      id: clean.id,
+      booking_uid: clean.booking_uid,
+      property_id: clean.property_id,
+      property_name: property?.name ?? "Unknown property",
+      scheduled_for: clean.scheduled_for,
+      status: clean.status,
+      notes: clean.notes,
+      checkin: clean.bookings?.checkin ?? null,
+      checkout: clean.bookings?.checkout ?? null,
+      cleaner: property?.cleaner ?? null,
+    };
+  });
 
   return NextResponse.json(response);
 }

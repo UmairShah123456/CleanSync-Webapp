@@ -17,6 +17,7 @@ import {
 } from "date-fns";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { Spinner } from "@/components/ui/Spinner";
+import { Modal } from "@/components/ui/Modal";
 import type { ScheduleClean, ScheduleProperty, ScheduleRange } from "./types";
 
 type ScheduleView = "timeline" | "calendar";
@@ -135,6 +136,19 @@ export function ScheduleClient({
     });
     return map;
   }, [properties]);
+
+  const propertyLookup = useMemo(() => {
+    const map = new Map<string, ScheduleProperty>();
+    properties.forEach((property) => map.set(property.id, property));
+    return map;
+  }, [properties]);
+
+  const [selectedPropertyDetails, setSelectedPropertyDetails] =
+    useState<ScheduleProperty | null>(null);
+
+  const handlePropertySelect = useCallback((property: ScheduleProperty) => {
+    setSelectedPropertyDetails(property);
+  }, []);
 
   const handleViewChange = (nextView: ScheduleView) => {
     if (nextView === view) return;
@@ -285,15 +299,16 @@ export function ScheduleClient({
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-[#EFF6E0]">{title}</h1>
-        {description ? (
-          <p className="mt-1 text-base text-[#EFF6E0]/70">{description}</p>
-        ) : null}
-      </div>
+    <>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-[#EFF6E0]">{title}</h1>
+          {description ? (
+            <p className="mt-1 text-base text-[#EFF6E0]/70">{description}</p>
+          ) : null}
+        </div>
 
-      <div className="rounded-2xl border border-[#124559]/50 bg-[#124559]/20 p-6 shadow-lg shadow-[#01161E]/40">
+        <div className="rounded-2xl border border-[#124559]/50 bg-[#124559]/20 p-6 shadow-lg shadow-[#01161E]/40">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-wrap items-center gap-3">
               <button
@@ -387,17 +402,32 @@ export function ScheduleClient({
                 cleans={filteredCleans}
                 days={timelineDays}
                 propertyColors={propertyColorMap}
+                onPropertyClick={handlePropertySelect}
               />
             ) : (
               <CalendarView
                 month={selectedMonth}
                 cleans={filteredCleans}
                 propertyColors={propertyColorMap}
+                propertyLookup={propertyLookup}
+                onEventClick={handlePropertySelect}
               />
             )}
           </div>
+        </div>
       </div>
-    </div>
+
+      <Modal
+        title={selectedPropertyDetails?.name ?? "Property details"}
+        open={Boolean(selectedPropertyDetails)}
+        onClose={() => setSelectedPropertyDetails(null)}
+        footer={null}
+      >
+        {selectedPropertyDetails ? (
+          <UtilityDetails property={selectedPropertyDetails} />
+        ) : null}
+      </Modal>
+    </>
   );
 }
 
@@ -406,11 +436,13 @@ function TimelineView({
   cleans,
   days,
   propertyColors,
+  onPropertyClick,
 }: {
   properties: ScheduleProperty[];
   cleans: ScheduleClean[];
   days: Date[];
   propertyColors: Map<string, string>;
+  onPropertyClick: (property: ScheduleProperty) => void;
 }) {
   const today = new Date();
 
@@ -486,7 +518,19 @@ function TimelineView({
               className="grid border-b border-[#124559]/35 last:border-b-0"
               style={{ gridTemplateColumns: columnTemplate }}
             >
-              <div className="flex flex-col gap-1 border-r border-[#124559]/35 px-4 py-4">
+              <div
+                className="flex flex-col gap-1 border-r border-[#124559]/35 px-4 py-4 transition-colors hover:bg-[#124559]/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#598392] cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onClick={() => onPropertyClick(property)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onPropertyClick(property);
+                  }
+                }}
+                aria-label={`View utility information for ${property.name}`}
+              >
                 <div className="flex items-start gap-3">
                   <span
                     className="mt-1 inline-block h-8 w-1.5 rounded-full"
@@ -579,10 +623,14 @@ function CalendarView({
   month,
   cleans,
   propertyColors,
+  propertyLookup,
+  onEventClick,
 }: {
   month: Date;
   cleans: ScheduleClean[];
   propertyColors: Map<string, string>;
+  propertyLookup: Map<string, ScheduleProperty>;
+  onEventClick: (property: ScheduleProperty) => void;
 }) {
   const today = new Date();
 
@@ -647,13 +695,31 @@ function CalendarView({
                 {entries.map((clean) => {
                   const color =
                     propertyColors.get(clean.property_id) ?? PROPERTY_COLORS[0];
+                  const property = propertyLookup.get(clean.property_id);
                   return (
                     <div
                       key={clean.id}
-                      className="rounded-full border px-3 py-1 text-[0.65rem] font-medium text-white"
+                      className={clsx(
+                        "rounded-full border px-3 py-1 text-[0.65rem] font-medium text-white",
+                        property ? "cursor-pointer" : ""
+                      )}
                       style={{
                         backgroundColor: hexToRgba(color, 0.55),
                         borderColor: hexToRgba(color, 0.85),
+                      }}
+                      role={property ? "button" : undefined}
+                      tabIndex={property ? 0 : -1}
+                      onClick={() => {
+                        if (property) {
+                          onEventClick(property);
+                        }
+                      }}
+                      onKeyDown={(event) => {
+                        if (!property) return;
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          onEventClick(property);
+                        }
                       }}
                     >
                       <div className="flex items-center justify-between gap-2">
@@ -677,6 +743,46 @@ function CalendarView({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function UtilityDetails({
+  property,
+}: {
+  property: ScheduleProperty;
+}) {
+  const details = [
+    { label: "Address", value: property.property_address },
+    { label: "Access codes", value: property.access_codes },
+    { label: "Bin locations", value: property.bin_locations },
+    { label: "Key locations", value: property.key_locations },
+  ];
+
+  const hasDetails = details.some(
+    (detail) => detail.value && detail.value.trim().length > 0
+  );
+
+  return (
+    <div className="space-y-4 text-sm text-[#EFF6E0]/80">
+      {details
+        .filter((detail) => detail.value && detail.value.trim().length > 0)
+        .map((detail) => (
+          <div key={detail.label} className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/60">
+              {detail.label}
+            </p>
+            <p className="whitespace-pre-wrap text-[#EFF6E0]">
+              {detail.value}
+            </p>
+          </div>
+        ))}
+
+      {!hasDetails ? (
+        <p className="text-sm text-[#EFF6E0]/60">
+          No utility details recorded for this property yet.
+        </p>
+      ) : null}
     </div>
   );
 }
