@@ -57,6 +57,8 @@ const formatTime = (iso: string) => {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 };
 
+type FetchUrlBuilder = (range: ScheduleRange, propertyId?: string) => string;
+
 const createTimelineRange = (startDate: Date): ScheduleRange => {
   const from = new Date(startDate);
   from.setHours(0, 0, 0, 0);
@@ -96,11 +98,19 @@ export function ScheduleClient({
   properties,
   initialCleans,
   initialRange,
+  fetchUrlBuilder,
+  standalone = false,
+  title = "Schedule",
+  description = "Track checkouts across your properties with a responsive timeline or calendar view.",
 }: {
   email?: string | null;
   properties: ScheduleProperty[];
   initialCleans: ScheduleClean[];
   initialRange: ScheduleRange;
+  fetchUrlBuilder?: FetchUrlBuilder;
+  standalone?: boolean;
+  title?: string;
+  description?: string;
 }) {
   const [view, setView] = useState<ScheduleView>("timeline");
   const [timelineStart, setTimelineStart] = useState(() => {
@@ -203,19 +213,30 @@ export function ScheduleClient({
     return format(selectedMonth, "MMMM, yyyy");
   }, [view, timelineDays, selectedMonth]);
 
+  const buildUrl = useCallback(
+    (range: ScheduleRange, propertyId?: string) => {
+      if (fetchUrlBuilder) {
+        return fetchUrlBuilder(range, propertyId);
+      }
+      const params = new URLSearchParams();
+      params.append("from", range.from);
+      params.append("to", range.to);
+      if (propertyId) {
+        params.append("property_id", propertyId);
+      }
+      return `/api/cleans?${params.toString()}`;
+    },
+    [fetchUrlBuilder]
+  );
+
   const loadCleansForRange = useCallback(
     async (range: ScheduleRange, propertyId?: string) => {
       if (!properties.length) return;
       setLoading(true);
       setError(null);
       try {
-        const params = new URLSearchParams();
-        params.append("from", range.from);
-        params.append("to", range.to);
-        if (propertyId) {
-          params.append("property_id", propertyId);
-        }
-        const response = await fetch(`/api/cleans?${params.toString()}`, {
+        const url = buildUrl(range, propertyId);
+        const response = await fetch(url, {
           cache: "no-store",
         });
 
@@ -233,7 +254,7 @@ export function ScheduleClient({
         setLoading(false);
       }
     },
-    [properties.length]
+    [properties.length, buildUrl]
   );
 
   useEffect(() => {
@@ -268,18 +289,16 @@ export function ScheduleClient({
     );
   }
 
-  return (
-    <AppShell email={email}>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-[#EFF6E0]">Schedule</h1>
-          <p className="mt-1 text-base text-[#EFF6E0]/70">
-            Track checkouts across your properties with a responsive timeline or
-            calendar view.
-          </p>
-        </div>
+  const content = (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold text-[#EFF6E0]">{title}</h1>
+        {description ? (
+          <p className="mt-1 text-base text-[#EFF6E0]/70">{description}</p>
+        ) : null}
+      </div>
 
-        <div className="rounded-2xl border border-[#124559]/50 bg-[#124559]/20 p-6 shadow-lg shadow-[#01161E]/40">
+      <div className="rounded-2xl border border-[#124559]/50 bg-[#124559]/20 p-6 shadow-lg shadow-[#01161E]/40">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-wrap items-center gap-3">
               <button
@@ -382,10 +401,15 @@ export function ScheduleClient({
               />
             )}
           </div>
-        </div>
       </div>
-    </AppShell>
+    </div>
   );
+
+  if (standalone) {
+    return content;
+  }
+
+  return <AppShell email={email}>{content}</AppShell>;
 }
 
 function TimelineView({

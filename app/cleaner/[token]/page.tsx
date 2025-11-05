@@ -1,6 +1,11 @@
 import { notFound } from "next/navigation";
 import { getServiceSupabaseClient } from "@/lib/db";
 import { CleanerPortalClient } from "./CleanerPortalClient";
+import type {
+  ScheduleClean,
+  ScheduleProperty,
+  ScheduleRange,
+} from "@/app/schedule/types";
 
 type CleanerLinkRecord = {
   token: string;
@@ -54,34 +59,67 @@ export default async function CleanerPortalPage({
     .eq("user_id", cleaner.user_id)
     .ilike("cleaner", cleaner.name);
 
-  const properties =
-    propertiesData?.map((property) => ({
+  const scheduleProperties: ScheduleProperty[] = (propertiesData ?? []).map(
+    (property) => ({
       id: property.id,
       name: property.name,
-      notes: null as string | null,
-      checkout_time: property.checkout_time ?? null,
-    })) ?? [];
+      checkout_time: property.checkout_time ?? "10:00",
+      cleaner: property.cleaner ?? null,
+    })
+  );
 
-  const propertyIds = properties.map((property) => property.id);
+  const propertyIds = scheduleProperties.map((property) => property.id);
+  const propertyNameLookup = new Map(
+    scheduleProperties.map((property) => [property.id, property.name])
+  );
+  const propertyCleanerLookup = new Map(
+    scheduleProperties.map((property) => [property.id, property.cleaner])
+  );
+
+  const timelineStart = new Date();
+  timelineStart.setHours(0, 0, 0, 0);
+  const timelineEnd = new Date(timelineStart);
+  timelineEnd.setDate(timelineEnd.getDate() + 6);
+  timelineEnd.setHours(23, 59, 59, 999);
+  const fromIso = timelineStart.toISOString();
+  const toIso = timelineEnd.toISOString();
 
   const { data: cleansData } = propertyIds.length
     ? await supabase
         .from("cleans")
-        .select("id, property_id, scheduled_for, status, notes")
+        .select(
+          `
+            id,
+            booking_uid,
+            property_id,
+            scheduled_for,
+            status,
+            notes,
+            bookings(checkin, checkout)
+          `
+        )
         .in("property_id", propertyIds)
+        .gte("scheduled_for", fromIso)
+        .lte("scheduled_for", toIso)
+        .neq("status", "deleted")
         .order("scheduled_for", { ascending: true })
     : { data: [] };
 
-  const cleans =
-    cleansData
-      ?.filter((clean) => clean.status !== "deleted")
-      .map((clean) => ({
-        id: clean.id,
-        property_id: clean.property_id,
-        scheduled_for: clean.scheduled_for,
-        status: clean.status,
-        notes: clean.notes ?? null,
-      })) ?? [];
+  const initialCleans: ScheduleClean[] = (cleansData ?? []).map((clean: any) => ({
+    id: clean.id,
+    booking_uid: clean.booking_uid,
+    property_id: clean.property_id,
+    property_name:
+      propertyNameLookup.get(clean.property_id) ?? "Unknown property",
+    scheduled_for: clean.scheduled_for,
+    status: clean.status,
+    notes: clean.notes,
+    checkin: clean.bookings?.checkin ?? null,
+    checkout: clean.bookings?.checkout ?? null,
+    cleaner: propertyCleanerLookup.get(clean.property_id) ?? null,
+  }));
+
+  const initialRange: ScheduleRange = { from: fromIso, to: toIso };
 
   return (
     <CleanerPortalClient
@@ -93,8 +131,9 @@ export default async function CleanerPortalPage({
         notes: cleaner.notes ?? null,
         payment_details: cleaner.payment_details ?? null,
       }}
-      properties={properties}
-      cleans={cleans}
+      properties={scheduleProperties}
+      initialCleans={initialCleans}
+      initialRange={initialRange}
     />
   );
 }
