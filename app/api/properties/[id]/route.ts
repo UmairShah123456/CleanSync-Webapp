@@ -8,8 +8,17 @@ export async function PATCH(
   const supabase = await getServerSupabaseClient();
   const { id } = await context.params;
   const body = await request.json();
-  const { name, ical_url, checkout_time, cleaner, management_type } =
-    body ?? {};
+  const {
+    name,
+    ical_url,
+    checkout_time,
+    cleaner,
+    management_type,
+    access_codes,
+    bin_locations,
+    property_address,
+    key_locations,
+  } = body ?? {};
 
   const updatePayload: Record<string, any> = {};
   if (name) updatePayload.name = name;
@@ -20,7 +29,21 @@ export async function PATCH(
   }
   if (management_type !== undefined) {
     updatePayload.management_type =
-      management_type === "company-managed" ? "company-managed" : "self-managed";
+      management_type === "company-managed"
+        ? "company-managed"
+        : "self-managed";
+  }
+  if (access_codes !== undefined) {
+    updatePayload.access_codes = access_codes?.trim() || null;
+  }
+  if (bin_locations !== undefined) {
+    updatePayload.bin_locations = bin_locations?.trim() || null;
+  }
+  if (property_address !== undefined) {
+    updatePayload.property_address = property_address?.trim() || null;
+  }
+  if (key_locations !== undefined) {
+    updatePayload.key_locations = key_locations?.trim() || null;
   }
 
   if (Object.keys(updatePayload).length === 0) {

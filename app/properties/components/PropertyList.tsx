@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowPathIcon,
   ClockIcon,
@@ -9,6 +9,9 @@ import {
   PencilSquareIcon,
   UserIcon,
   BuildingOffice2Icon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
 import { PropertyForm, PropertyPayload } from "@/components/forms/PropertyForm";
 import { Modal } from "@/components/ui/Modal";
@@ -22,6 +25,10 @@ export type Property = {
   cleaner?: string | null;
   management_type?: "self-managed" | "company-managed" | null;
   created_at?: string;
+  access_codes?: string | null;
+  bin_locations?: string | null;
+  property_address?: string | null;
+  key_locations?: string | null;
 };
 
 const getInitials = (name: string): string => {
@@ -76,6 +83,174 @@ const DetailRow = ({
   );
 };
 
+const UtilityDetailsModal = ({
+  property,
+  onClose,
+  onUpdate,
+}: {
+  property: Property | null;
+  onClose: () => void;
+  onUpdate: (payload: PropertyPayload) => Promise<void>;
+}) => {
+  const [formData, setFormData] = useState({
+    access_codes: property?.access_codes || "",
+    bin_locations: property?.bin_locations || "",
+    property_address: property?.property_address || "",
+    key_locations: property?.key_locations || "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Update form data when property changes
+  useEffect(() => {
+    if (property) {
+      setFormData({
+        access_codes: property.access_codes || "",
+        bin_locations: property.bin_locations || "",
+        property_address: property.property_address || "",
+        key_locations: property.key_locations || "",
+      });
+    }
+  }, [property]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSaving(true);
+    try {
+      await onUpdate({
+        name: property!.name,
+        ical_url: property!.ical_url,
+        checkout_time: property!.checkout_time || "10:00",
+        cleaner: property!.cleaner || "",
+        management_type: property!.management_type || "self-managed",
+        access_codes: formData.access_codes,
+        bin_locations: formData.bin_locations,
+        property_address: formData.property_address,
+        key_locations: formData.key_locations,
+      });
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Unable to save utility details"
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!property) return null;
+
+  return (
+    <Modal
+      title="Utility Details"
+      open={Boolean(property)}
+      onClose={onClose}
+      footer={null}
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {error && (
+          <div className="rounded-xl border border-red-500/40 bg-red-500/15 p-3 text-sm text-red-200">
+            {error}
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <label
+            className="text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/60"
+            htmlFor="property_address"
+          >
+            Property Address
+          </label>
+          <textarea
+            id="property_address"
+            value={formData.property_address}
+            onChange={(e) =>
+              setFormData({ ...formData, property_address: e.target.value })
+            }
+            className="w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/70 px-4 py-3 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/60 transition-colors duration-200"
+            placeholder="Enter property address"
+            rows={2}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label
+            className="text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/60"
+            htmlFor="access_codes"
+          >
+            Access Codes
+          </label>
+          <textarea
+            id="access_codes"
+            value={formData.access_codes}
+            onChange={(e) =>
+              setFormData({ ...formData, access_codes: e.target.value })
+            }
+            className="w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/70 px-4 py-3 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/60 transition-colors duration-200"
+            placeholder="Enter access codes (e.g., WiFi password, door codes)"
+            rows={3}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label
+            className="text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/60"
+            htmlFor="key_locations"
+          >
+            Key Locations
+          </label>
+          <textarea
+            id="key_locations"
+            value={formData.key_locations}
+            onChange={(e) =>
+              setFormData({ ...formData, key_locations: e.target.value })
+            }
+            className="w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/70 px-4 py-3 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/60 transition-colors duration-200"
+            placeholder="Enter key locations (e.g., lockbox code, key safe location)"
+            rows={3}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label
+            className="text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/60"
+            htmlFor="bin_locations"
+          >
+            Bin Locations
+          </label>
+          <textarea
+            id="bin_locations"
+            value={formData.bin_locations}
+            onChange={(e) =>
+              setFormData({ ...formData, bin_locations: e.target.value })
+            }
+            className="w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/70 px-4 py-3 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/60 transition-colors duration-200"
+            placeholder="Enter bin locations (e.g., recycling bin, general waste)"
+            rows={3}
+          />
+        </div>
+
+        <div className="flex justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full border border-[#124559]/50 px-5 py-2.5 text-sm font-semibold text-[#EFF6E0]/70 transition-colors duration-200 hover:border-[#598392]/60 hover:text-[#EFF6E0]"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-full bg-gradient-to-r from-[#124559] to-[#598392] px-5 py-2.5 text-sm font-semibold text-[#EFF6E0] shadow-lg shadow-[#01161E]/50 transition-all duration-200 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {saving ? "Saving..." : "Save"}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+};
+
 export function PropertyList({
   properties,
   onDelete,
@@ -92,6 +267,11 @@ export function PropertyList({
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+  const [expandedPropertyDetails, setExpandedPropertyDetails] = useState<
+    Set<string>
+  >(new Set());
+  const [utilityDetailsProperty, setUtilityDetailsProperty] =
+    useState<Property | null>(null);
 
   const handleSync = async (id: string) => {
     setActionId(id);
@@ -170,62 +350,109 @@ export function PropertyList({
                   </p>
                 )}
               </div>
+              <div className="flex items-center gap-2">
+                <div className="group/button relative">
+                  <button
+                    onClick={() => handleSync(property.id)}
+                    disabled={actionId === property.id}
+                    className="rounded-full border border-transparent bg-[#124559]/60 p-2 text-[#EFF6E0]/80 transition-colors hover:border-[#598392]/60 hover:bg-[#598392]/30 hover:text-[#EFF6E0] disabled:cursor-not-allowed disabled:opacity-50"
+                    type="button"
+                    aria-label={`Sync ${property.name}`}
+                  >
+                    <ArrowPathIcon
+                      className={`h-5 w-5 ${
+                        actionId === property.id ? "animate-spin" : ""
+                      }`}
+                    />
+                  </button>
+                  <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#01161E]/95 px-2 py-1 text-xs font-medium text-[#EFF6E0] opacity-0 shadow-lg transition-opacity duration-200 group-hover/button:opacity-100">
+                    Sync
+                  </span>
+                </div>
+                <div className="group/button relative">
+                  <button
+                    onClick={() => {
+                      setModalError(null);
+                      setDeleting(false);
+                      setEditing(property);
+                    }}
+                    className="rounded-full border border-transparent bg-[#124559]/60 p-2 text-[#EFF6E0]/80 transition-colors hover:border-[#598392]/60 hover:bg-[#598392]/30 hover:text-[#EFF6E0]"
+                    type="button"
+                    aria-label={`Edit ${property.name}`}
+                  >
+                    <PencilSquareIcon className="h-5 w-5" />
+                  </button>
+                  <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#01161E]/95 px-2 py-1 text-xs font-medium text-[#EFF6E0] opacity-0 shadow-lg transition-opacity duration-200 group-hover/button:opacity-100">
+                    Edit
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="relative z-10 mt-6 flex flex-wrap gap-3">
               <button
                 onClick={() => {
-                  setModalError(null);
-                  setDeleting(false);
-                  setEditing(property);
+                  const newExpanded = new Set(expandedPropertyDetails);
+                  if (newExpanded.has(property.id)) {
+                    newExpanded.delete(property.id);
+                  } else {
+                    newExpanded.add(property.id);
+                  }
+                  setExpandedPropertyDetails(newExpanded);
                 }}
-                className="rounded-full border border-transparent bg-[#124559]/60 p-2 text-[#EFF6E0]/80 transition-colors hover:border-[#598392]/60 hover:bg-[#598392]/30 hover:text-[#EFF6E0]"
+                className="inline-flex items-center gap-2 rounded-full border border-[#124559]/50 bg-[#124559]/40 px-4 py-2 text-xs font-semibold text-[#EFF6E0]/80 transition-colors hover:border-[#598392]/60 hover:bg-[#124559]/60"
                 type="button"
-                aria-label={`Edit ${property.name}`}
               >
-                <PencilSquareIcon className="h-5 w-5" />
+                {expandedPropertyDetails.has(property.id) ? (
+                  <>
+                    <ChevronUpIcon className="h-4 w-4" />
+                    Hide Property Details
+                  </>
+                ) : (
+                  <>
+                    <ChevronDownIcon className="h-4 w-4" />
+                    Property Details
+                  </>
+                )}
               </button>
-            </div>
-            <div className="relative z-10 mt-6 space-y-3 text-sm">
-              <DetailRow icon={LinkIcon} label="Calendar feed">
-                <a
-                  href={property.ical_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block truncate text-[#EFF6E0] underline-offset-2 hover:underline"
-                  title={property.ical_url}
-                >
-                  {property.ical_url}
-                </a>
-              </DetailRow>
-              <DetailRow icon={ClockIcon} label="Checkout time">
-                <span className="font-semibold text-[#EFF6E0]">
-                  {property.checkout_time || "10:00"}
-                </span>
-              </DetailRow>
-              <DetailRow icon={BuildingOffice2Icon} label="Management">
-                <span className="font-medium text-[#EFF6E0]">
-                  {getManagementLabel(property.management_type)}
-                </span>
-              </DetailRow>
-              <DetailRow icon={UserIcon} label="Assigned cleaner">
-                <span className="font-medium text-[#EFF6E0]">
-                  {property.cleaner ? property.cleaner : "Unassigned"}
-                </span>
-              </DetailRow>
-            </div>
-            <div className="relative z-10 mt-6 flex flex-wrap items-center gap-3 text-sm">
               <button
-                onClick={() => handleSync(property.id)}
-                disabled={actionId === property.id}
-                className="ml-auto inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#124559] to-[#598392] px-4 py-2 text-xs font-semibold text-[#EFF6E0] shadow-md transition-all duration-200 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => setUtilityDetailsProperty(property)}
+                className="inline-flex items-center gap-2 rounded-full border border-[#124559]/50 bg-[#124559]/40 px-4 py-2 text-xs font-semibold text-[#EFF6E0]/80 transition-colors hover:border-[#598392]/60 hover:bg-[#124559]/60"
                 type="button"
               >
-                <ArrowPathIcon
-                  className={`h-4 w-4 ${
-                    actionId === property.id ? "animate-spin" : ""
-                  }`}
-                />
-                {actionId === property.id ? "Syncing..." : "Sync now"}
+                <WrenchScrewdriverIcon className="h-4 w-4" />
+                Utility Details
               </button>
             </div>
+            {expandedPropertyDetails.has(property.id) && (
+              <div className="relative z-10 mt-4 space-y-3 text-sm">
+                <DetailRow icon={LinkIcon} label="Calendar feed">
+                  <a
+                    href={property.ical_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block truncate text-[#EFF6E0] underline-offset-2 hover:underline"
+                    title={property.ical_url}
+                  >
+                    {property.ical_url}
+                  </a>
+                </DetailRow>
+                <DetailRow icon={ClockIcon} label="Checkout time">
+                  <span className="font-semibold text-[#EFF6E0]">
+                    {property.checkout_time || "10:00"}
+                  </span>
+                </DetailRow>
+                <DetailRow icon={BuildingOffice2Icon} label="Management">
+                  <span className="font-medium text-[#EFF6E0]">
+                    {getManagementLabel(property.management_type)}
+                  </span>
+                </DetailRow>
+                <DetailRow icon={UserIcon} label="Assigned cleaner">
+                  <span className="font-medium text-[#EFF6E0]">
+                    {property.cleaner ? property.cleaner : "Unassigned"}
+                  </span>
+                </DetailRow>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -268,6 +495,17 @@ export function PropertyList({
           </>
         ) : null}
       </Modal>
+
+      <UtilityDetailsModal
+        property={utilityDetailsProperty}
+        onClose={() => setUtilityDetailsProperty(null)}
+        onUpdate={async (payload) => {
+          if (utilityDetailsProperty) {
+            await onUpdate(utilityDetailsProperty.id, payload);
+            setUtilityDetailsProperty(null);
+          }
+        }}
+      />
     </>
   );
 }

@@ -16,6 +16,10 @@ export type PropertyPayload = {
   checkout_time: string;
   cleaner?: string;
   management_type?: "self-managed" | "company-managed";
+  access_codes?: string;
+  bin_locations?: string;
+  property_address?: string;
+  key_locations?: string;
 };
 
 export function PropertyForm({

@@ -15,15 +15,15 @@ export default async function PropertiesPage() {
     redirect("/login");
   }
 
-  const columnsWithManagement =
-    "id, name, ical_url, checkout_time, cleaner, management_type, created_at";
+  // Try to select all columns including utility fields
   let { data: propertiesData, error } = await supabase
     .from("properties")
-    .select(columnsWithManagement)
+    .select("*")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  if (error && error.message.includes("management_type")) {
+  // If error, fallback to basic columns
+  if (error) {
     const { data: fallbackData, error: fallbackError } = await supabase
       .from("properties")
       .select("id, name, ical_url, checkout_time, cleaner, created_at")
@@ -37,10 +37,12 @@ export default async function PropertiesPage() {
     propertiesData = fallbackData?.map((property: any) => ({
       ...property,
       management_type: null,
+      access_codes: null,
+      bin_locations: null,
+      property_address: null,
+      key_locations: null,
     }));
     error = null;
-  } else if (error) {
-    throw new Error(error.message);
   }
 
   const properties = propertiesData ?? [];
