@@ -10,9 +10,15 @@ import type { CleanerWithAssignments } from "../CleanersClient";
 export function CleanerList({
   cleaners,
   onEdit,
+  onGenerateLink,
+  onRefreshLink,
+  onDeleteLink,
 }: {
   cleaners: CleanerWithAssignments[];
   onEdit: (cleaner: CleanerWithAssignments) => void;
+  onGenerateLink: (cleaner: CleanerWithAssignments) => void;
+  onRefreshLink: (cleaner: CleanerWithAssignments) => void;
+  onDeleteLink: (cleaner: CleanerWithAssignments) => void;
 }) {
   if (!cleaners.length) {
     return (
@@ -113,6 +119,97 @@ export function CleanerList({
                 }
               />
             ) : null}
+
+            <div className="rounded-xl border border-[#124559]/40 bg-[#01161E]/40 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/50">
+                Cleaner link
+              </p>
+              {cleaner.link ? (
+                <div className="mt-2 space-y-2">
+                  <div className="truncate text-sm text-[#EFF6E0]/80">
+                    {typeof window !== "undefined"
+                      ? `${window.location.origin}/cleaner/${cleaner.link.token}`
+                      : `/cleaner/${cleaner.link.token}`}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (
+                          confirm(
+                            "Generate a fresh link for this cleaner? The previous link will stop working."
+                          )
+                        ) {
+                          onRefreshLink(cleaner);
+                        }
+                      }}
+                      className="rounded-full border border-[#124559]/60 px-3 py-1.5 text-xs font-semibold text-[#EFF6E0]/80 transition-all duration-200 hover:border-[#598392]/60 hover:text-[#EFF6E0]"
+                    >
+                      Refresh
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (
+                          confirm(
+                            "Delete this link? The cleaner will lose access until you generate a new one."
+                          )
+                        ) {
+                          onDeleteLink(cleaner);
+                        }
+                      }}
+                      className="rounded-full border border-red-500/60 px-3 py-1.5 text-xs font-semibold text-red-200 transition-all duration-200 hover:border-red-400 hover:bg-red-500/20"
+                    >
+                      Delete
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url =
+                          typeof window !== "undefined"
+                            ? `${window.location.origin}/cleaner/${cleaner.link!.token}`
+                            : `/cleaner/${cleaner.link!.token}`;
+                        if (typeof navigator !== "undefined" && navigator.clipboard) {
+                          navigator.clipboard.writeText(url);
+                          alert("Link copied to clipboard.");
+                        } else {
+                          prompt("Copy link", url);
+                        }
+                      }}
+                      className="rounded-full border border-[#598392]/60 px-3 py-1.5 text-xs font-semibold text-[#EFF6E0]/80 transition-all duration-200 hover:border-[#598392] hover:text-[#EFF6E0]"
+                    >
+                      Copy link
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url =
+                          typeof window !== "undefined"
+                            ? `${window.location.origin}/cleaner/${cleaner.link!.token}`
+                            : `/cleaner/${cleaner.link!.token}`;
+                        window.open(url, "_blank", "noopener");
+                      }}
+                      className="rounded-full border border-[#598392]/60 px-3 py-1.5 text-xs font-semibold text-[#EFF6E0]/80 transition-all duration-200 hover:border-[#598392] hover:text-[#EFF6E0]"
+                    >
+                      Open
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-2 space-y-2">
+                  <p className="text-xs text-[#EFF6E0]/60">
+                    No link created yet.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => onGenerateLink(cleaner)}
+                    className="rounded-full bg-gradient-to-r from-[#124559] to-[#598392] px-3 py-1.5 text-xs font-semibold text-[#EFF6E0] shadow-md transition-all duration-200 hover:shadow-lg"
+                  >
+                    Generate link
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ))}

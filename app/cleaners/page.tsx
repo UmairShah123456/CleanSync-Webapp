@@ -20,7 +20,16 @@ export default async function CleanersPage() {
   } = await supabase
     .from("cleaners")
     .select(
-      "id, name, phone, notes, payment_details, cleaner_type, created_at"
+      `
+        id,
+        name,
+        phone,
+        notes,
+        payment_details,
+        cleaner_type,
+        created_at,
+        cleaner_links(id, token, created_at, updated_at)
+      `
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: true });
@@ -43,7 +52,8 @@ export default async function CleanersPage() {
 
   const cleaners: CleanerWithAssignments[] = (cleanersData ?? []).map(
     (cleaner) => {
-      const normalizedName = cleaner.name?.trim().toLowerCase() ?? "";
+      const { cleaner_links, ...rest } = cleaner as any;
+      const normalizedName = rest.name?.trim().toLowerCase() ?? "";
       const assignedProperties =
         propertiesData
           ?.filter((property) => {
@@ -58,11 +68,23 @@ export default async function CleanersPage() {
             id: property.id,
             name: property.name,
           })) ?? [];
+      const link = Array.isArray(cleaner_links)
+        ? cleaner_links[0] ?? null
+        : null;
       return {
-        ...cleaner,
+        ...rest,
         cleaner_type:
-          cleaner.cleaner_type === "company" ? "company" : "individual",
+          rest.cleaner_type === "company" ? "company" : "individual",
         assigned_properties: assignedProperties,
+        link:
+          link && link.token
+            ? {
+                id: link.id,
+                token: link.token,
+                created_at: link.created_at ?? null,
+                updated_at: link.updated_at ?? null,
+              }
+            : null,
       };
     }
   );

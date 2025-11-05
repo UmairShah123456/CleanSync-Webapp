@@ -75,3 +75,35 @@ where table_name = 'properties' and column_name = 'management_type';
 ```
 
 You should see `management_type` with type `text` and default `'self-managed'`. Once added, the UI will store and display the selected management type for every property.
+
+## Creating Cleaners & Cleaner Links Tables
+
+The cleaners page and cleaner sharing links require dedicated tables.
+
+```sql
+create table if not exists cleaners (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users (id) on delete cascade not null,
+  name text not null,
+  cleaner_type text not null check (cleaner_type in ('individual', 'company')),
+  phone text,
+  notes text,
+  payment_details text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists cleaners_user_id_idx on cleaners (user_id);
+
+create table if not exists cleaner_links (
+  id uuid primary key default gen_random_uuid(),
+  cleaner_id uuid references cleaners (id) on delete cascade not null,
+  token text not null unique,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists cleaner_links_cleaner_id_idx on cleaner_links (cleaner_id);
+```
+
+After running the migration, the cleaners UI can create and reuse unique sharing links.

@@ -32,7 +32,17 @@ export async function GET(request: NextRequest) {
   } = await supabase
     .from("cleaners")
     .select(
-      "id, name, phone, notes, payment_details, cleaner_type, created_at, updated_at"
+      `
+        id,
+        name,
+        phone,
+        notes,
+        payment_details,
+        cleaner_type,
+        created_at,
+        updated_at,
+        cleaner_links(id, token, created_at, updated_at)
+      `
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: true });
@@ -65,7 +75,8 @@ export async function GET(request: NextRequest) {
     }
 
     const fullResponse = (cleanersData ?? []).map((cleaner) => {
-      const normalizedName = cleaner.name?.trim().toLowerCase() ?? "";
+      const { cleaner_links, ...rest } = cleaner as any;
+      const normalizedName = rest.name?.trim().toLowerCase() ?? "";
       const assignedProperties =
         properties
           ?.filter((property) => {
@@ -82,8 +93,17 @@ export async function GET(request: NextRequest) {
           })) ?? [];
 
       return {
-        ...cleaner,
+        ...rest,
         assigned_properties: assignedProperties,
+        link:
+          Array.isArray(cleaner_links) && cleaner_links[0]
+            ? {
+                id: cleaner_links[0].id,
+                token: cleaner_links[0].token,
+                created_at: cleaner_links[0].created_at ?? null,
+                updated_at: cleaner_links[0].updated_at ?? null,
+              }
+            : null,
       };
     });
 
