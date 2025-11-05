@@ -13,6 +13,7 @@ import {
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
   XMarkIcon,
+  UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import { getSupabaseBrowserClient } from "@/lib/supabaseClient";
 
@@ -20,6 +21,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: HomeIcon },
   { href: "/schedule", label: "Schedule", icon: CalendarIcon },
   { href: "/properties", label: "Properties", icon: BuildingOfficeIcon },
+  { href: "/cleaners", label: "Cleaners", icon: UserGroupIcon },
   { href: "/logs", label: "Logs", icon: ChartBarIcon },
   { href: "/settings", label: "Settings", icon: Cog6ToothIcon },
 ];
