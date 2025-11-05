@@ -9,6 +9,7 @@ import { FilterBar } from "./components/FilterBar";
 import { Loader } from "@/components/ui/Loader";
 import type { FilterState } from "@/components/forms/FilterForm";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import { AnimatePresence, motion } from "framer-motion";
 
 async function fetchCleansWithFilters(filters: FilterState) {
   const params = new URLSearchParams();
@@ -270,52 +271,61 @@ export function DashboardClient({
         )}
 
         {/* Sync Complete Message */}
-        {!syncing && syncMessage && (
-          <div
-            className={`relative mt-6 flex flex-col items-center gap-4 text-center transition-opacity duration-300 ${
-              syncMessageVisible ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <button
-              onClick={() => {
-                setSyncMessageVisible(false);
-                setTimeout(() => {
-                  setSyncMessage(null);
-                }, 300);
-              }}
-              className="absolute right-0 top-0 text-[#EFF6E0]/70 transition-transform duration-200 hover:scale-110 hover:text-[#EFF6E0]"
-              aria-label="Dismiss sync message"
+        <AnimatePresence>
+          {!syncing && syncMessage && syncMessageVisible && (
+            <motion.div
+              key="sync-complete"
+              initial={{ opacity: 0, y: -12, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: -12, height: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="overflow-hidden"
             >
-              <XMarkIcon className="h-5 w-5" />
-            </button>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#598392]/40 bg-[#124559]/40 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-[#EFF6E0]/70">
-              <span className="h-2 w-2 rounded-full bg-[#9AD1D4]" />
-              Sync complete
-            </div>
-            <p className="max-w-2xl text-lg font-semibold text-[#EFF6E0]">
-              {syncMessage}
-            </p>
-          </div>
-        )}
+              <div className="relative mt-6 flex flex-col items-center gap-4 text-center">
+                <button
+                  onClick={() => {
+                    setSyncMessageVisible(false);
+                    setTimeout(() => {
+                      setSyncMessage(null);
+                    }, 250);
+                  }}
+                  className="absolute right-0 top-0 text-[#EFF6E0]/70 transition-transform duration-200 hover:scale-110 hover:text-[#EFF6E0]"
+                  aria-label="Dismiss sync message"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+                <div className="inline-flex items-center gap-2 rounded-full border border-[#598392]/40 bg-[#124559]/40 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-[#EFF6E0]/70">
+                  <span className="h-2 w-2 rounded-full bg-[#9AD1D4]" />
+                  Sync complete
+                </div>
+                <p className="max-w-2xl text-lg font-semibold text-[#EFF6E0]">
+                  {syncMessage}
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Loading State */}
-        {loading && !syncing ? (
-          <div className="flex items-center justify-center rounded-xl bg-[#124559] p-12 border border-[#124559]/50">
-            <Loader />
-          </div>
-        ) : !syncing ? (
-          <CleansTable
-            cleans={cleans}
-            onDelete={async (id) => {
-              const fresh = await fetchCleansWithFilters(filters);
-              setCleans(fresh);
-            }}
-            onStatusUpdate={async () => {
-              const fresh = await fetchCleansWithFilters(filters);
-              setCleans(fresh);
-            }}
-          />
-        ) : null}
+        {/* Loading State / Table */}
+        <motion.div layout="position">
+          {loading && !syncing ? (
+            <div className="flex items-center justify-center rounded-xl bg-[#124559] p-12 border border-[#124559]/50">
+              <Loader />
+            </div>
+          ) : !syncing ? (
+            <CleansTable
+              cleans={cleans}
+              onDelete={async (id) => {
+                const fresh = await fetchCleansWithFilters(filters);
+                setCleans(fresh);
+              }}
+              onStatusUpdate={async () => {
+                const fresh = await fetchCleansWithFilters(filters);
+                setCleans(fresh);
+              }}
+            />
+          ) : null}
+        </motion.div>
       </div>
     </AppShell>
   );

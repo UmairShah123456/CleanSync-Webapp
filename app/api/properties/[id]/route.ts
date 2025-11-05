@@ -8,7 +8,8 @@ export async function PATCH(
   const supabase = await getServerSupabaseClient();
   const { id } = await context.params;
   const body = await request.json();
-  const { name, ical_url, checkout_time, cleaner } = body ?? {};
+  const { name, ical_url, checkout_time, cleaner, management_type } =
+    body ?? {};
 
   const updatePayload: Record<string, any> = {};
   if (name) updatePayload.name = name;
@@ -16,6 +17,10 @@ export async function PATCH(
   if (checkout_time !== undefined) updatePayload.checkout_time = checkout_time;
   if (cleaner !== undefined) {
     updatePayload.cleaner = cleaner?.trim() || null;
+  }
+  if (management_type !== undefined) {
+    updatePayload.management_type =
+      management_type === "company-managed" ? "company-managed" : "self-managed";
   }
 
   if (Object.keys(updatePayload).length === 0) {
@@ -35,13 +40,32 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("properties")
     .update(updatePayload)
     .eq("id", id)
     .eq("user_id", user.id)
     .select()
     .single();
+
+  if (error && error.message.includes("management_type")) {
+    delete updatePayload.management_type;
+
+    ({ data, error } = await supabase
+      .from("properties")
+      .update(updatePayload)
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .select()
+      .single());
+
+    if (!error && data && management_type !== undefined) {
+      data.management_type =
+        management_type === "company-managed"
+          ? "company-managed"
+          : "self-managed";
+    }
+  }
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

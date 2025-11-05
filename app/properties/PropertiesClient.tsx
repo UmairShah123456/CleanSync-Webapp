@@ -48,7 +48,9 @@ export function PropertiesClient({
     const response = await fetch(`/api/properties/${id}`, { method: "DELETE" });
     if (!response.ok) {
       const { error: message } = await response.json();
-      setError(message ?? "Unable to delete property");
+      const errorMessage = message ?? "Unable to delete property";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } else {
       setProperties((prev) => prev.filter((property) => property.id !== id));
     }

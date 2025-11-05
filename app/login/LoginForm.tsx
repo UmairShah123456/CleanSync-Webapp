@@ -48,6 +48,7 @@ export function LoginForm() {
           onChange={(event) => setEmail(event.target.value)}
           placeholder="you@example.com"
           required
+          suppressHydrationWarning
           className="w-full rounded-lg border border-[#124559]/50 bg-[#124559]/60 px-4 py-2.5 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/50 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392] transition-colors duration-200"
         />
       </div>
@@ -65,6 +66,7 @@ export function LoginForm() {
           onChange={(event) => setPassword(event.target.value)}
           placeholder="••••••••"
           required
+          suppressHydrationWarning
           className="w-full rounded-lg border border-[#124559]/50 bg-[#124559]/60 px-4 py-2.5 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/50 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392] transition-colors duration-200"
         />
       </div>

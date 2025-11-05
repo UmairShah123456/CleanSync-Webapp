@@ -32,7 +32,12 @@ export default async function DashboardPage() {
       .in("property_id", propertyIds)
       .order("scheduled_for", { ascending: true });
 
-    cleans = data ?? [];
+    // Extra safeguard: filter out any cleans that don't have valid properties
+    const validPropertyIds = new Set(propertyIds);
+    cleans = (data ?? []).filter(
+      (clean: any) =>
+        clean.property_id && validPropertyIds.has(clean.property_id)
+    );
 
     // Automatically mark cleans as completed if their scheduled date has passed
     if (cleans.length > 0) {

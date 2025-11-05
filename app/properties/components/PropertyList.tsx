@@ -7,8 +7,8 @@ import {
   ClockIcon,
   LinkIcon,
   PencilSquareIcon,
-  TrashIcon,
   UserIcon,
+  BuildingOffice2Icon,
 } from "@heroicons/react/24/outline";
 import { PropertyForm, PropertyPayload } from "@/components/forms/PropertyForm";
 import { Modal } from "@/components/ui/Modal";
@@ -20,6 +20,7 @@ export type Property = {
   ical_url: string;
   checkout_time?: string | null;
   cleaner?: string | null;
+  management_type?: "self-managed" | "company-managed" | null;
   created_at?: string;
 };
 
@@ -32,6 +33,14 @@ const getInitials = (name: string): string => {
     .filter(Boolean);
   if (!parts.length) return "PR";
   return parts.slice(0, 2).join("");
+};
+
+const getManagementLabel = (
+  type?: "self-managed" | "company-managed" | null
+) => {
+  if (type === "company-managed") return "Company-managed";
+  if (type === "self-managed") return "Self-managed";
+  return "Not set";
 };
 
 const PropertyAvatar = ({ name }: { name: string }) => {
@@ -80,17 +89,9 @@ export function PropertyList({
 }) {
   const [actionId, setActionId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Property | null>(null);
-  const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
-
-  const handleDelete = async (id: string) => {
-    setLoadingAction(id);
-    try {
-      await onDelete(id);
-    } finally {
-      setLoadingAction(null);
-    }
-  };
+  const [deleting, setDeleting] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
 
   const handleSync = async (id: string) => {
     setActionId(id);
@@ -112,10 +113,28 @@ export function PropertyList({
     }
   };
 
+  const handleDeleteFromModal = async () => {
+    if (!editing) return;
+    setDeleting(true);
+    setModalError(null);
+    try {
+      await onDelete(editing.id);
+      setEditing(null);
+    } catch (err) {
+      setModalError(
+        err instanceof Error ? err.message : "Unable to delete property."
+      );
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (!properties.length) {
     return (
-      <div className="rounded-xl border border-dashed border-[#598392]/30 bg-[#124559] p-12 text-center text-sm text-[#EFF6E0]/70">
-        Add your first property to start syncing cleans.
+      <div className="rounded-xl border border-dashed border-[#598392]/30 bg-[#124559] p-12 text-center">
+        <p className="text-sm text-[#EFF6E0]/70">
+          Add your first property to start syncing cleans.
+        </p>
       </div>
     );
   }
@@ -128,7 +147,13 @@ export function PropertyList({
             key={property.id}
             className="group relative overflow-hidden rounded-2xl border border-[#124559]/50 bg-[#01161E]/60 p-6 shadow-lg shadow-[#01161E]/40 transition-all duration-300 hover:-translate-y-1 hover:border-[#598392]/60 hover:shadow-2xl hover:shadow-[#01161E]/60"
           >
-            <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ background: "radial-gradient(circle at top right, rgba(89,131,146,0.35), transparent 55%)" }} />
+            <span
+              className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+              style={{
+                background:
+                  "radial-gradient(circle at top right, rgba(89,131,146,0.35), transparent 55%)",
+              }}
+            />
             <div className="relative z-10 flex items-start justify-between gap-4">
               <PropertyAvatar name={property.name} />
               <div className="min-w-0 flex-1">
@@ -146,7 +171,11 @@ export function PropertyList({
                 )}
               </div>
               <button
-                onClick={() => setEditing(property)}
+                onClick={() => {
+                  setModalError(null);
+                  setDeleting(false);
+                  setEditing(property);
+                }}
                 className="rounded-full border border-transparent bg-[#124559]/60 p-2 text-[#EFF6E0]/80 transition-colors hover:border-[#598392]/60 hover:bg-[#598392]/30 hover:text-[#EFF6E0]"
                 type="button"
                 aria-label={`Edit ${property.name}`}
@@ -171,6 +200,11 @@ export function PropertyList({
                   {property.checkout_time || "10:00"}
                 </span>
               </DetailRow>
+              <DetailRow icon={BuildingOffice2Icon} label="Management">
+                <span className="font-medium text-[#EFF6E0]">
+                  {getManagementLabel(property.management_type)}
+                </span>
+              </DetailRow>
               <DetailRow icon={UserIcon} label="Assigned cleaner">
                 <span className="font-medium text-[#EFF6E0]">
                   {property.cleaner ? property.cleaner : "Unassigned"}
@@ -179,22 +213,15 @@ export function PropertyList({
             </div>
             <div className="relative z-10 mt-6 flex flex-wrap items-center gap-3 text-sm">
               <button
-                onClick={() => handleDelete(property.id)}
-                disabled={loadingAction === property.id}
-                className="inline-flex items-center gap-2 rounded-full border border-red-500/50 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-200 transition-all hover:border-red-400 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-                type="button"
-              >
-                <TrashIcon className="h-4 w-4" />
-                {loadingAction === property.id ? "Removing..." : "Delete"}
-              </button>
-              <button
                 onClick={() => handleSync(property.id)}
                 disabled={actionId === property.id}
                 className="ml-auto inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#124559] to-[#598392] px-4 py-2 text-xs font-semibold text-[#EFF6E0] shadow-md transition-all duration-200 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
                 type="button"
               >
                 <ArrowPathIcon
-                  className={`h-4 w-4 ${actionId === property.id ? "animate-spin" : ""}`}
+                  className={`h-4 w-4 ${
+                    actionId === property.id ? "animate-spin" : ""
+                  }`}
                 />
                 {actionId === property.id ? "Syncing..." : "Sync now"}
               </button>
@@ -206,21 +233,39 @@ export function PropertyList({
       <Modal
         title="Edit property"
         open={Boolean(editing)}
-        onClose={() => setEditing(null)}
+        onClose={() => {
+          setModalError(null);
+          setEditing(null);
+          setDeleting(false);
+        }}
         footer={null}
       >
         {editing ? (
-          <PropertyForm
-            initial={{
-              name: editing.name,
-              ical_url: editing.ical_url,
-              checkout_time: editing.checkout_time || "10:00",
-              cleaner: editing.cleaner || "",
-            }}
-            onSubmit={handleUpdate}
-            submitting={updating}
-            onCancel={() => setEditing(null)}
-          />
+          <>
+            {modalError ? (
+              <div className="mb-4 rounded-xl border border-red-500/40 bg-red-500/15 p-3 text-sm text-red-200">
+                {modalError}
+              </div>
+            ) : null}
+            <PropertyForm
+              initial={{
+                name: editing.name,
+                ical_url: editing.ical_url,
+                checkout_time: editing.checkout_time || "10:00",
+                cleaner: editing.cleaner || "",
+                management_type: editing.management_type ?? "self-managed",
+              }}
+              onSubmit={handleUpdate}
+              submitting={updating}
+              onCancel={() => {
+                setModalError(null);
+                setEditing(null);
+                setDeleting(false);
+              }}
+              onDelete={handleDeleteFromModal}
+              deleting={deleting}
+            />
+          </>
         ) : null}
       </Modal>
     </>

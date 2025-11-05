@@ -50,3 +50,28 @@ WHERE table_name = 'properties' AND column_name = 'checkout_time';
 You should see `checkout_time` with type `text` and default `'10:00'`.
 
 Once this migration is complete, you'll be able to add new properties with custom checkout times!
+
+## Adding management_type Column to Properties Table
+
+To track whether a property is self-managed or company-managed, add the `management_type` column.
+
+### SQL (Supabase Dashboard or CLI)
+
+```sql
+alter table properties
+add column if not exists management_type text default 'self-managed';
+
+update properties
+set management_type = 'self-managed'
+where management_type is null;
+```
+
+### Verification
+
+```sql
+select column_name, data_type, column_default
+from information_schema.columns
+where table_name = 'properties' and column_name = 'management_type';
+```
+
+You should see `management_type` with type `text` and default `'self-managed'`. Once added, the UI will store and display the selected management type for every property.

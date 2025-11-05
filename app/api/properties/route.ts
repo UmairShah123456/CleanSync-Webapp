@@ -34,7 +34,8 @@ export async function GET() {
 export async function POST(request: Request) {
   const supabase = await getServerSupabaseClient();
   const body = await request.json();
-  const { name, ical_url, checkout_time, cleaner } = body ?? {};
+  const { name, ical_url, checkout_time, cleaner, management_type } =
+    body ?? {};
 
   if (!name || !ical_url) {
     return NextResponse.json(
@@ -67,11 +68,30 @@ export async function POST(request: Request) {
     insertData.cleaner = cleaner.trim() || null;
   }
 
-  const { data, error } = await supabase
+  const chosenManagementType =
+    management_type === "company-managed" ? "company-managed" : "self-managed";
+
+  insertData.management_type = chosenManagementType;
+
+  let { data, error } = await supabase
     .from("properties")
     .insert(insertData)
     .select()
     .single();
+
+  if (error && error.message.includes("management_type")) {
+    delete insertData.management_type;
+
+    ({ data, error } = await supabase
+      .from("properties")
+      .insert(insertData)
+      .select()
+      .single());
+
+    if (!error && data) {
+      data.management_type = chosenManagementType;
+    }
+  }
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

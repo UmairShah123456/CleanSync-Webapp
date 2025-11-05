@@ -1,12 +1,19 @@
 "use client";
 
-import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
+import {
+  useState,
+  useEffect,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
+import { TrashIcon } from "@heroicons/react/24/outline";
 
 export type PropertyPayload = {
   name: string;
   ical_url: string;
   checkout_time: string;
   cleaner?: string;
+  management_type?: "self-managed" | "company-managed";
 };
 
 export function PropertyForm({
@@ -14,11 +21,15 @@ export function PropertyForm({
   onSubmit,
   submitting,
   onCancel,
+  onDelete,
+  deleting,
 }: {
   initial?: PropertyPayload;
   onSubmit: (payload: PropertyPayload) => Promise<void>;
   submitting?: boolean;
   onCancel?: () => void;
+  onDelete?: () => Promise<void> | void;
+  deleting?: boolean;
 }) {
   const [formState, setFormState] = useState<PropertyPayload>(
     initial ?? {
@@ -26,6 +37,7 @@ export function PropertyForm({
       ical_url: "",
       checkout_time: "10:00",
       cleaner: "",
+      management_type: "self-managed",
     }
   );
   const [error, setError] = useState<string | null>(null);
@@ -72,8 +84,15 @@ export function PropertyForm({
     event.preventDefault();
     setError(null);
 
-    if (!formState.name || !formState.ical_url || !formState.checkout_time) {
-      setError("Please provide a property name, iCal URL, and checkout time.");
+    if (
+      !formState.name ||
+      !formState.ical_url ||
+      !formState.checkout_time ||
+      !formState.management_type
+    ) {
+      setError(
+        "Please provide a property name, iCal URL, checkout time, and management type."
+      );
       return;
     }
 
@@ -122,6 +141,65 @@ export function PropertyForm({
             required
             className="w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/70 px-4 py-3 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/60 transition-colors duration-200"
           />
+        </div>
+
+        <div className="space-y-2">
+          <label
+            className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/60"
+            htmlFor="management-type-self"
+          >
+            <span>Management type</span>
+            <span className="rounded-full bg-[#124559]/50 px-2 py-0.5 text-[0.6rem] font-semibold text-[#EFF6E0]/70">
+              Required
+            </span>
+          </label>
+          <div className="flex flex-wrap gap-3">
+            {[
+              { value: "self-managed", label: "Self-managed" },
+              { value: "company-managed", label: "Company-managed" },
+            ].map((option) => (
+              <label
+                key={option.value}
+                className="flex-1 min-w-[140px] cursor-pointer rounded-xl border border-[#124559]/60 bg-[#01161E]/70 px-4 py-3 text-sm text-[#EFF6E0]/80 transition-colors duration-200 hover:border-[#598392]/60"
+              >
+                <input
+                  id={
+                    option.value === "self-managed"
+                      ? "management-type-self"
+                      : "management-type-company"
+                  }
+                  type="radio"
+                  name="management-type"
+                  value={option.value}
+                  checked={formState.management_type === option.value}
+                  onChange={(event) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      management_type:
+                        event.target.value as PropertyPayload["management_type"],
+                    }))
+                  }
+                  className="hidden"
+                  required
+                />
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-semibold text-[#EFF6E0]">
+                    {option.label}
+                  </span>
+                  <span
+                    className={`h-3 w-3 rounded-full border ${
+                      formState.management_type === option.value
+                        ? "border-[#9AD1D4] bg-[#9AD1D4]"
+                        : "border-[#598392]/50"
+                    }`}
+                  />
+                </div>
+              </label>
+            ))}
+          </div>
+          <p className="text-xs text-[#EFF6E0]/50">
+            Choose whether you or a partner company manages this property.
+          </p>
         </div>
 
         <div className="space-y-2">
@@ -224,23 +302,39 @@ export function PropertyForm({
         </div>
       ) : null}
 
-      <div className="flex justify-end gap-3 pt-2">
-        {onCancel ? (
+      <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+        {onDelete ? (
           <button
             type="button"
-            onClick={onCancel}
-            className="rounded-full border border-[#124559]/50 px-5 py-2.5 text-sm font-semibold text-[#EFF6E0]/70 transition-colors duration-200 hover:border-[#598392]/60 hover:text-[#EFF6E0]"
+            onClick={onDelete}
+            disabled={deleting || submitting}
+            className="inline-flex items-center gap-2 rounded-full border border-red-500/60 bg-red-500/10 px-5 py-2.5 text-sm font-semibold text-red-200 transition-all duration-200 hover:border-red-400 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Cancel
+            <TrashIcon className="h-4 w-4" />
+            {deleting ? "Deleting..." : "Delete property"}
           </button>
-        ) : null}
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-full bg-gradient-to-r from-[#124559] to-[#598392] px-5 py-2.5 text-sm font-semibold text-[#EFF6E0] shadow-lg shadow-[#01161E]/50 transition-all duration-200 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {submitting ? "Saving..." : "Save property"}
-        </button>
+        ) : (
+          <span />
+        )}
+        <div className="flex items-center gap-3">
+          {onCancel ? (
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={submitting || deleting}
+              className="rounded-full border border-[#124559]/50 px-5 py-2.5 text-sm font-semibold text-[#EFF6E0]/70 transition-colors duration-200 hover:border-[#598392]/60 hover:text-[#EFF6E0] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          ) : null}
+          <button
+            type="submit"
+            disabled={submitting || deleting}
+            className="rounded-full bg-gradient-to-r from-[#124559] to-[#598392] px-5 py-2.5 text-sm font-semibold text-[#EFF6E0] shadow-lg shadow-[#01161E]/50 transition-all duration-200 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {submitting ? "Saving..." : "Save property"}
+          </button>
+        </div>
       </div>
     </form>
   );

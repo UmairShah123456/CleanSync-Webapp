@@ -97,19 +97,26 @@ export default async function SchedulePage() {
       }
     }
 
-    cleans = (cleansData ?? []).map((clean: any) => ({
-      id: clean.id,
-      booking_uid: clean.booking_uid,
-      property_id: clean.property_id,
-      property_name:
-        propertyNameLookup.get(clean.property_id) ?? "Unknown property",
-      scheduled_for: clean.scheduled_for,
-      status: clean.status,
-      notes: clean.notes,
-      checkin: clean.bookings?.checkin ?? null,
-      checkout: clean.bookings?.checkout ?? null,
-      cleaner: propertyCleanerLookup.get(clean.property_id) ?? null,
-    }));
+    // Extra safeguard: filter out any cleans that don't have valid properties
+    const validPropertyIds = new Set(propertyIds);
+    cleans = (cleansData ?? [])
+      .filter(
+        (clean: any) =>
+          clean.property_id && validPropertyIds.has(clean.property_id)
+      )
+      .map((clean: any) => ({
+        id: clean.id,
+        booking_uid: clean.booking_uid,
+        property_id: clean.property_id,
+        property_name:
+          propertyNameLookup.get(clean.property_id) ?? "Unknown property",
+        scheduled_for: clean.scheduled_for,
+        status: clean.status,
+        notes: clean.notes,
+        checkin: clean.bookings?.checkin ?? null,
+        checkout: clean.bookings?.checkout ?? null,
+        cleaner: propertyCleanerLookup.get(clean.property_id) ?? null,
+      }));
   }
 
   return (
