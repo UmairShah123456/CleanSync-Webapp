@@ -35,7 +35,7 @@ export function CleanerPortalClient({
 
   return (
     <div className="min-h-screen bg-[#01161E] text-[#EFF6E0]">
-      <div className="mx-auto max-w-6xl space-y-8 px-6 py-10 md:px-10">
+      <div className="mx-auto w-full max-w-screen space-y-8 px-4 py-10 md:px-8">
         <header className="rounded-3xl border border-[#124559]/60 bg-gradient-to-br from-[#021b27] via-[#01161E] to-[#0b3141] p-6 shadow-2xl shadow-[#01161E]/80">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
@@ -77,7 +77,6 @@ export function CleanerPortalClient({
         </header>
 
         <ScheduleClient
-          standalone
           properties={properties}
           initialCleans={initialCleans}
           initialRange={initialRange}

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSupabaseClient } from "@/lib/db";
 import { ScheduleClient } from "./ScheduleClient";
+import { AppShell } from "@/components/layout/AppShell";
 import type { ScheduleClean, ScheduleProperty } from "./types";
 
 export const revalidate = 0;
@@ -120,11 +121,12 @@ export default async function SchedulePage() {
   }
 
   return (
-    <ScheduleClient
-      email={user.email}
-      properties={properties}
-      initialCleans={cleans}
-      initialRange={{ from: fromIso, to: toIso }}
-    />
+    <AppShell email={user.email}>
+      <ScheduleClient
+        properties={properties}
+        initialCleans={cleans}
+        initialRange={{ from: fromIso, to: toIso }}
+      />
+    </AppShell>
   );
 }

@@ -16,7 +16,6 @@ import {
   startOfWeek,
 } from "date-fns";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
-import { AppShell } from "@/components/layout/AppShell";
 import { Spinner } from "@/components/ui/Spinner";
 import type { ScheduleClean, ScheduleProperty, ScheduleRange } from "./types";
 
@@ -94,21 +93,17 @@ const EmptyState = () => {
 };
 
 export function ScheduleClient({
-  email,
   properties,
   initialCleans,
   initialRange,
   fetchUrlBuilder,
-  standalone = false,
   title = "Schedule",
   description = "Track checkouts across your properties with a responsive timeline or calendar view.",
 }: {
-  email?: string | null;
   properties: ScheduleProperty[];
   initialCleans: ScheduleClean[];
   initialRange: ScheduleRange;
   fetchUrlBuilder?: FetchUrlBuilder;
-  standalone?: boolean;
   title?: string;
   description?: string;
 }) {
@@ -277,19 +272,19 @@ export function ScheduleClient({
 
   if (!properties.length) {
     return (
-      <AppShell email={email}>
+      <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#EFF6E0]">Schedule</h1>
+          <h1 className="text-2xl font-semibold text-[#EFF6E0]">{title}</h1>
           <p className="mt-1 text-base text-[#EFF6E0]/70">
             Visualise every turnover by adding your first property.
           </p>
         </div>
         <EmptyState />
-      </AppShell>
+      </div>
     );
   }
 
-  const content = (
+  return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-[#EFF6E0]">{title}</h1>
@@ -404,12 +399,6 @@ export function ScheduleClient({
       </div>
     </div>
   );
-
-  if (standalone) {
-    return content;
-  }
-
-  return <AppShell email={email}>{content}</AppShell>;
 }
 
 function TimelineView({
