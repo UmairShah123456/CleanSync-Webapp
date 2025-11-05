@@ -7,6 +7,8 @@ import {
   type FormEvent,
 } from "react";
 import { TrashIcon } from "@heroicons/react/24/outline";
+import { CleanerForm, type CleanerPayload } from "@/components/forms/CleanerForm";
+import { Modal } from "@/components/ui/Modal";
 
 export type PropertyPayload = {
   name: string;
@@ -42,8 +44,8 @@ export function PropertyForm({
   );
   const [error, setError] = useState<string | null>(null);
   const [existingCleaners, setExistingCleaners] = useState<string[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+  const [addCleanerOpen, setAddCleanerOpen] = useState(false);
+  const [creatingCleaner, setCreatingCleaner] = useState(false);
 
   // Fetch existing cleaners on mount
   useEffect(() => {
@@ -60,19 +62,6 @@ export function PropertyForm({
     };
     fetchCleaners();
   }, []);
-
-  // Filter suggestions based on input
-  useEffect(() => {
-    if (formState.cleaner && showSuggestions) {
-      const input = formState.cleaner.toLowerCase().trim();
-      const filtered = existingCleaners.filter((cleaner) =>
-        cleaner.toLowerCase().includes(input)
-      );
-      setFilteredSuggestions(filtered);
-    } else {
-      setFilteredSuggestions([]);
-    }
-  }, [formState.cleaner, existingCleaners, showSuggestions]);
 
   const handleChange =
     (field: keyof PropertyPayload) =>
@@ -247,51 +236,42 @@ export function PropertyForm({
         </div>
 
         <div className="space-y-2">
-          <label
-            className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/60"
-            htmlFor="cleaner"
-          >
+          <label className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/60">
             <span>Cleaner</span>
             <span className="rounded-full bg-[#124559]/40 px-2 py-0.5 text-[0.6rem] font-semibold text-[#EFF6E0]/60">
               Optional
             </span>
           </label>
-          <div className="relative z-50">
-            <input
-              id="cleaner"
-              placeholder="Enter cleaner name"
-              value={formState.cleaner || ""}
-              onChange={(event) => {
-                handleChange("cleaner")(event);
-                setShowSuggestions(true);
-              }}
-              onFocus={() => setShowSuggestions(true)}
-              onBlur={() => {
-                setTimeout(() => setShowSuggestions(false), 200);
-              }}
-              className="w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/70 px-4 py-3 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/60 transition-colors duration-200"
-            />
-            {showSuggestions && filteredSuggestions.length > 0 && (
-              <ul className="absolute z-[100] mt-1 max-h-56 w-full overflow-auto rounded-xl border border-[#124559]/60 bg-[#01161E]/95 shadow-2xl shadow-[#01161E]/60 backdrop-blur">
-                {filteredSuggestions.map((cleaner, index) => (
-                  <li
-                    key={index}
-                    className="cursor-pointer px-4 py-2 text-sm text-[#EFF6E0] transition-colors duration-200 hover:bg-[#124559]/50"
-                    onMouseDown={(event) => {
-                      event.preventDefault();
-                      setFormState((prev) => ({ ...prev, cleaner }));
-                      setShowSuggestions(false);
-                    }}
-                  >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex-1">
+              <select
+                value={formState.cleaner ?? ""}
+                onChange={(event) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    cleaner: event.target.value || undefined,
+                  }))
+                }
+                className="w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/70 px-4 py-3 text-sm text-[#EFF6E0] focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/60 transition-colors duration-200"
+              >
+                <option value="">Unassigned</option>
+                {existingCleaners.map((cleaner) => (
+                  <option key={cleaner} value={cleaner}>
                     {cleaner}
-                  </li>
+                  </option>
                 ))}
-              </ul>
-            )}
+              </select>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAddCleanerOpen(true)}
+              className="inline-flex items-center justify-center rounded-full border border-[#124559]/60 px-4 py-2 text-xs font-semibold text-[#EFF6E0]/80 transition-colors duration-200 hover:border-[#598392]/60 hover:text-[#EFF6E0]"
+            >
+              Add new cleaner
+            </button>
           </div>
           <p className="text-xs text-[#EFF6E0]/50">
-            Assign a cleaner to surface their schedule on dashboards. Start
-            typing to reuse an existing name.
+            Pick an existing cleaner or add a new one without leaving the form.
           </p>
         </div>
       </div>
@@ -336,6 +316,58 @@ export function PropertyForm({
           </button>
         </div>
       </div>
+
+      <Modal
+        title="Add a cleaner"
+        open={addCleanerOpen}
+        onClose={() => {
+          if (!creatingCleaner) {
+            setAddCleanerOpen(false);
+          }
+        }}
+        footer={null}
+      >
+        <CleanerForm
+          onSubmit={async (payload: CleanerPayload) => {
+            setCreatingCleaner(true);
+            try {
+              const response = await fetch("/api/cleaners", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
+              if (!response.ok) {
+                const { error: message } = await response.json();
+                throw new Error(
+                  message ??
+                    "Unable to create cleaner. Ensure the cleaners table exists."
+                );
+              }
+              const created = await response.json();
+              const newName = created?.name ?? payload.name;
+              setExistingCleaners((prev) => {
+                if (prev.includes(newName)) return prev;
+                return [...prev, newName].sort((a, b) =>
+                  a.localeCompare(b)
+                );
+              });
+              setFormState((prev) => ({
+                ...prev,
+                cleaner: newName,
+              }));
+              setAddCleanerOpen(false);
+            } finally {
+              setCreatingCleaner(false);
+            }
+          }}
+          submitting={creatingCleaner}
+          onCancel={() => {
+            if (!creatingCleaner) {
+              setAddCleanerOpen(false);
+            }
+          }}
+        />
+      </Modal>
     </form>
   );
 }
