@@ -9,6 +9,7 @@ import {
   ClockIcon,
   DocumentTextIcon,
   UserIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import { useState } from "react";
@@ -49,6 +50,7 @@ export function CleansTable({
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   const [editingTimeId, setEditingTimeId] = useState<string | null>(null);
   const [timeValues, setTimeValues] = useState<Record<string, string>>({});
+  const [removingNoteId, setRemovingNoteId] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
     if (
@@ -79,6 +81,53 @@ export function CleansTable({
     } catch (error) {
       alert(error instanceof Error ? error.message : "Failed to delete clean");
       setDeletingId(null);
+    }
+  };
+
+  const handleRemoveNote = async (id: string, noteToRemove: string) => {
+    setRemovingNoteId(id);
+    try {
+      // Get current clean to find its notes
+      const currentClean = cleans.find((c) => c.id === id);
+      if (!currentClean || !currentClean.notes) {
+        return;
+      }
+
+      // Split notes by newlines and filter out the note to remove
+      const notesArray = currentClean.notes
+        .split(/\n/)
+        .filter((note) => note.trim());
+      const updatedNotes = notesArray
+        .filter((note) => note.trim() !== noteToRemove.trim())
+        .join("\n")
+        .trim();
+
+      const response = await fetch(`/api/cleans/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ notes: updatedNotes || null }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to remove note");
+      }
+
+      const payload = (await response.json()) as { clean?: any };
+      if (payload.clean && onStatusUpdate) {
+        // The API returns the updated clean, refresh to get the latest state
+        await onStatusUpdate();
+      } else if (onStatusUpdate) {
+        await onStatusUpdate();
+      } else {
+        window.location.reload();
+      }
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Failed to remove note");
+    } finally {
+      setRemovingNoteId(null);
     }
   };
 
@@ -242,6 +291,8 @@ export function CleansTable({
                   handleStatusChange={handleStatusChange}
                   handleTimeChange={handleTimeChange}
                   onManageClean={onManageClean}
+                  handleRemoveNote={handleRemoveNote}
+                  removingNoteId={removingNoteId}
                 />
               ))}
             </tbody>
@@ -264,6 +315,8 @@ export function CleansTable({
               handleStatusChange={handleStatusChange}
               handleTimeChange={handleTimeChange}
               onManageClean={onManageClean}
+              handleRemoveNote={handleRemoveNote}
+              removingNoteId={removingNoteId}
             />
             {/* Divider between cards */}
             {index < cleans.length - 1 && (
@@ -287,6 +340,8 @@ function DesktopTableRow({
   handleStatusChange,
   handleTimeChange,
   onManageClean,
+  handleRemoveNote,
+  removingNoteId,
 }: {
   clean: CleanRow;
   deletingId: string | null;
@@ -298,6 +353,8 @@ function DesktopTableRow({
   handleStatusChange: (id: string, status: string) => Promise<void>;
   handleTimeChange: (id: string, time: string) => Promise<void>;
   onManageClean?: (clean: CleanRow) => void;
+  handleRemoveNote: (id: string, note: string) => Promise<void>;
+  removingNoteId: string | null;
 }) {
   const status = clean.status.toLowerCase();
   const isCancelled = status === "cancelled";
@@ -461,14 +518,37 @@ function DesktopTableRow({
             : "text-[#EFF6E0]/70"
         )}
       >
-        {isSameDayCheckIn(clean) ? (
-          <span className="mr-2 align-middle">🔄 Same-day check-in</span>
-        ) : null}
-        {clean.notes && getDisplayNotes(clean.notes) ? (
-          <span className="align-middle">{getDisplayNotes(clean.notes)}</span>
-        ) : !isSameDayCheckIn(clean) ? (
-          <span className="align-middle">—</span>
-        ) : null}
+        <div className="flex flex-col gap-1.5">
+          {isSameDayCheckIn(clean) ? (
+            <span className="align-middle">🔄 Same-day check-in</span>
+          ) : null}
+          {clean.notes && getDisplayNotes(clean.notes) ? (
+            <div className="flex flex-col gap-1">
+              {getDisplayNotes(clean.notes)
+                .split(/\n/)
+                .filter((note) => note.trim())
+                .map((note, index) => (
+                  <div
+                    key={index}
+                    className="group/note flex items-center gap-2 rounded-md px-2 py-1 hover:bg-[#124559]/30"
+                  >
+                    <span className="flex-1 align-middle">{note.trim()}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveNote(clean.id, note.trim())}
+                      disabled={removingNoteId === clean.id}
+                      className="opacity-0 transition-opacity group-hover/note:opacity-100 disabled:opacity-50"
+                      aria-label={`Remove note: ${note.trim()}`}
+                    >
+                      <XMarkIcon className="h-4 w-4 text-[#EFF6E0]/60 hover:text-red-300" />
+                    </button>
+                  </div>
+                ))}
+            </div>
+          ) : !isSameDayCheckIn(clean) ? (
+            <span className="align-middle">—</span>
+          ) : null}
+        </div>
       </td>
       <td className="py-4 relative z-10">
         <select
@@ -560,6 +640,8 @@ function MobileCard({
   handleStatusChange,
   handleTimeChange,
   onManageClean,
+  handleRemoveNote,
+  removingNoteId,
 }: {
   clean: CleanRow;
   deletingId: string | null;
@@ -571,6 +653,8 @@ function MobileCard({
   handleStatusChange: (id: string, status: string) => Promise<void>;
   handleTimeChange: (id: string, time: string) => Promise<void>;
   onManageClean?: (clean: CleanRow) => void;
+  handleRemoveNote: (id: string, note: string) => Promise<void>;
+  removingNoteId: string | null;
 }) {
   const status = clean.status.toLowerCase();
   const isCancelled = status === "cancelled";
@@ -799,7 +883,7 @@ function MobileCard({
       {/* Notes */}
       {(isSameDayCheckIn(clean) ||
         (clean.notes && getDisplayNotes(clean.notes))) && (
-        <div className="flex items-end gap-1.5 mt-1.5">
+        <div className="flex items-start gap-1.5 mt-1.5">
           <DocumentTextIcon
             className={clsx(
               "h-4 w-4 shrink-0 mt-0.5",
@@ -812,7 +896,7 @@ function MobileCard({
           />
           <div
             className={clsx(
-              "text-sm font-semibold flex-1",
+              "text-sm font-semibold flex-1 flex flex-col gap-1",
               isCancelled
                 ? "text-[#EFF6E0]/50"
                 : isCompleted
@@ -821,10 +905,31 @@ function MobileCard({
             )}
           >
             {isSameDayCheckIn(clean) && (
-              <span className="mr-2">Same-day check-in</span>
+              <span className="mr-2">🔄 Same-day check-in</span>
             )}
             {clean.notes && getDisplayNotes(clean.notes) && (
-              <span>{getDisplayNotes(clean.notes)}</span>
+              <div className="flex flex-col gap-1">
+                {getDisplayNotes(clean.notes)
+                  .split(/\n/)
+                  .filter((note) => note.trim())
+                  .map((note, index) => (
+                    <div
+                      key={index}
+                      className="group/note flex items-center gap-2 rounded-md px-2 py-1 hover:bg-[#124559]/30"
+                    >
+                      <span className="flex-1">{note.trim()}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveNote(clean.id, note.trim())}
+                        disabled={removingNoteId === clean.id}
+                        className="opacity-0 transition-opacity group-hover/note:opacity-100 disabled:opacity-50"
+                        aria-label={`Remove note: ${note.trim()}`}
+                      >
+                        <XMarkIcon className="h-4 w-4 text-[#EFF6E0]/60 hover:text-red-300" />
+                      </button>
+                    </div>
+                  ))}
+              </div>
             )}
           </div>
         </div>
@@ -835,7 +940,8 @@ function MobileCard({
           onClick={() => handleDelete(clean.id)}
           className={clsx(
             "inline-flex items-center justify-center gap-1 rounded-full border border-red-400/40 bg-[#01161E]/40 px-3 py-1 text-xs font-semibold text-red-200 transition hover:border-red-300 hover:text-red-100",
-            (isCancelled || deletingId === clean.id) && "cursor-not-allowed opacity-60"
+            (isCancelled || deletingId === clean.id) &&
+              "cursor-not-allowed opacity-60"
           )}
           disabled={isCancelled || deletingId === clean.id}
         >

@@ -29,18 +29,22 @@ export async function PATCH(
         status: undefined,
         scheduled_for: undefined,
         maintenance_notes: undefined,
+        notes: undefined,
       } as {
         status?: string;
         scheduled_for?: string;
         maintenance_notes?: string[];
+        notes?: string | null;
       })
   );
-  const { status, scheduled_for, maintenance_notes } = body;
+  const { status, scheduled_for, maintenance_notes, notes } = body;
 
   // Validate that at least one field is provided
-  if (!status && !scheduled_for && !maintenance_notes) {
+  if (!status && !scheduled_for && !maintenance_notes && notes === undefined) {
     return NextResponse.json(
-      { error: "Status, scheduled_for, or maintenance_notes is required" },
+      {
+        error: "Status, scheduled_for, maintenance_notes, or notes is required",
+      },
       { status: 400 }
     );
   }
@@ -89,6 +93,7 @@ export async function PATCH(
     status?: string;
     scheduled_for?: string;
     maintenance_notes?: string[];
+    notes?: string | null;
     updated_at: string;
   } = {
     updated_at: new Date().toISOString(),
@@ -129,6 +134,10 @@ export async function PATCH(
       )
     );
     updateData.maintenance_notes = normalizedNotes;
+  }
+
+  if (notes !== undefined) {
+    updateData.notes = notes?.trim() || null;
   }
 
   // Update the clean

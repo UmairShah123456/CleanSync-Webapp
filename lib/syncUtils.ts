@@ -250,11 +250,59 @@ export const syncPropertyCalendar = async (
 
   const activeUids = new Set(activeEvents.map((event) => event.uid));
 
-  for (const uid of bookingsMap.keys()) {
-    if (!activeUids.has(uid) || cancelledEvents.includes(uid)) {
-      await cancelBookingAndClean(supabase, uid);
-      removed += 1;
+  // Fetch all cleans for this property to check their status and dates
+  const { data: cleans, error: cleansError } = await supabase
+    .from("cleans")
+    .select("id, booking_uid, scheduled_for, status")
+    .eq("property_id", property.id);
+
+  if (cleansError) {
+    throw new Error(
+      `Failed to load cleans for property ${property.id}: ${cleansError.message}`
+    );
+  }
+
+  const cleansMap = new Map<
+    string,
+    { id: string; scheduled_for: string; status: string }
+  >();
+  cleans?.forEach((clean) => {
+    if (clean.booking_uid) {
+      cleansMap.set(clean.booking_uid, {
+        id: clean.id,
+        scheduled_for: clean.scheduled_for,
+        status: clean.status,
+      });
     }
+  });
+
+  const now = new Date();
+
+  for (const uid of bookingsMap.keys()) {
+    const shouldCancel = !activeUids.has(uid) || cancelledEvents.includes(uid);
+    if (!shouldCancel) {
+      continue;
+    }
+
+    // Check if we should cancel this clean
+    const clean = cleansMap.get(uid);
+    if (clean) {
+      const scheduledFor = new Date(clean.scheduled_for);
+      const isPast = scheduledFor < now;
+      const isProtectedStatus = ["completed", "cancelled", "deleted"].includes(
+        clean.status
+      );
+
+      // Don't cancel if:
+      // 1. The clean is in the past (calendar might not return past events)
+      // 2. The clean has a protected status (manually set)
+      if (isPast || isProtectedStatus) {
+        continue;
+      }
+    }
+
+    await cancelBookingAndClean(supabase, uid);
+    removed += 1;
   }
 
   const { error: logError } = await supabase.from("sync_logs").insert({
