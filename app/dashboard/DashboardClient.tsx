@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect, useRef } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { DashboardHeader } from "./components/DashboardHeader";
 import { MetricCard } from "./components/MetricCard";
@@ -10,6 +10,9 @@ import { Loader } from "@/components/ui/Loader";
 import type { FilterState } from "@/components/forms/FilterForm";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { AnimatePresence, motion } from "framer-motion";
+import { getSupabaseBrowserClient } from "@/lib/supabaseClient";
+import { CleanActionsModal } from "@/components/clean/CleanActionsModal";
+import type { ScheduleClean, ScheduleProperty } from "@/app/schedule/types";
 
 async function fetchCleansWithFilters(filters: FilterState) {
   const params = new URLSearchParams();
@@ -31,7 +34,46 @@ async function fetchCleansWithFilters(filters: FilterState) {
     throw new Error("Failed to fetch cleans");
   }
 
-  return (await response.json()) as CleanRow[];
+  const data = (await response.json()) as Array<{
+    id: string;
+    booking_uid: string;
+    property_id: string;
+    property_name: string;
+    scheduled_for: string;
+    status: string;
+    notes?: string | null;
+    checkin?: string | null;
+    checkout?: string | null;
+    cleaner?: string | null;
+    maintenance_notes?: string[] | null;
+    reimbursements?: Array<{
+      id: string;
+      amount: number;
+      item: string;
+      created_at: string;
+    }>;
+  }>;
+
+  return data.map((clean) => ({
+    id: clean.id,
+    booking_uid: clean.booking_uid,
+    property_id: clean.property_id,
+    property_name: clean.property_name,
+    scheduled_for: clean.scheduled_for,
+    status: clean.status,
+    notes: clean.notes ?? null,
+    checkin: clean.checkin ?? null,
+    checkout: clean.checkout ?? null,
+    cleaner: clean.cleaner ?? null,
+    maintenance_notes: clean.maintenance_notes ?? [],
+    reimbursements:
+      (clean.reimbursements ?? []).map((entry) => ({
+        id: entry.id,
+        amount: Number(entry.amount),
+        item: entry.item,
+        created_at: entry.created_at,
+      })),
+  }));
 }
 
 // Helper function to parse time string "HH:MM" to minutes since midnight
@@ -102,7 +144,16 @@ export function DashboardClient({
   initialCleans,
 }: {
   email?: string | null;
-  properties: { id: string; name: string; checkout_time?: string | null }[];
+  properties: Array<{
+    id: string;
+    name: string;
+    checkout_time?: string | null;
+    cleaner?: string | null;
+    access_codes?: string | null;
+    bin_locations?: string | null;
+    property_address?: string | null;
+    key_locations?: string | null;
+  }>;
   initialCleans: CleanRow[];
 }) {
   const [cleans, setCleans] = useState(initialCleans);
@@ -113,6 +164,15 @@ export function DashboardClient({
   const [error, setError] = useState<string | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [syncMessageVisible, setSyncMessageVisible] = useState(true);
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const propertyDetailsMap = useMemo(
+    () => new Map(properties.map((property) => [property.id, property])),
+    [properties]
+  );
+  const [managedClean, setManagedClean] = useState<{
+    clean: ScheduleClean;
+    property: ScheduleProperty | null;
+  } | null>(null);
 
   // Create a map of property IDs to their checkout times
   const propertyCheckoutTimes = useMemo(() => {
@@ -123,10 +183,177 @@ export function DashboardClient({
     return map;
   }, [properties]);
 
+  const mapRowToScheduleClean = useCallback(
+    (row: CleanRow): ScheduleClean => ({
+      id: row.id,
+      booking_uid: row.booking_uid,
+      property_id: row.property_id,
+      property_name: row.property_name,
+      scheduled_for: row.scheduled_for,
+      status: row.status,
+      notes: row.notes ?? null,
+      checkin: row.checkin ?? null,
+      checkout: row.checkout ?? null,
+      cleaner: row.cleaner ?? null,
+      maintenance_notes: row.maintenance_notes ?? [],
+      reimbursements: (row.reimbursements ?? []).map((entry) => ({
+        id: entry.id,
+        amount: Number(entry.amount),
+        item: entry.item,
+        created_at: entry.created_at,
+      })),
+    }),
+    []
+  );
+
+  const mapScheduleCleanToRow = useCallback(
+    (clean: ScheduleClean, previous?: CleanRow): CleanRow => ({
+      id: clean.id,
+      booking_uid: clean.booking_uid,
+      property_id: clean.property_id,
+      property_name: clean.property_name,
+      scheduled_for: clean.scheduled_for,
+      status: clean.status,
+      notes: clean.notes ?? null,
+      property_unit: previous?.property_unit,
+      checkin: clean.checkin ?? null,
+      checkout: clean.checkout ?? null,
+      cleaner: clean.cleaner ?? null,
+      maintenance_notes: clean.maintenance_notes ?? [],
+      reimbursements: (clean.reimbursements ?? []).map((entry) => ({
+        id: entry.id,
+        amount: Number(entry.amount),
+        item: entry.item,
+        created_at: entry.created_at,
+      })),
+    }),
+    []
+  );
+
   const metrics = useMemo(
     () => calculateMetrics(cleans, propertyCheckoutTimes),
     [cleans, propertyCheckoutTimes]
   );
+
+  const refreshCleans = useCallback(async () => {
+    try {
+      const data = await fetchCleansWithFilters(filters);
+      setCleans(data);
+    } catch (err) {
+      console.error("Failed to refresh cleans from realtime update.", err);
+    }
+  }, [filters]);
+
+  const handleManageClean = useCallback(
+    (row: CleanRow) => {
+      const propertyInfo = propertyDetailsMap.get(row.property_id);
+      const property: ScheduleProperty | null = propertyInfo
+        ? {
+            id: propertyInfo.id,
+            name: propertyInfo.name,
+            checkout_time: propertyInfo.checkout_time ?? "10:00",
+            cleaner: propertyInfo.cleaner ?? row.cleaner ?? null,
+            access_codes: propertyInfo.access_codes ?? null,
+            bin_locations: propertyInfo.bin_locations ?? null,
+            property_address: propertyInfo.property_address ?? null,
+            key_locations: propertyInfo.key_locations ?? null,
+          }
+        : null;
+
+      setManagedClean({
+        clean: mapRowToScheduleClean(row),
+        property,
+      });
+    },
+    [mapRowToScheduleClean, propertyDetailsMap]
+  );
+
+  const closeManagedClean = useCallback(() => {
+    setManagedClean(null);
+  }, []);
+
+  const handleManagedCleanUpdated = useCallback(
+    (updated: ScheduleClean) => {
+      setCleans((previous) =>
+        previous.map((row) =>
+          row.id === updated.id
+            ? mapScheduleCleanToRow(updated, row)
+            : row
+        )
+      );
+
+      setManagedClean((current) =>
+        current && current.clean.id === updated.id
+          ? { ...current, clean: updated }
+          : current
+      );
+    },
+    [mapScheduleCleanToRow]
+  );
+
+  const scheduleRealtimeRefresh = useCallback(() => {
+    if (refreshTimeoutRef.current) {
+      return;
+    }
+
+    refreshTimeoutRef.current = setTimeout(() => {
+      refreshCleans().finally(() => {
+        refreshTimeoutRef.current = null;
+      });
+    }, 250);
+  }, [refreshCleans]);
+
+  useEffect(() => {
+    if (!properties.length) return;
+
+    let supabase;
+    try {
+      supabase = getSupabaseBrowserClient();
+    } catch (error) {
+      console.warn("Supabase client unavailable for realtime updates.", error);
+      return;
+    }
+
+    const propertyIds = properties
+      .map((property) => property.id)
+      .filter((id) => Boolean(id));
+
+    if (!propertyIds.length) {
+      return;
+    }
+
+    const filterValues = propertyIds.map((id) => `"${id}"`).join(",");
+    const filter = `property_id=in.(${filterValues})`;
+    const channelKey = propertyIds.slice(0, 5).join("-");
+
+    const channel = supabase
+      .channel(`cleans-dashboard-${channelKey}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "cleans",
+          filter,
+        },
+        () => {
+          scheduleRealtimeRefresh();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [properties, scheduleRealtimeRefresh]);
+
+  useEffect(() => {
+    return () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleFilterChange = useCallback(async (nextFilters: FilterState) => {
     setFilters(nextFilters);
@@ -323,10 +550,20 @@ export function DashboardClient({
                 const fresh = await fetchCleansWithFilters(filters);
                 setCleans(fresh);
               }}
+              onManageClean={handleManageClean}
             />
           ) : null}
         </motion.div>
       </div>
+
+      <CleanActionsModal
+        open={Boolean(managedClean)}
+        onClose={closeManagedClean}
+        property={managedClean?.property ?? null}
+        clean={managedClean?.clean ?? null}
+        context={{ mode: "owner" }}
+        onCleanUpdated={handleManagedCleanUpdated}
+      />
     </AppShell>
   );
 }

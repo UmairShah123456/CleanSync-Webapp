@@ -16,7 +16,9 @@ export default async function DashboardPage() {
 
   const { data: propertiesData } = await supabase
     .from("properties")
-    .select("id, name, checkout_time, cleaner")
+    .select(
+      "id, name, checkout_time, cleaner, access_codes, bin_locations, property_address, key_locations"
+    )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -28,7 +30,18 @@ export default async function DashboardPage() {
     const propertyIds = properties.map((property) => property.id);
     const { data } = await supabase
       .from("cleans")
-      .select("id, booking_uid, property_id, scheduled_for, status, notes")
+      .select(
+        `
+          id,
+          booking_uid,
+          property_id,
+          scheduled_for,
+          status,
+          notes,
+          maintenance_notes,
+          clean_reimbursements ( id, amount, item, created_at )
+        `
+      )
       .in("property_id", propertyIds)
       .order("scheduled_for", { ascending: true });
 
@@ -38,46 +51,6 @@ export default async function DashboardPage() {
       (clean: any) =>
         clean.property_id && validPropertyIds.has(clean.property_id)
     );
-
-    // Automatically mark cleans as completed if their scheduled date has passed
-    if (cleans.length > 0) {
-      const now = new Date();
-      const cleansToComplete = cleans.filter((clean: any) => {
-        if (clean.status !== "scheduled") {
-          return false;
-        }
-        const scheduledDate = new Date(clean.scheduled_for);
-        return scheduledDate < now;
-      });
-
-      if (cleansToComplete.length > 0) {
-        const cleanIdsToComplete = cleansToComplete.map(
-          (clean: any) => clean.id
-        );
-
-        // Batch update all cleans that should be completed
-        const { error: updateError } = await supabase
-          .from("cleans")
-          .update({
-            status: "completed",
-            updated_at: new Date().toISOString(),
-          })
-          .in("id", cleanIdsToComplete)
-          .eq("status", "scheduled"); // Only update if still scheduled (safety check)
-
-        if (updateError) {
-          console.error("Error auto-completing cleans:", updateError);
-          // Don't fail the request, just log the error
-        } else {
-          // Update the local cleans array with the new statuses
-          cleans.forEach((clean: any) => {
-            if (cleanIdsToComplete.includes(clean.id)) {
-              clean.status = "completed";
-            }
-          });
-        }
-      }
-    }
   }
 
   const propertyLookup = new Map(
@@ -114,6 +87,14 @@ export default async function DashboardPage() {
     checkin: bookingMap.get(clean.booking_uid)?.checkin ?? null,
     checkout: bookingMap.get(clean.booking_uid)?.checkout ?? null,
     cleaner: propertyCleanerLookup.get(clean.property_id) ?? null,
+    maintenance_notes: clean.maintenance_notes ?? [],
+    reimbursements:
+      (clean.clean_reimbursements ?? []).map((entry: any) => ({
+        id: entry.id,
+        amount: Number(entry.amount),
+        item: entry.item,
+        created_at: entry.created_at,
+      })) ?? [],
   }));
 
   return (
@@ -123,6 +104,11 @@ export default async function DashboardPage() {
         id: property.id,
         name: property.name,
         checkout_time: property.checkout_time || "10:00",
+        cleaner: property.cleaner ?? null,
+        access_codes: property.access_codes ?? null,
+        bin_locations: property.bin_locations ?? null,
+        property_address: property.property_address ?? null,
+        key_locations: property.key_locations ?? null,
       }))}
       initialCleans={initialCleans}
     />

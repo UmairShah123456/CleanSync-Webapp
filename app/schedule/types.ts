@@ -9,6 +9,13 @@ export type ScheduleProperty = {
   key_locations?: string | null;
 };
 
+export type CleanReimbursement = {
+  id: string;
+  amount: number;
+  item: string;
+  created_at: string;
+};
+
 export type ScheduleClean = {
   id: string;
   booking_uid: string;
@@ -20,6 +27,8 @@ export type ScheduleClean = {
   checkin?: string | null;
   checkout?: string | null;
   cleaner?: string | null;
+  maintenance_notes?: string[] | null;
+  reimbursements?: CleanReimbursement[];
 };
 
 export type ScheduleRange = {

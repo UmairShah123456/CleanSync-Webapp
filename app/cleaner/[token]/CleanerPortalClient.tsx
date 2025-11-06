@@ -92,6 +92,11 @@ export function CleanerPortalClient({
           }}
           title="Schedule"
           description=""
+          portalContext={{
+            type: "cleaner",
+            cleanerType: cleaner.cleaner_type,
+            token,
+          }}
         />
       </div>
     </div>

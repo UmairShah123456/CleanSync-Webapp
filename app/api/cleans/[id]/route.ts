@@ -25,13 +25,24 @@ export async function PATCH(
 
   const body = await request
     .json()
-    .catch(() => ({} as { status?: string; scheduled_for?: string }));
-  const { status, scheduled_for } = body;
+    .catch(
+      () =>
+        ({
+          status: undefined,
+          scheduled_for: undefined,
+          maintenance_notes: undefined,
+        } as {
+          status?: string;
+          scheduled_for?: string;
+          maintenance_notes?: string[];
+        })
+    );
+  const { status, scheduled_for, maintenance_notes } = body;
 
   // Validate that at least one field is provided
-  if (!status && !scheduled_for) {
+  if (!status && !scheduled_for && !maintenance_notes) {
     return NextResponse.json(
-      { error: "Status or scheduled_for is required" },
+      { error: "Status, scheduled_for, or maintenance_notes is required" },
       { status: 400 }
     );
   }
@@ -79,6 +90,7 @@ export async function PATCH(
   const updateData: {
     status?: string;
     scheduled_for?: string;
+    maintenance_notes?: string[];
     updated_at: string;
   } = {
     updated_at: new Date().toISOString(),
@@ -98,6 +110,27 @@ export async function PATCH(
       );
     }
     updateData.scheduled_for = date.toISOString();
+  }
+
+  if (maintenance_notes) {
+    if (
+      !Array.isArray(maintenance_notes) ||
+      maintenance_notes.some((note) => typeof note !== "string")
+    ) {
+      return NextResponse.json(
+        { error: "maintenance_notes must be an array of strings" },
+        { status: 400 }
+      );
+    }
+
+    const normalizedNotes = Array.from(
+      new Set(
+        maintenance_notes
+          .map((note) => note.trim())
+          .filter((note) => note.length > 0)
+      )
+    );
+    updateData.maintenance_notes = normalizedNotes;
   }
 
   // Update the clean

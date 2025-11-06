@@ -66,6 +66,8 @@ export default async function SchedulePage() {
           scheduled_for,
           status,
           notes,
+          maintenance_notes,
+          clean_reimbursements ( id, amount, item, created_at ),
           bookings(checkin, checkout)
         `
       )
@@ -74,35 +76,6 @@ export default async function SchedulePage() {
       .lte("scheduled_for", toIso)
       .neq("status", "deleted")
       .order("scheduled_for", { ascending: true });
-
-    const now = new Date();
-    const cleansToComplete = (cleansData ?? []).filter((clean: any) => {
-      if (clean.status !== "scheduled") {
-        return false;
-      }
-      const scheduledDate = new Date(clean.scheduled_for);
-      return scheduledDate < now;
-    });
-
-    if (cleansToComplete.length > 0) {
-      const cleanIdsToComplete = cleansToComplete.map((clean: any) => clean.id);
-      const { error: updateError } = await supabase
-        .from("cleans")
-        .update({
-          status: "completed",
-          updated_at: new Date().toISOString(),
-        })
-        .in("id", cleanIdsToComplete)
-        .eq("status", "scheduled");
-
-      if (!updateError) {
-        cleansData?.forEach((clean: any) => {
-          if (cleanIdsToComplete.includes(clean.id)) {
-            clean.status = "completed";
-          }
-        });
-      }
-    }
 
     // Extra safeguard: filter out any cleans that don't have valid properties
     const validPropertyIds = new Set(propertyIds);
@@ -123,6 +96,14 @@ export default async function SchedulePage() {
         checkin: clean.bookings?.checkin ?? null,
         checkout: clean.bookings?.checkout ?? null,
         cleaner: propertyCleanerLookup.get(clean.property_id) ?? null,
+        maintenance_notes: clean.maintenance_notes ?? [],
+        reimbursements:
+          (clean.clean_reimbursements ?? []).map((entry: any) => ({
+            id: entry.id,
+            amount: Number(entry.amount),
+            item: entry.item,
+            created_at: entry.created_at,
+          })) ?? [],
       }));
   }
 

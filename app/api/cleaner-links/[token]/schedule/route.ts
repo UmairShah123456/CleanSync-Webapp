@@ -94,6 +94,8 @@ export async function GET(
         scheduled_for,
         status,
         notes,
+        maintenance_notes,
+        clean_reimbursements ( id, amount, item, created_at ),
         bookings(checkin, checkout)
       `
     )
@@ -120,6 +122,14 @@ export async function GET(
       checkin: clean.bookings?.checkin ?? null,
       checkout: clean.bookings?.checkout ?? null,
       cleaner: property?.cleaner ?? null,
+      maintenance_notes: clean.maintenance_notes ?? [],
+      reimbursements:
+        (clean.clean_reimbursements ?? []).map((entry: any) => ({
+          id: entry.id,
+          amount: Number(entry.amount),
+          item: entry.item,
+          created_at: entry.created_at,
+        })) ?? [],
     };
   });
 

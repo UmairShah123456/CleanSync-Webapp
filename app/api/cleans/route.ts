@@ -22,7 +22,9 @@ export async function GET(request: NextRequest) {
 
   const { data: properties, error: propertiesError } = await supabase
     .from("properties")
-    .select("id, name, cleaner")
+    .select(
+      "id, name, cleaner, checkout_time, access_codes, bin_locations, property_address, key_locations"
+    )
     .eq("user_id", user.id);
 
   if (propertiesError) {
@@ -54,6 +56,8 @@ export async function GET(request: NextRequest) {
         scheduled_for,
         status,
         notes,
+        maintenance_notes,
+        clean_reimbursements ( id, amount, item, created_at ),
         bookings(checkin, checkout, status)
       `
     )
@@ -108,42 +112,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json([]);
   }
 
-  // Automatically mark cleans as completed if their scheduled date has passed
-  const now = new Date();
-  const cleansToComplete = data.filter((clean: any) => {
-    if (clean.status !== "scheduled") {
-      return false;
-    }
-    const scheduledDate = new Date(clean.scheduled_for);
-    return scheduledDate < now;
-  });
-
-  if (cleansToComplete.length > 0) {
-    const cleanIdsToComplete = cleansToComplete.map((clean: any) => clean.id);
-
-    // Batch update all cleans that should be completed
-    const { error: updateError } = await supabase
-      .from("cleans")
-      .update({
-        status: "completed",
-        updated_at: new Date().toISOString(),
-      })
-      .in("id", cleanIdsToComplete)
-      .eq("status", "scheduled"); // Only update if still scheduled (safety check)
-
-    if (updateError) {
-      console.error("Error auto-completing cleans:", updateError);
-      // Don't fail the request, just log the error
-    } else {
-      // Update the local data array with the new statuses
-      data.forEach((clean: any) => {
-        if (cleanIdsToComplete.includes(clean.id)) {
-          clean.status = "completed";
-        }
-      });
-    }
-  }
-
   const response = (data ?? []).map((clean: any) => ({
     id: clean.id,
     booking_uid: clean.booking_uid,
@@ -155,6 +123,14 @@ export async function GET(request: NextRequest) {
     checkin: clean.bookings?.checkin ?? null,
     checkout: clean.bookings?.checkout ?? null,
     cleaner: propertyCleanerLookup.get(clean.property_id) ?? null,
+    maintenance_notes: clean.maintenance_notes ?? [],
+    reimbursements:
+      (clean.clean_reimbursements ?? []).map((entry: any) => ({
+        id: entry.id,
+        amount: Number(entry.amount),
+        item: entry.item,
+        created_at: entry.created_at,
+      })) ?? [],
   }));
 
   return NextResponse.json(response);

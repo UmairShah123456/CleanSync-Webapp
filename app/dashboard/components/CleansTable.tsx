@@ -25,16 +25,25 @@ export type CleanRow = {
   checkin?: string | null;
   checkout?: string | null;
   cleaner?: string | null;
+  maintenance_notes?: string[] | null;
+  reimbursements?: Array<{
+    id: string;
+    amount: number;
+    item: string;
+    created_at: string;
+  }>;
 };
 
 export function CleansTable({
   cleans,
   onDelete,
   onStatusUpdate,
+  onManageClean,
 }: {
   cleans: CleanRow[];
   onDelete?: (id: string) => Promise<void>;
   onStatusUpdate?: () => Promise<void>;
+  onManageClean?: (clean: CleanRow) => void;
 }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
@@ -212,6 +221,11 @@ export function CleansTable({
                 <th className="py-3 text-right text-xs font-bold uppercase tracking-wider text-[#598392]">
                   Actions
                 </th>
+                {onManageClean ? (
+                  <th className="py-3 text-right text-xs font-bold uppercase tracking-wider text-[#598392]">
+                    Manage
+                  </th>
+                ) : null}
               </tr>
             </thead>
             <tbody className="divide-y divide-[#598392]/20">
@@ -227,6 +241,7 @@ export function CleansTable({
                   handleDelete={handleDelete}
                   handleStatusChange={handleStatusChange}
                   handleTimeChange={handleTimeChange}
+                  onManageClean={onManageClean}
                 />
               ))}
             </tbody>
@@ -248,6 +263,7 @@ export function CleansTable({
               handleDelete={handleDelete}
               handleStatusChange={handleStatusChange}
               handleTimeChange={handleTimeChange}
+              onManageClean={onManageClean}
             />
             {/* Divider between cards */}
             {index < cleans.length - 1 && (
@@ -270,6 +286,7 @@ function DesktopTableRow({
   handleDelete,
   handleStatusChange,
   handleTimeChange,
+  onManageClean,
 }: {
   clean: CleanRow;
   deletingId: string | null;
@@ -280,6 +297,7 @@ function DesktopTableRow({
   handleDelete: (id: string) => Promise<void>;
   handleStatusChange: (id: string, status: string) => Promise<void>;
   handleTimeChange: (id: string, time: string) => Promise<void>;
+  onManageClean?: (clean: CleanRow) => void;
 }) {
   const status = clean.status.toLowerCase();
   const isCancelled = status === "cancelled";
@@ -516,6 +534,17 @@ function DesktopTableRow({
           </button>
         </div>
       </td>
+      {onManageClean ? (
+        <td className="py-4 text-right">
+          <button
+            type="button"
+            onClick={() => onManageClean(clean)}
+            className="inline-flex items-center rounded-full border border-[#598392]/40 bg-[#01161E]/40 px-3 py-1 text-xs font-semibold text-[#EFF6E0]/80 transition hover:border-[#598392]/70 hover:text-[#EFF6E0]"
+          >
+            Manage
+          </button>
+        </td>
+      ) : null}
     </tr>
   );
 }
@@ -530,6 +559,7 @@ function MobileCard({
   handleDelete,
   handleStatusChange,
   handleTimeChange,
+  onManageClean,
 }: {
   clean: CleanRow;
   deletingId: string | null;
@@ -540,6 +570,7 @@ function MobileCard({
   handleDelete: (id: string) => Promise<void>;
   handleStatusChange: (id: string, status: string) => Promise<void>;
   handleTimeChange: (id: string, time: string) => Promise<void>;
+  onManageClean?: (clean: CleanRow) => void;
 }) {
   const status = clean.status.toLowerCase();
   const isCancelled = status === "cancelled";
@@ -798,6 +829,28 @@ function MobileCard({
           </div>
         </div>
       )}
+
+      <div className="mt-3 flex flex-wrap justify-end gap-2">
+        <button
+          onClick={() => handleDelete(clean.id)}
+          className={clsx(
+            "inline-flex items-center justify-center gap-1 rounded-full border border-red-400/40 bg-[#01161E]/40 px-3 py-1 text-xs font-semibold text-red-200 transition hover:border-red-300 hover:text-red-100",
+            (isCancelled || deletingId === clean.id) && "cursor-not-allowed opacity-60"
+          )}
+          disabled={isCancelled || deletingId === clean.id}
+        >
+          <TrashIcon className="h-4 w-4" /> Delete
+        </button>
+        {onManageClean ? (
+          <button
+            type="button"
+            onClick={() => onManageClean(clean)}
+            className="inline-flex items-center justify-center gap-1 rounded-full border border-[#598392]/40 bg-[#01161E]/40 px-3 py-1 text-xs font-semibold text-[#EFF6E0]/80 transition hover:border-[#598392]/70 hover:text-[#EFF6E0]"
+          >
+            Manage
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -107,3 +107,45 @@ create index if not exists cleaner_links_cleaner_id_idx on cleaner_links (cleane
 ```
 
 After running the migration, the cleaners UI can create and reuse unique sharing links.
+
+## Enabling Cleaner Action Tracking
+
+Individual cleaners can record maintenance notes and reimbursement requests from their shared schedule link. Run the following SQL to prepare the database.
+
+```sql
+alter table cleans
+add column if not exists maintenance_notes text[] default array[]::text[];
+
+create table if not exists clean_reimbursements (
+  id uuid primary key default gen_random_uuid(),
+  clean_id uuid references cleans (id) on delete cascade not null,
+  amount numeric(10, 2) not null,
+  item text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists clean_reimbursements_clean_id_idx
+  on clean_reimbursements (clean_id);
+```
+
+After running the migration you can verify the new structures with:
+
+```sql
+select column_name, data_type
+from information_schema.columns
+where table_name = 'cleans' and column_name = 'maintenance_notes';
+
+select table_name
+from information_schema.tables
+where table_name = 'clean_reimbursements';
+```
+
+### Option 2: Supabase CLI
+
+If you already have the Supabase CLI configured against your project, you can apply this migration (along with any pending ones) by running:
+
+```bash
+npx supabase db push
+```
+
+This will execute `supabase/migrations/0006_add_cleaner_actions.sql` on your database.

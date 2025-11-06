@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import {
   addDays,
@@ -17,7 +17,8 @@ import {
 } from "date-fns";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { Spinner } from "@/components/ui/Spinner";
-import { Modal } from "@/components/ui/Modal";
+import { getSupabaseBrowserClient } from "@/lib/supabaseClient";
+import { CleanActionsModal } from "@/components/clean/CleanActionsModal";
 import type { ScheduleClean, ScheduleProperty, ScheduleRange } from "./types";
 
 type ScheduleView = "timeline" | "calendar";
@@ -100,6 +101,7 @@ export function ScheduleClient({
   fetchUrlBuilder,
   title = "Schedule",
   description = "Track checkouts across your properties with a responsive timeline or calendar view.",
+  portalContext,
 }: {
   properties: ScheduleProperty[];
   initialCleans: ScheduleClean[];
@@ -107,8 +109,17 @@ export function ScheduleClient({
   fetchUrlBuilder?: FetchUrlBuilder;
   title?: string;
   description?: string;
+  portalContext?: {
+    type: "cleaner";
+    cleanerType: "individual" | "company";
+    token: string;
+  };
 }) {
   const [view, setView] = useState<ScheduleView>("timeline");
+  const isCleanerPortal = portalContext?.type === "cleaner";
+  const isIndividualCleaner =
+    isCleanerPortal && portalContext?.cleanerType === "individual";
+  const cleanerToken = isCleanerPortal ? portalContext?.token ?? null : null;
   const [timelineStart, setTimelineStart] = useState(() => {
     const initial = new Date(initialRange.from);
     return new Date(
@@ -143,12 +154,61 @@ export function ScheduleClient({
     return map;
   }, [properties]);
 
-  const [selectedPropertyDetails, setSelectedPropertyDetails] =
-    useState<ScheduleProperty | null>(null);
+  const [modalSelection, setModalSelection] = useState<{
+    property: ScheduleProperty;
+    clean: ScheduleClean | null;
+  } | null>(null);
 
-  const handlePropertySelect = useCallback((property: ScheduleProperty) => {
-    setSelectedPropertyDetails(property);
+  const openModal = useCallback(
+    (property: ScheduleProperty, clean: ScheduleClean | null = null) => {
+      setModalSelection({ property, clean });
+    },
+    []
+  );
+
+  const handlePropertySelect = useCallback(
+    (property: ScheduleProperty) => {
+      openModal(property, null);
+    },
+    [openModal]
+  );
+
+  const handleCleanSelect = useCallback(
+    (clean: ScheduleClean) => {
+      const property = propertyLookup.get(clean.property_id);
+      if (property) {
+        openModal(property, clean);
+      }
+    },
+    [openModal, propertyLookup]
+  );
+
+  const closeModal = useCallback(() => {
+    setModalSelection(null);
   }, []);
+
+  const applyCleanUpdates = useCallback((updatedClean: ScheduleClean) => {
+    setCleans((previous) =>
+      previous.map((clean) =>
+        clean.id === updatedClean.id ? { ...clean, ...updatedClean } : clean
+      )
+    );
+
+    setModalSelection((current) => {
+      if (!current || !current.clean || current.clean.id !== updatedClean.id) {
+        return current;
+      }
+
+      return {
+        ...current,
+        clean: { ...current.clean, ...updatedClean },
+      };
+    });
+  }, []);
+
+  const activeClean = modalSelection?.clean ?? null;
+  const activeProperty = modalSelection?.property ?? null;
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleViewChange = (nextView: ScheduleView) => {
     if (nextView === view) return;
@@ -266,7 +326,7 @@ export function ScheduleClient({
     [properties.length, buildUrl]
   );
 
-  useEffect(() => {
+  const refreshCurrentRange = useCallback(() => {
     if (!properties.length) return;
 
     const range =
@@ -278,11 +338,80 @@ export function ScheduleClient({
   }, [
     loadCleansForRange,
     properties.length,
-    selectedPropertyId,
     selectedMonth,
+    selectedPropertyId,
     timelineStart,
     view,
   ]);
+
+  useEffect(() => {
+    refreshCurrentRange();
+  }, [refreshCurrentRange]);
+
+  const scheduleRealtimeRefresh = useCallback(() => {
+    if (refreshTimeoutRef.current) {
+      return;
+    }
+
+    refreshTimeoutRef.current = setTimeout(() => {
+      refreshCurrentRange();
+      refreshTimeoutRef.current = null;
+    }, 250);
+  }, [refreshCurrentRange]);
+
+  useEffect(() => {
+    if (!properties.length) return;
+
+    let supabase;
+    try {
+      supabase = getSupabaseBrowserClient();
+    } catch (error) {
+      console.warn("Supabase client unavailable for realtime updates.", error);
+      return;
+    }
+
+    const propertyIds = properties
+      .map((property) => property.id)
+      .filter((id) => Boolean(id));
+
+    if (!propertyIds.length) {
+      return;
+    }
+
+    const filterValues = propertyIds.map((id) => `"${id}"`).join(",");
+    const filter = `property_id=in.(${filterValues})`;
+    const channelKey = propertyIds.slice(0, 5).join("-");
+
+    const channel = supabase
+      .channel(
+        `cleans-schedule-${isCleanerPortal ? "cleaner" : "owner"}-${channelKey}`
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "cleans",
+          filter,
+        },
+        () => {
+          scheduleRealtimeRefresh();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [properties, scheduleRealtimeRefresh, isCleanerPortal]);
+
+  useEffect(() => {
+    return () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (!properties.length) {
     return (
@@ -403,6 +532,7 @@ export function ScheduleClient({
                 days={timelineDays}
                 propertyColors={propertyColorMap}
                 onPropertyClick={handlePropertySelect}
+                onCleanClick={handleCleanSelect}
               />
             ) : (
               <CalendarView
@@ -410,23 +540,29 @@ export function ScheduleClient({
                 cleans={filteredCleans}
                 propertyColors={propertyColorMap}
                 propertyLookup={propertyLookup}
-                onEventClick={handlePropertySelect}
+                onEventClick={handleCleanSelect}
               />
             )}
           </div>
         </div>
       </div>
 
-      <Modal
-        title={selectedPropertyDetails?.name ?? "Property details"}
-        open={Boolean(selectedPropertyDetails)}
-        onClose={() => setSelectedPropertyDetails(null)}
-        footer={null}
-      >
-        {selectedPropertyDetails ? (
-          <UtilityDetails property={selectedPropertyDetails} />
-        ) : null}
-      </Modal>
+      <CleanActionsModal
+        open={Boolean(modalSelection)}
+        onClose={closeModal}
+        property={activeProperty}
+        clean={activeClean}
+        context={
+          isCleanerPortal
+            ? {
+                mode: "cleaner",
+                cleanerType: portalContext?.cleanerType ?? "company",
+                token: cleanerToken,
+              }
+            : { mode: "owner" }
+        }
+        onCleanUpdated={applyCleanUpdates}
+      />
     </>
   );
 }
@@ -437,12 +573,14 @@ function TimelineView({
   days,
   propertyColors,
   onPropertyClick,
+  onCleanClick,
 }: {
   properties: ScheduleProperty[];
   cleans: ScheduleClean[];
   days: Date[];
   propertyColors: Map<string, string>;
   onPropertyClick: (property: ScheduleProperty) => void;
+  onCleanClick: (clean: ScheduleClean) => void;
 }) {
   const today = new Date();
 
@@ -570,11 +708,21 @@ function TimelineView({
                       {cleansForDay.map((clean) => (
                         <div
                           key={clean.id}
-                          className="rounded-lg border px-3 py-2 shadow-sm"
+                          className="rounded-lg border px-3 py-2 shadow-sm transition-colors hover:border-[#EFF6E0]/60 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#598392]"
                           style={{
                             backgroundColor: pillBackground,
                             borderColor: pillBorder,
                           }}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => onCleanClick(clean)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              onCleanClick(clean);
+                            }
+                          }}
+                          aria-label={`Inspect clean scheduled for ${formatTime(clean.scheduled_for)} at ${property.name}`}
                         >
                           <div className="flex items-center justify-between text-[0.7rem] font-semibold text-white">
                             <span className="font-bold drop-shadow-sm">
@@ -630,7 +778,7 @@ function CalendarView({
   cleans: ScheduleClean[];
   propertyColors: Map<string, string>;
   propertyLookup: Map<string, ScheduleProperty>;
-  onEventClick: (property: ScheduleProperty) => void;
+  onEventClick: (clean: ScheduleClean) => void;
 }) {
   const today = new Date();
 
@@ -711,14 +859,14 @@ function CalendarView({
                       tabIndex={property ? 0 : -1}
                       onClick={() => {
                         if (property) {
-                          onEventClick(property);
+                          onEventClick(clean);
                         }
                       }}
                       onKeyDown={(event) => {
                         if (!property) return;
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
-                          onEventClick(property);
+                          onEventClick(clean);
                         }
                       }}
                     >
@@ -743,46 +891,6 @@ function CalendarView({
           );
         })}
       </div>
-    </div>
-  );
-}
-
-function UtilityDetails({
-  property,
-}: {
-  property: ScheduleProperty;
-}) {
-  const details = [
-    { label: "Address", value: property.property_address },
-    { label: "Access codes", value: property.access_codes },
-    { label: "Bin locations", value: property.bin_locations },
-    { label: "Key locations", value: property.key_locations },
-  ];
-
-  const hasDetails = details.some(
-    (detail) => detail.value && detail.value.trim().length > 0
-  );
-
-  return (
-    <div className="space-y-4 text-sm text-[#EFF6E0]/80">
-      {details
-        .filter((detail) => detail.value && detail.value.trim().length > 0)
-        .map((detail) => (
-          <div key={detail.label} className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/60">
-              {detail.label}
-            </p>
-            <p className="whitespace-pre-wrap text-[#EFF6E0]">
-              {detail.value}
-            </p>
-          </div>
-        ))}
-
-      {!hasDetails ? (
-        <p className="text-sm text-[#EFF6E0]/60">
-          No utility details recorded for this property yet.
-        </p>
-      ) : null}
     </div>
   );
 }
