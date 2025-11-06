@@ -23,20 +23,18 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request
-    .json()
-    .catch(
-      () =>
-        ({
-          status: undefined,
-          scheduled_for: undefined,
-          maintenance_notes: undefined,
-        } as {
-          status?: string;
-          scheduled_for?: string;
-          maintenance_notes?: string[];
-        })
-    );
+  const body = await request.json().catch(
+    () =>
+      ({
+        status: undefined,
+        scheduled_for: undefined,
+        maintenance_notes: undefined,
+      } as {
+        status?: string;
+        scheduled_for?: string;
+        maintenance_notes?: string[];
+      })
+  );
   const { status, scheduled_for, maintenance_notes } = body;
 
   // Validate that at least one field is provided
@@ -143,7 +141,58 @@ export async function PATCH(
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ message: "Clean status updated successfully" });
+  // Fetch the updated clean with all related data
+  const { data: updatedCleanData, error: fetchError } = await supabase
+    .from("cleans")
+    .select(
+      `
+        id,
+        booking_uid,
+        property_id,
+        scheduled_for,
+        status,
+        notes,
+        maintenance_notes,
+        clean_reimbursements ( id, amount, item, created_at ),
+        bookings(checkin, checkout),
+        properties(id, name, cleaner)
+      `
+    )
+    .eq("id", id)
+    .single();
+
+  if (fetchError || !updatedCleanData) {
+    return NextResponse.json(
+      { error: fetchError?.message ?? "Failed to fetch updated clean" },
+      { status: 500 }
+    );
+  }
+
+  // Map to ScheduleClean format
+  const property = (updatedCleanData.properties as any) ?? {};
+  const cleanResponse = {
+    id: updatedCleanData.id,
+    booking_uid: updatedCleanData.booking_uid ?? "",
+    property_id: updatedCleanData.property_id,
+    property_name: property.name ?? "Unknown property",
+    scheduled_for: updatedCleanData.scheduled_for,
+    status: updatedCleanData.status,
+    notes: updatedCleanData.notes ?? null,
+    checkin: (updatedCleanData.bookings as any)?.checkin ?? null,
+    checkout: (updatedCleanData.bookings as any)?.checkout ?? null,
+    cleaner: property.cleaner ?? null,
+    maintenance_notes: updatedCleanData.maintenance_notes ?? [],
+    reimbursements: (
+      (updatedCleanData.clean_reimbursements as any[]) ?? []
+    ).map((entry) => ({
+      id: entry.id,
+      amount: Number(entry.amount),
+      item: entry.item,
+      created_at: entry.created_at,
+    })),
+  };
+
+  return NextResponse.json({ clean: cleanResponse });
 }
 
 export async function DELETE(

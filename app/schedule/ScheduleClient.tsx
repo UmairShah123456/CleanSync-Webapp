@@ -187,24 +187,35 @@ export function ScheduleClient({
     setModalSelection(null);
   }, []);
 
-  const applyCleanUpdates = useCallback((updatedClean: ScheduleClean) => {
-    setCleans((previous) =>
-      previous.map((clean) =>
-        clean.id === updatedClean.id ? { ...clean, ...updatedClean } : clean
-      )
-    );
-
-    setModalSelection((current) => {
-      if (!current || !current.clean || current.clean.id !== updatedClean.id) {
-        return current;
+  const applyCleanUpdates = useCallback(
+    (updatedClean: ScheduleClean | null | undefined) => {
+      if (!updatedClean || !updatedClean.id) {
+        return;
       }
 
-      return {
-        ...current,
-        clean: { ...current.clean, ...updatedClean },
-      };
-    });
-  }, []);
+      setCleans((previous) =>
+        previous.map((clean) =>
+          clean.id === updatedClean.id ? { ...clean, ...updatedClean } : clean
+        )
+      );
+
+      setModalSelection((current) => {
+        if (
+          !current ||
+          !current.clean ||
+          current.clean.id !== updatedClean.id
+        ) {
+          return current;
+        }
+
+        return {
+          ...current,
+          clean: { ...current.clean, ...updatedClean },
+        };
+      });
+    },
+    []
+  );
 
   const activeClean = modalSelection?.clean ?? null;
   const activeProperty = modalSelection?.property ?? null;
@@ -722,7 +733,9 @@ function TimelineView({
                               onCleanClick(clean);
                             }
                           }}
-                          aria-label={`Inspect clean scheduled for ${formatTime(clean.scheduled_for)} at ${property.name}`}
+                          aria-label={`Inspect clean scheduled for ${formatTime(
+                            clean.scheduled_for
+                          )} at ${property.name}`}
                         >
                           <div className="flex items-center justify-between text-[0.7rem] font-semibold text-white">
                             <span className="font-bold drop-shadow-sm">
