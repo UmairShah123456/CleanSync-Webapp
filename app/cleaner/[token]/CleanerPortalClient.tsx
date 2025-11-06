@@ -6,6 +6,8 @@ import type {
   ScheduleRange,
 } from "@/app/schedule/types";
 import { ScheduleClient } from "@/app/schedule/ScheduleClient";
+import { LanguageProvider, useLanguage } from "@/lib/contexts/LanguageContext";
+import { LanguageSelector } from "@/components/cleaner/LanguageSelector";
 
 export type CleanerPortalClientProps = {
   token: string;
@@ -21,17 +23,18 @@ export type CleanerPortalClientProps = {
   initialRange: ScheduleRange;
 };
 
-export function CleanerPortalClient({
+function CleanerPortalContent({
   token,
   cleaner,
   properties,
   initialCleans,
   initialRange,
 }: CleanerPortalClientProps) {
+  const { t } = useLanguage();
   const isCompany = cleaner.cleaner_type === "company";
   const description = isCompany
-    ? "This link is read-only. You can review every scheduled clean for the properties assigned to your team."
-    : "Review every clean that has been assigned to you.";
+    ? t.descriptionCompany
+    : t.descriptionIndividual;
 
   return (
     <div className="min-h-screen bg-[#01161E] text-[#EFF6E0]">
@@ -43,15 +46,28 @@ export function CleanerPortalClient({
                 {cleaner.name}
               </h1>
               <p className="mt-1 text-xs uppercase tracking-[0.3em] text-[#EFF6E0]/70">
-                {isCompany ? "Cleaning company" : "Individual cleaner"}
+                {isCompany ? t.cleaningCompany : t.individualCleaner}
               </p>
               <div className="mt-3 space-y-1 text-sm text-[#EFF6E0]/70">
-                {cleaner.phone ? <p>Phone: {cleaner.phone}</p> : null}
-                {cleaner.notes ? <p>Notes: {cleaner.notes}</p> : null}
+                {cleaner.phone ? (
+                  <p>
+                    {t.phone}: {cleaner.phone}
+                  </p>
+                ) : null}
+                {cleaner.notes ? (
+                  <p>
+                    {t.notes}: {cleaner.notes}
+                  </p>
+                ) : null}
                 {cleaner.payment_details ? (
-                  <p>Payment: {cleaner.payment_details}</p>
+                  <p>
+                    {t.payment}: {cleaner.payment_details}
+                  </p>
                 ) : null}
               </div>
+            </div>
+            <div>
+              <LanguageSelector />
             </div>
           </div>
 
@@ -69,7 +85,7 @@ export function CleanerPortalClient({
                 ))
               ) : (
                 <span className="text-xs text-[#EFF6E0]/50">
-                  No properties assigned yet.
+                  {t.noPropertiesAssigned}
                 </span>
               )}
             </div>
@@ -90,15 +106,24 @@ export function CleanerPortalClient({
             }
             return `/api/cleaner-links/${token}/schedule?${params.toString()}`;
           }}
-          title="Schedule"
+          title={t.schedule}
           description=""
           portalContext={{
             type: "cleaner",
             cleanerType: cleaner.cleaner_type,
             token,
           }}
+          translations={t}
         />
       </div>
     </div>
+  );
+}
+
+export function CleanerPortalClient(props: CleanerPortalClientProps) {
+  return (
+    <LanguageProvider>
+      <CleanerPortalContent {...props} />
+    </LanguageProvider>
   );
 }

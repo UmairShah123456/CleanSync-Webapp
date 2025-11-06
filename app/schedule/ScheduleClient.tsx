@@ -20,6 +20,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { getSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { CleanActionsModal } from "@/components/clean/CleanActionsModal";
 import type { ScheduleClean, ScheduleProperty, ScheduleRange } from "./types";
+import type { Translations } from "@/lib/translations/cleanerPortal";
 
 type ScheduleView = "timeline" | "calendar";
 
@@ -36,7 +37,7 @@ const PROPERTY_COLORS = [
   "#DAB6FC",
 ];
 
-const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAY_LABELS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const hexToRgba = (hex: string, alpha: number) => {
   const sanitized = hex.replace("#", "");
@@ -85,11 +86,13 @@ const isSameLocalDay = (a: Date, b: Date) => {
   );
 };
 
-const EmptyState = () => {
+const EmptyState = ({ t }: { t?: Translations }) => {
+  const text =
+    t?.emptyStateText ||
+    "Add a property first to start exploring your schedule. Once synced, every clean will appear on this timeline and calendar.";
   return (
     <div className="rounded-xl border border-dashed border-[#598392]/30 bg-[#124559]/40 p-12 text-center text-sm text-[#EFF6E0]/70">
-      Add a property first to start exploring your schedule. Once synced, every
-      clean will appear on this timeline and calendar.
+      {text}
     </div>
   );
 };
@@ -102,6 +105,7 @@ export function ScheduleClient({
   title = "Schedule",
   description = "Track checkouts across your properties with a responsive timeline or calendar view.",
   portalContext,
+  translations,
 }: {
   properties: ScheduleProperty[];
   initialCleans: ScheduleClean[];
@@ -114,6 +118,7 @@ export function ScheduleClient({
     cleanerType: "individual" | "company";
     token: string;
   };
+  translations?: Translations;
 }) {
   const [view, setView] = useState<ScheduleView>("timeline");
   const isCleanerPortal = portalContext?.type === "cleaner";
@@ -433,7 +438,7 @@ export function ScheduleClient({
             Visualise every turnover by adding your first property.
           </p>
         </div>
-        <EmptyState />
+        <EmptyState t={translations} />
       </div>
     );
   }
@@ -456,7 +461,7 @@ export function ScheduleClient({
                 onClick={handleToday}
                 className="rounded-full border border-[#124559]/50 bg-[#124559]/40 px-4 py-2 text-sm font-medium text-[#EFF6E0] transition-colors hover:bg-[#124559]/60"
               >
-                Today
+                {translations?.today || "Today"}
               </button>
               <div className="rounded-full bg-[#124559]/35 px-4 py-2 text-sm font-semibold text-[#EFF6E0]">
                 {dateRangeLabel}
@@ -513,7 +518,9 @@ export function ScheduleClient({
                         : "text-[#EFF6E0]/70 hover:text-[#EFF6E0]"
                     )}
                   >
-                    {mode === "timeline" ? "Timeline" : "Calendar"}
+                    {mode === "timeline"
+                      ? translations?.timeline || "Timeline"
+                      : translations?.calendar || "Calendar"}
                   </button>
                 ))}
               </div>
@@ -544,6 +551,7 @@ export function ScheduleClient({
                 propertyColors={propertyColorMap}
                 onPropertyClick={handlePropertySelect}
                 onCleanClick={handleCleanSelect}
+                translations={translations}
               />
             ) : (
               <CalendarView
@@ -552,6 +560,7 @@ export function ScheduleClient({
                 propertyColors={propertyColorMap}
                 propertyLookup={propertyLookup}
                 onEventClick={handleCleanSelect}
+                translations={translations}
               />
             )}
           </div>
@@ -573,6 +582,7 @@ export function ScheduleClient({
             : { mode: "owner" }
         }
         onCleanUpdated={applyCleanUpdates}
+        translations={translations}
       />
     </>
   );
@@ -585,6 +595,7 @@ function TimelineView({
   propertyColors,
   onPropertyClick,
   onCleanClick,
+  translations,
 }: {
   properties: ScheduleProperty[];
   cleans: ScheduleClean[];
@@ -592,6 +603,7 @@ function TimelineView({
   propertyColors: Map<string, string>;
   onPropertyClick: (property: ScheduleProperty) => void;
   onCleanClick: (clean: ScheduleClean) => void;
+  translations?: Translations;
 }) {
   const today = new Date();
 
@@ -786,13 +798,16 @@ function CalendarView({
   propertyColors,
   propertyLookup,
   onEventClick,
+  translations,
 }: {
   month: Date;
   cleans: ScheduleClean[];
   propertyColors: Map<string, string>;
   propertyLookup: Map<string, ScheduleProperty>;
   onEventClick: (clean: ScheduleClean) => void;
+  translations?: Translations;
 }) {
+  const weekdayLabels = translations?.weekdays || WEEKDAY_LABELS_EN;
   const today = new Date();
 
   const start = startOfWeek(startOfMonth(month), { weekStartsOn: 0 });
@@ -815,7 +830,7 @@ function CalendarView({
   return (
     <div className="rounded-xl border border-[#124559]/40 bg-[#01161E]/40 shadow-lg shadow-[#01161E]/40">
       <div className="grid grid-cols-7 border-b border-[#124559]/40 bg-[#124559]/30 text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/70">
-        {WEEKDAY_LABELS.map((label) => (
+        {weekdayLabels.map((label) => (
           <div key={label} className="px-3 py-3 text-center">
             {label}
           </div>

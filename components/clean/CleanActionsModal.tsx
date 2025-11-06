@@ -10,6 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { Modal } from "@/components/ui/Modal";
 import type { ScheduleClean, ScheduleProperty } from "@/app/schedule/types";
+import type { Translations } from "@/lib/translations/cleanerPortal";
 
 type CleanerContext = {
   mode: "cleaner";
@@ -23,21 +24,27 @@ type OwnerContext = {
 
 export type CleanActionsContext = CleanerContext | OwnerContext;
 
-const CLEAN_STATUS_OPTIONS = [
+const getCleanStatusOptions = (t?: Translations) => [
   {
     value: "scheduled" as const,
-    label: "Scheduled",
-    description: "Use while the clean is pending or in progress.",
+    label: t?.scheduled || "Scheduled",
+    description:
+      t?.scheduledDescription ||
+      "Use while the clean is pending or in progress.",
   },
   {
     value: "completed" as const,
-    label: "Completed",
-    description: "Confirm once the clean is finished and walkthrough is done.",
+    label: t?.completed || "Completed",
+    description:
+      t?.completedDescription ||
+      "Confirm once the clean is finished and walkthrough is done.",
   },
   {
     value: "cancelled" as const,
-    label: "Cancelled",
-    description: "Only use if the clean is no longer going ahead.",
+    label: t?.cancelled || "Cancelled",
+    description:
+      t?.cancelledDescription ||
+      "Only use if the clean is no longer going ahead.",
   },
 ];
 
@@ -49,9 +56,7 @@ const MAINTENANCE_NOTE_OPTIONS = [
   "Captured photos for reported damage",
 ];
 
-const STATUS_VALUE_SET = new Set(
-  CLEAN_STATUS_OPTIONS.map((option) => option.value)
-);
+const STATUS_VALUE_SET = new Set(["scheduled", "completed", "cancelled"]);
 
 const normalizeStatusValue = (
   value: string
@@ -75,6 +80,7 @@ type CleanActionsModalProps = {
   clean: ScheduleClean | null;
   context: CleanActionsContext;
   onCleanUpdated: (clean: ScheduleClean) => void;
+  translations?: Translations;
 };
 
 export function CleanActionsModal({
@@ -84,6 +90,7 @@ export function CleanActionsModal({
   clean,
   context,
   onCleanUpdated,
+  translations,
 }: CleanActionsModalProps) {
   const isCleanerContext = context.mode === "cleaner";
   const isIndividualCleaner =
@@ -93,8 +100,9 @@ export function CleanActionsModal({
   const [activeTab, setActiveTab] = useState<"details" | "actions">(
     canManageCleans ? "actions" : "details"
   );
-  const [selectedStatus, setSelectedStatus] =
-    useState<"scheduled" | "completed" | "cancelled">("scheduled");
+  const [selectedStatus, setSelectedStatus] = useState<
+    "scheduled" | "completed" | "cancelled"
+  >("scheduled");
   const [selectedMaintenanceNotes, setSelectedMaintenanceNotes] = useState<
     string[]
   >([]);
@@ -107,14 +115,15 @@ export function CleanActionsModal({
   const [newReimbursementAmount, setNewReimbursementAmount] = useState("");
   const [addingReimbursement, setAddingReimbursement] = useState(false);
 
-  const [editingReimbursementId, setEditingReimbursementId] =
-    useState<string | null>(null);
-  const [editReimbursementAmount, setEditReimbursementAmount] =
-    useState("");
+  const [editingReimbursementId, setEditingReimbursementId] = useState<
+    string | null
+  >(null);
+  const [editReimbursementAmount, setEditReimbursementAmount] = useState("");
   const [editReimbursementItem, setEditReimbursementItem] = useState("");
   const [updatingReimbursement, setUpdatingReimbursement] = useState(false);
-  const [deletingReimbursementId, setDeletingReimbursementId] =
-    useState<string | null>(null);
+  const [deletingReimbursementId, setDeletingReimbursementId] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     if (!open) {
@@ -206,17 +215,22 @@ export function CleanActionsModal({
 
       if (!response.ok) {
         const error = await response.json().catch(() => null);
-        throw new Error(error?.error ?? "Unable to save updates.");
+        throw new Error(
+          error?.error ??
+            (translations?.unableToSave || "Unable to save updates.")
+        );
       }
 
       const payload = (await response.json()) as { clean: ScheduleClean };
       onCleanUpdated(payload.clean);
       setSelectedStatus(normalizeStatusValue(payload.clean.status));
       setSelectedMaintenanceNotes(payload.clean.maintenance_notes ?? []);
-      setActionSuccess("Updates saved.");
+      setActionSuccess(translations?.updatesSaved || "Updates saved.");
     } catch (error) {
       setActionError(
-        error instanceof Error ? error.message : "Unable to save updates."
+        error instanceof Error
+          ? error.message
+          : translations?.unableToSave || "Unable to save updates."
       );
     } finally {
       setSavingClean(false);
@@ -236,8 +250,14 @@ export function CleanActionsModal({
     }
 
     const amountValue = Number(newReimbursementAmount);
-    if (!newReimbursementItem.trim() || !Number.isFinite(amountValue) || amountValue <= 0) {
-      setActionError("Add a valid item and amount before logging a reimbursement.");
+    if (
+      !newReimbursementItem.trim() ||
+      !Number.isFinite(amountValue) ||
+      amountValue <= 0
+    ) {
+      setActionError(
+        "Add a valid item and amount before logging a reimbursement."
+      );
       return;
     }
 
@@ -283,13 +303,16 @@ export function CleanActionsModal({
     reimbursementsEndpoint,
   ]);
 
-  const beginEditingReimbursement = useCallback((reimbursementId: string, amount: number, item: string) => {
-    setEditingReimbursementId(reimbursementId);
-    setEditReimbursementAmount(amount.toString());
-    setEditReimbursementItem(item);
-    setActionError(null);
-    setActionSuccess(null);
-  }, []);
+  const beginEditingReimbursement = useCallback(
+    (reimbursementId: string, amount: number, item: string) => {
+      setEditingReimbursementId(reimbursementId);
+      setEditReimbursementAmount(amount.toString());
+      setEditReimbursementItem(item);
+      setActionError(null);
+      setActionSuccess(null);
+    },
+    []
+  );
 
   const cancelEditingReimbursement = useCallback(() => {
     setEditingReimbursementId(null);
@@ -309,7 +332,11 @@ export function CleanActionsModal({
     }
 
     const amountValue = Number(editReimbursementAmount);
-    if (!editReimbursementItem.trim() || !Number.isFinite(amountValue) || amountValue <= 0) {
+    if (
+      !editReimbursementItem.trim() ||
+      !Number.isFinite(amountValue) ||
+      amountValue <= 0
+    ) {
       setActionError("Enter a valid amount and description before saving.");
       return;
     }
@@ -425,7 +452,8 @@ export function CleanActionsModal({
     >
       {!property ? (
         <p className="text-sm text-[#EFF6E0]/70">
-          Select a property to view its utility information and cleans.
+          {translations?.selectPropertyViewDetails ||
+            "Select a property to view its utility information and cleans."}
         </p>
       ) : (
         <div className="space-y-6">
@@ -445,7 +473,7 @@ export function CleanActionsModal({
                     : "text-[#EFF6E0]/70 hover:text-[#EFF6E0]"
                 )}
               >
-                Utility details
+                {translations?.utilityDetails || "Utility details"}
               </button>
               <button
                 type="button"
@@ -462,8 +490,8 @@ export function CleanActionsModal({
                 )}
               >
                 {context.mode === "owner"
-                  ? "Manage clean"
-                  : "Cleaner actions"}
+                  ? translations?.manageClean || "Manage clean"
+                  : translations?.cleanerActions || "Cleaner actions"}
               </button>
             </div>
           ) : null}
@@ -478,20 +506,21 @@ export function CleanActionsModal({
                 <div className="space-y-6 text-sm text-[#EFF6E0]/80">
                   <div className="rounded-2xl border border-[#124559]/40 bg-[#01161E]/50 p-4">
                     <p className="text-xs uppercase tracking-wide text-[#EFF6E0]/50">
-                      Scheduled for
+                      {translations?.scheduledFor || "Scheduled for"}
                     </p>
                     <p className="mt-1 text-sm font-semibold text-[#EFF6E0]">
-                      {format(new Date(clean.scheduled_for), "EEE d MMM yyyy")} • {formatTime(clean.scheduled_for)}
+                      {format(new Date(clean.scheduled_for), "EEE d MMM yyyy")}{" "}
+                      • {formatTime(clean.scheduled_for)}
                     </p>
                     <p className="mt-4 text-xs uppercase tracking-wide text-[#EFF6E0]/50">
-                      Current status
+                      {translations?.currentStatus || "Current status"}
                     </p>
                     <p className="mt-1 text-sm font-semibold capitalize text-[#EFF6E0]">
                       {clean.status}
                     </p>
                     {clean.notes ? (
                       <p className="mt-4 text-xs text-[#EFF6E0]/60">
-                        Host note: {clean.notes}
+                        {translations?.hostNote || "Host note"}: {clean.notes}
                       </p>
                     ) : null}
                   </div>
@@ -499,10 +528,11 @@ export function CleanActionsModal({
                   <section className="space-y-3">
                     <div>
                       <p className="text-xs uppercase tracking-wide text-[#EFF6E0]/50">
-                        Update status
+                        {translations?.updateStatus || "Update status"}
                       </p>
                       <p className="text-xs text-[#EFF6E0]/60">
-                        Choose the option that best reflects progress.
+                        {translations?.chooseOptionBestReflectsProgress ||
+                          "Choose the option that best reflects progress."}
                       </p>
                     </div>
                     <div className="w-full max-w-xs">
@@ -518,7 +548,7 @@ export function CleanActionsModal({
                           }}
                           className="w-full appearance-none rounded-2xl border border-[#124559]/60 bg-[#01161E]/50 px-4 py-2 pr-10 text-sm font-semibold text-[#EFF6E0] focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/40"
                         >
-                          {CLEAN_STATUS_OPTIONS.map((option) => (
+                          {getCleanStatusOptions(translations).map((option) => (
                             <option key={option.value} value={option.value}>
                               {option.label}
                             </option>
@@ -527,7 +557,7 @@ export function CleanActionsModal({
                         <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EFF6E0]/50" />
                       </div>
                       <p className="mt-2 text-[0.65rem] text-[#EFF6E0]/50">
-                        {CLEAN_STATUS_OPTIONS.find(
+                        {getCleanStatusOptions(translations).find(
                           (option) => option.value === selectedStatus
                         )?.description ?? ""}
                       </p>
@@ -537,16 +567,19 @@ export function CleanActionsModal({
                   <section className="space-y-3">
                     <div>
                       <p className="text-xs uppercase tracking-wide text-[#EFF6E0]/50">
-                        Maintenance notes
+                        {translations?.maintenanceNotes || "Maintenance notes"}
                       </p>
                       <p className="text-xs text-[#EFF6E0]/60">
-                        Pick the notes that apply to this clean.
+                        {translations?.pickNotesApplyToClean ||
+                          "Pick the notes that apply to this clean."}
                       </p>
                     </div>
                     <div className="relative w-full max-w-md">
                       <button
                         type="button"
-                        onClick={() => setNotesMenuOpen((previous) => !previous)}
+                        onClick={() =>
+                          setNotesMenuOpen((previous) => !previous)
+                        }
                         className={clsx(
                           "flex w-full items-center justify-between rounded-2xl border border-[#124559]/60 bg-[#01161E]/50 px-4 py-2 text-sm font-semibold text-[#EFF6E0] transition",
                           notesMenuOpen
@@ -556,10 +589,13 @@ export function CleanActionsModal({
                       >
                         <span className="truncate text-left">
                           {selectedMaintenanceNotes.length
-                            ? `${selectedMaintenanceNotes.length} note${
-                                selectedMaintenanceNotes.length === 1 ? "" : "s"
-                              } selected`
-                            : "Select maintenance notes"}
+                            ? `${selectedMaintenanceNotes.length} ${
+                                selectedMaintenanceNotes.length === 1
+                                  ? translations?.note || "note"
+                                  : translations?.notesPlural || "notes"
+                              } ${translations?.selected || "selected"}`
+                            : translations?.selectMaintenanceNotes ||
+                              "Select maintenance notes"}
                         </span>
                         <ChevronDownIcon
                           className={clsx(
@@ -570,14 +606,20 @@ export function CleanActionsModal({
                       </button>
                       {notesMenuOpen ? (
                         <div className="absolute left-0 right-0 z-20 mt-2 max-h-56 overflow-y-auto rounded-2xl border border-[#124559]/60 bg-[#01161E]/95 p-2 shadow-xl shadow-[#01161E]/60 backdrop-blur">
-                          {MAINTENANCE_NOTE_OPTIONS.map((note) => {
-                            const isActive = selectedMaintenanceNotes.includes(note);
+                          {(
+                            translations?.maintenanceNoteOptions ||
+                            MAINTENANCE_NOTE_OPTIONS
+                          ).map((note) => {
+                            const isActive =
+                              selectedMaintenanceNotes.includes(note);
                             return (
                               <label
                                 key={note}
                                 className={clsx(
                                   "flex cursor-pointer items-start gap-3 rounded-xl px-3 py-2 text-sm text-[#EFF6E0]/80 transition",
-                                  isActive ? "bg-[#124559]/40" : "hover:bg-[#124559]/30"
+                                  isActive
+                                    ? "bg-[#124559]/40"
+                                    : "hover:bg-[#124559]/30"
                                 )}
                               >
                                 <input
@@ -599,7 +641,8 @@ export function CleanActionsModal({
                       </p>
                     ) : (
                       <p className="text-[0.65rem] text-[#EFF6E0]/50">
-                        The host will see any notes you select alongside this clean.
+                        {translations?.hostWillSeeNotesSelected ||
+                          "The host will see any notes you select alongside this clean."}
                       </p>
                     )}
                   </section>
@@ -607,17 +650,19 @@ export function CleanActionsModal({
                   <section className="space-y-4">
                     <div>
                       <p className="text-xs uppercase tracking-wide text-[#EFF6E0]/50">
-                        Reimbursements
+                        {translations?.reimbursements || "Reimbursements"}
                       </p>
                       <p className="text-xs text-[#EFF6E0]/60">
-                        Log items you purchased so the host can refund you.
+                        {translations?.logItemsPurchasedForRefund ||
+                          "Log items you purchased so the host can refund you."}
                       </p>
                     </div>
                     {activeReimbursements.length ? (
                       <ul className="space-y-2">
                         {activeReimbursements.map((entry) => {
                           const isEditing = editingReimbursementId === entry.id;
-                          const isDeleting = deletingReimbursementId === entry.id;
+                          const isDeleting =
+                            deletingReimbursementId === entry.id;
                           return (
                             <li
                               key={entry.id}
@@ -628,7 +673,7 @@ export function CleanActionsModal({
                                   <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                                     <div>
                                       <label className="text-[0.65rem] uppercase tracking-wide text-[#EFF6E0]/50">
-                                        Amount
+                                        {translations?.amount || "Amount"}
                                       </label>
                                       <input
                                         type="number"
@@ -636,7 +681,9 @@ export function CleanActionsModal({
                                         step="0.01"
                                         value={editReimbursementAmount}
                                         onChange={(event) =>
-                                          setEditReimbursementAmount(event.target.value)
+                                          setEditReimbursementAmount(
+                                            event.target.value
+                                          )
                                         }
                                         className="mt-1 w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/50 px-3 py-2 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/50"
                                         placeholder="0.00"
@@ -645,16 +692,20 @@ export function CleanActionsModal({
                                     </div>
                                     <div>
                                       <label className="text-[0.65rem] uppercase tracking-wide text-[#EFF6E0]/50">
-                                        Item
+                                        {translations?.item || "Item"}
                                       </label>
                                       <input
                                         type="text"
                                         value={editReimbursementItem}
                                         onChange={(event) =>
-                                          setEditReimbursementItem(event.target.value)
+                                          setEditReimbursementItem(
+                                            event.target.value
+                                          )
                                         }
                                         className="mt-1 w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/50 px-3 py-2 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/50"
-                                        placeholder="Describe the item"
+                                        placeholder={
+                                          translations?.item || "Item"
+                                        }
                                       />
                                     </div>
                                   </div>
@@ -665,7 +716,7 @@ export function CleanActionsModal({
                                       className="rounded-full border border-[#598392]/40 bg-transparent px-4 py-2 text-xs font-semibold text-[#EFF6E0]/70 transition hover:border-[#598392]/70 hover:text-[#EFF6E0]"
                                       disabled={updatingReimbursement}
                                     >
-                                      Cancel
+                                      {translations?.cancel || "Cancel"}
                                     </button>
                                     <button
                                       type="button"
@@ -673,10 +724,14 @@ export function CleanActionsModal({
                                       disabled={updatingReimbursement}
                                       className={clsx(
                                         "rounded-full bg-gradient-to-r from-[#124559] to-[#598392] px-4 py-2 text-xs font-semibold text-[#EFF6E0] transition hover:scale-[1.01]",
-                                        updatingReimbursement ? "cursor-not-allowed opacity-60" : ""
+                                        updatingReimbursement
+                                          ? "cursor-not-allowed opacity-60"
+                                          : ""
                                       )}
                                     >
-                                      {updatingReimbursement ? "Saving..." : "Save"}
+                                      {updatingReimbursement
+                                        ? translations?.saving || "Saving..."
+                                        : translations?.saveUpdates || "Save"}
                                     </button>
                                   </div>
                                 </div>
@@ -687,7 +742,10 @@ export function CleanActionsModal({
                                       {entry.item}
                                     </p>
                                     <span className="mt-1 block text-[0.65rem] text-[#EFF6E0]/50">
-                                      {format(new Date(entry.created_at), "d MMM yyyy")}
+                                      {format(
+                                        new Date(entry.created_at),
+                                        "d MMM yyyy"
+                                      )}
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-3">
@@ -707,19 +765,27 @@ export function CleanActionsModal({
                                           }
                                           className="flex items-center gap-1 rounded-full border border-[#598392]/40 px-3 py-1 text-xs font-semibold text-[#EFF6E0]/80 transition hover:border-[#598392]/70 hover:text-[#EFF6E0]"
                                         >
-                                          <PencilSquareIcon className="h-4 w-4" /> Edit
+                                          <PencilSquareIcon className="h-4 w-4" />{" "}
+                                          {translations?.edit || "Edit"}
                                         </button>
                                         <button
                                           type="button"
-                                          onClick={() => handleDeleteReimbursement(entry.id)}
+                                          onClick={() =>
+                                            handleDeleteReimbursement(entry.id)
+                                          }
                                           disabled={isDeleting}
                                           className={clsx(
                                             "flex items-center gap-1 rounded-full border border-red-400/50 px-3 py-1 text-xs font-semibold text-red-200 transition hover:border-red-300 hover:text-red-100",
-                                            isDeleting ? "cursor-not-allowed opacity-60" : ""
+                                            isDeleting
+                                              ? "cursor-not-allowed opacity-60"
+                                              : ""
                                           )}
                                         >
                                           <TrashIcon className="h-4 w-4" />
-                                          {isDeleting ? "Removing..." : "Delete"}
+                                          {isDeleting
+                                            ? translations?.removing ||
+                                              "Removing..."
+                                            : translations?.delete || "Delete"}
                                         </button>
                                       </>
                                     ) : null}
@@ -732,21 +798,24 @@ export function CleanActionsModal({
                       </ul>
                     ) : (
                       <p className="rounded-2xl border border-dashed border-[#598392]/40 bg-[#01161E]/40 p-4 text-xs text-[#EFF6E0]/60">
-                        No reimbursements logged yet.
+                        {translations?.noReimbursementsLogged ||
+                          "No reimbursements logged yet."}
                       </p>
                     )}
 
                     <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
                       <div className="md:col-span-1">
                         <label className="text-[0.65rem] uppercase tracking-wide text-[#EFF6E0]/50">
-                          Amount
+                          {translations?.amount || "Amount"}
                         </label>
                         <input
                           type="number"
                           min="0"
                           step="0.01"
                           value={newReimbursementAmount}
-                          onChange={(event) => setNewReimbursementAmount(event.target.value)}
+                          onChange={(event) =>
+                            setNewReimbursementAmount(event.target.value)
+                          }
                           className="mt-1 w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/50 px-3 py-2 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/50"
                           placeholder="0.00"
                           inputMode="decimal"
@@ -754,14 +823,19 @@ export function CleanActionsModal({
                       </div>
                       <div className="md:col-span-1 md:col-start-2">
                         <label className="text-[0.65rem] uppercase tracking-wide text-[#EFF6E0]/50">
-                          Item
+                          {translations?.item || "Item"}
                         </label>
                         <input
                           type="text"
                           value={newReimbursementItem}
-                          onChange={(event) => setNewReimbursementItem(event.target.value)}
+                          onChange={(event) =>
+                            setNewReimbursementItem(event.target.value)
+                          }
                           className="mt-1 w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/50 px-3 py-2 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/50"
-                          placeholder="e.g. Cleaning supplies"
+                          placeholder={
+                            translations?.cleaningSuppliesExample ||
+                            "e.g. Cleaning supplies"
+                          }
                         />
                       </div>
                       <div className="self-end md:col-span-1">
@@ -771,10 +845,15 @@ export function CleanActionsModal({
                           disabled={addingReimbursement}
                           className={clsx(
                             "w-full rounded-full border border-[#598392] bg-[#598392]/20 px-4 py-2 text-sm font-semibold text-[#EFF6E0] transition-all duration-150 hover:bg-[#598392]/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#598392]",
-                            addingReimbursement ? "cursor-not-allowed opacity-60" : ""
+                            addingReimbursement
+                              ? "cursor-not-allowed opacity-60"
+                              : ""
                           )}
                         >
-                          {addingReimbursement ? "Saving..." : "Log reimbursement"}
+                          {addingReimbursement
+                            ? translations?.saving || "Saving..."
+                            : translations?.logReimbursement ||
+                              "Log reimbursement"}
                         </button>
                       </div>
                     </div>
@@ -800,17 +879,20 @@ export function CleanActionsModal({
                       savingClean ? "cursor-not-allowed opacity-60" : ""
                     )}
                   >
-                    {savingClean ? "Saving..." : "Save updates"}
+                    {savingClean
+                      ? translations?.saving || "Saving..."
+                      : translations?.saveUpdates || "Save updates"}
                   </button>
                 </div>
               ) : (
                 <p className="rounded-2xl border border-dashed border-[#598392]/40 bg-[#01161E]/40 p-4 text-sm text-[#EFF6E0]/70">
-                  Select a clean from the timeline or table to update its status, add notes, or request reimbursements.
+                  {translations?.selectCleanToUpdate ||
+                    "Select a clean from the timeline or table to update its status, add notes, or request reimbursements."}
                 </p>
               )
             ) : (
               <p className="rounded-2xl border border-dashed border-[#598392]/40 bg-[#01161E]/40 p-4 text-sm text-[#EFF6E0]/70">
-                This view is read-only.
+                {translations?.readOnly || "This view is read-only."}
               </p>
             )
           ) : null}
@@ -841,9 +923,7 @@ function UtilityDetails({ property }: { property: ScheduleProperty }) {
             <p className="text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/60">
               {detail.label}
             </p>
-            <p className="whitespace-pre-wrap text-[#EFF6E0]">
-              {detail.value}
-            </p>
+            <p className="whitespace-pre-wrap text-[#EFF6E0]">{detail.value}</p>
           </div>
         ))}
 
