@@ -24,17 +24,18 @@ import type { Translations } from "@/lib/translations/cleanerPortal";
 
 type ScheduleView = "timeline" | "calendar";
 
+// Purple/blue color palette for scheduled cleans (distinct from green completed cleans)
 const PROPERTY_COLORS = [
-  "#A7D9C5",
-  "#85C7BF",
-  "#9AD1D4",
-  "#C7E8F3",
-  "#E3F2E8",
-  "#F6D8AE",
-  "#F4E285",
-  "#BFD8B8",
-  "#A3C4F3",
-  "#DAB6FC",
+  "#A78BFA", // violet-400
+  "#8B5CF6", // violet-500
+  "#7C3AED", // violet-600
+  "#9333EA", // purple-600
+  "#C084FC", // purple-400
+  "#A855F7", // purple-500
+  "#818CF8", // indigo-400
+  "#6366F1", // indigo-500
+  "#8B5CF6", // violet-500 (duplicate for variety)
+  "#A78BFA", // violet-400 (duplicate for variety)
 ];
 
 const WEEKDAY_LABELS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -792,11 +793,6 @@ function TimelineView({
                               {clean.notes ? (
                                 <p className="mt-0.5 line-clamp-1 text-[0.6rem] font-medium text-white/90 sm:mt-1 sm:text-[0.65rem]">
                                   {clean.notes}
-                                </p>
-                              ) : null}
-                              {clean.checkout ? (
-                                <p className="mt-0.5 text-[0.55rem] font-medium text-white/90 sm:mt-1 sm:text-[0.6rem]">
-                                  {formatTime(clean.checkout)}
                                 </p>
                               ) : null}
                             </div>
