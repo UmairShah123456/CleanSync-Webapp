@@ -66,13 +66,12 @@ async function fetchCleansWithFilters(filters: FilterState) {
     checkout: clean.checkout ?? null,
     cleaner: clean.cleaner ?? null,
     maintenance_notes: clean.maintenance_notes ?? [],
-    reimbursements:
-      (clean.reimbursements ?? []).map((entry) => ({
-        id: entry.id,
-        amount: Number(entry.amount),
-        item: entry.item,
-        created_at: entry.created_at,
-      })),
+    reimbursements: (clean.reimbursements ?? []).map((entry) => ({
+      id: entry.id,
+      amount: Number(entry.amount),
+      item: entry.item,
+      created_at: entry.created_at,
+    })),
   }));
 }
 
@@ -142,6 +141,7 @@ export function DashboardClient({
   email,
   properties,
   initialCleans,
+  cleanerTypeMap,
 }: {
   email?: string | null;
   properties: Array<{
@@ -155,6 +155,7 @@ export function DashboardClient({
     key_locations?: string | null;
   }>;
   initialCleans: CleanRow[];
+  cleanerTypeMap: Array<[string, "individual" | "company"]>;
 }) {
   const [cleans, setCleans] = useState(initialCleans);
   const [filters, setFilters] = useState<FilterState>({});
@@ -164,10 +165,18 @@ export function DashboardClient({
   const [error, setError] = useState<string | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [syncMessageVisible, setSyncMessageVisible] = useState(true);
+  const [activeTab, setActiveTab] = useState<
+    "all" | "self-managed" | "company-managed"
+  >("all");
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const propertyDetailsMap = useMemo(
     () => new Map(properties.map((property) => [property.id, property])),
     [properties]
+  );
+  // Convert array of tuples back to Map for efficient lookups
+  const cleanerTypeMapLookup = useMemo(
+    () => new Map<string, "individual" | "company">(cleanerTypeMap),
+    [cleanerTypeMap]
   );
   const [managedClean, setManagedClean] = useState<{
     clean: ScheduleClean;
@@ -230,9 +239,35 @@ export function DashboardClient({
     []
   );
 
+  // Filter cleans based on active tab
+  const filteredCleans = useMemo(() => {
+    if (activeTab === "all") {
+      return cleans;
+    }
+
+    return cleans.filter((clean) => {
+      const property = propertyDetailsMap.get(clean.property_id);
+      if (!property || !property.cleaner) {
+        // Properties with no cleaner assigned only show in "All cleans"
+        return false;
+      }
+
+      const normalizedCleanerName = property.cleaner.trim().toLowerCase();
+      const cleanerType = cleanerTypeMapLookup.get(normalizedCleanerName);
+
+      if (activeTab === "self-managed") {
+        return cleanerType === "individual";
+      } else if (activeTab === "company-managed") {
+        return cleanerType === "company";
+      }
+
+      return false;
+    });
+  }, [cleans, activeTab, propertyDetailsMap, cleanerTypeMapLookup]);
+
   const metrics = useMemo(
-    () => calculateMetrics(cleans, propertyCheckoutTimes),
-    [cleans, propertyCheckoutTimes]
+    () => calculateMetrics(filteredCleans, propertyCheckoutTimes),
+    [filteredCleans, propertyCheckoutTimes]
   );
 
   const refreshCleans = useCallback(async () => {
@@ -276,9 +311,7 @@ export function DashboardClient({
     (updated: ScheduleClean) => {
       setCleans((previous) =>
         previous.map((row) =>
-          row.id === updated.id
-            ? mapScheduleCleanToRow(updated, row)
-            : row
+          row.id === updated.id ? mapScheduleCleanToRow(updated, row) : row
         )
       );
 
@@ -442,6 +475,40 @@ export function DashboardClient({
       <div className="space-y-6">
         <DashboardHeader />
 
+        {/* Tab Views */}
+        <div className="flex gap-2 border-b border-[#598392]/30">
+          <button
+            onClick={() => setActiveTab("all")}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "all"
+                ? "border-b-2 border-[#9AD1D4] text-[#9AD1D4]"
+                : "text-[#EFF6E0]/70 hover:text-[#EFF6E0]"
+            }`}
+          >
+            All cleans
+          </button>
+          <button
+            onClick={() => setActiveTab("self-managed")}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "self-managed"
+                ? "border-b-2 border-[#9AD1D4] text-[#9AD1D4]"
+                : "text-[#EFF6E0]/70 hover:text-[#EFF6E0]"
+            }`}
+          >
+            Self-managed cleans
+          </button>
+          <button
+            onClick={() => setActiveTab("company-managed")}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "company-managed"
+                ? "border-b-2 border-[#9AD1D4] text-[#9AD1D4]"
+                : "text-[#EFF6E0]/70 hover:text-[#EFF6E0]"
+            }`}
+          >
+            Company-managed cleans
+          </button>
+        </div>
+
         {/* Metric Cards */}
         <div className="grid grid-cols-1 gap-4 overflow-hidden sm:grid-cols-2">
           <MetricCard
@@ -541,7 +608,7 @@ export function DashboardClient({
             </div>
           ) : !syncing ? (
             <CleansTable
-              cleans={cleans}
+              cleans={filteredCleans}
               onDelete={async (id) => {
                 const fresh = await fetchCleansWithFilters(filters);
                 setCleans(fresh);

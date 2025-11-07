@@ -24,6 +24,27 @@ export default async function DashboardPage() {
 
   const properties = propertiesData ?? [];
 
+  // Fetch cleaners to create mapping from cleaner name to cleaner_type
+  const { data: cleanersData } = await supabase
+    .from("cleaners")
+    .select("name, cleaner_type")
+    .eq("user_id", user.id);
+
+  // Create mapping from normalized cleaner name to cleaner_type
+  // Convert to array of tuples for serialization (Map can't be serialized)
+  const cleanerTypeMapArray: Array<[string, "individual" | "company"]> = [];
+  if (cleanersData) {
+    cleanersData.forEach((cleaner) => {
+      const normalizedName = cleaner.name?.trim().toLowerCase() ?? "";
+      if (normalizedName) {
+        cleanerTypeMapArray.push([
+          normalizedName,
+          cleaner.cleaner_type === "company" ? "company" : "individual",
+        ]);
+      }
+    });
+  }
+
   let cleans: any[] = [];
 
   if (properties.length) {
@@ -125,6 +146,7 @@ export default async function DashboardPage() {
         key_locations: property.key_locations ?? null,
       }))}
       initialCleans={initialCleans}
+      cleanerTypeMap={cleanerTypeMapArray}
     />
   );
 }

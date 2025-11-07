@@ -3,12 +3,10 @@
 import type { ReactNode } from "react";
 import { useState, useEffect } from "react";
 import {
-  ArrowPathIcon,
   ClockIcon,
   LinkIcon,
   PencilSquareIcon,
   UserIcon,
-  BuildingOffice2Icon,
   ChevronDownIcon,
   ChevronUpIcon,
   WrenchScrewdriverIcon,
@@ -23,7 +21,6 @@ export type Property = {
   ical_url: string;
   checkout_time?: string | null;
   cleaner?: string | null;
-  management_type?: "self-managed" | "company-managed" | null;
   created_at?: string;
   access_codes?: string | null;
   bin_locations?: string | null;
@@ -40,14 +37,6 @@ const getInitials = (name: string): string => {
     .filter(Boolean);
   if (!parts.length) return "PR";
   return parts.slice(0, 2).join("");
-};
-
-const getManagementLabel = (
-  type?: "self-managed" | "company-managed" | null
-) => {
-  if (type === "company-managed") return "Company-managed";
-  if (type === "self-managed") return "Self-managed";
-  return "Not set";
 };
 
 const PropertyAvatar = ({ name }: { name: string }) => {
@@ -123,7 +112,6 @@ const UtilityDetailsModal = ({
         ical_url: property!.ical_url,
         checkout_time: property!.checkout_time || "10:00",
         cleaner: property!.cleaner || "",
-        management_type: property!.management_type || "self-managed",
         access_codes: formData.access_codes,
         bin_locations: formData.bin_locations,
         property_address: formData.property_address,
@@ -254,15 +242,12 @@ const UtilityDetailsModal = ({
 export function PropertyList({
   properties,
   onDelete,
-  onSync,
   onUpdate,
 }: {
   properties: Property[];
   onDelete: (id: string) => Promise<void>;
-  onSync: (id: string) => Promise<void>;
   onUpdate: (id: string, payload: PropertyPayload) => Promise<void>;
 }) {
-  const [actionId, setActionId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Property | null>(null);
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -272,15 +257,6 @@ export function PropertyList({
   >(new Set());
   const [utilityDetailsProperty, setUtilityDetailsProperty] =
     useState<Property | null>(null);
-
-  const handleSync = async (id: string) => {
-    setActionId(id);
-    try {
-      await onSync(id);
-    } finally {
-      setActionId(null);
-    }
-  };
 
   const handleUpdate = async (payload: PropertyPayload) => {
     if (!editing) return;
@@ -353,24 +329,6 @@ export function PropertyList({
               <div className="flex items-center gap-2">
                 <div className="group/button relative">
                   <button
-                    onClick={() => handleSync(property.id)}
-                    disabled={actionId === property.id}
-                    className="rounded-full border border-transparent bg-[#124559]/60 p-2 text-[#EFF6E0]/80 transition-colors hover:border-[#598392]/60 hover:bg-[#598392]/30 hover:text-[#EFF6E0] disabled:cursor-not-allowed disabled:opacity-50"
-                    type="button"
-                    aria-label={`Sync ${property.name}`}
-                  >
-                    <ArrowPathIcon
-                      className={`h-5 w-5 ${
-                        actionId === property.id ? "animate-spin" : ""
-                      }`}
-                    />
-                  </button>
-                  <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#01161E]/95 px-2 py-1 text-xs font-medium text-[#EFF6E0] opacity-0 shadow-lg transition-opacity duration-200 group-hover/button:opacity-100">
-                    Sync
-                  </span>
-                </div>
-                <div className="group/button relative">
-                  <button
                     onClick={() => {
                       setModalError(null);
                       setDeleting(false);
@@ -441,11 +399,6 @@ export function PropertyList({
                     {property.checkout_time || "10:00"}
                   </span>
                 </DetailRow>
-                <DetailRow icon={BuildingOffice2Icon} label="Management">
-                  <span className="font-medium text-[#EFF6E0]">
-                    {getManagementLabel(property.management_type)}
-                  </span>
-                </DetailRow>
                 <DetailRow icon={UserIcon} label="Assigned cleaner">
                   <span className="font-medium text-[#EFF6E0]">
                     {property.cleaner ? property.cleaner : "Unassigned"}
@@ -480,7 +433,6 @@ export function PropertyList({
                 ical_url: editing.ical_url,
                 checkout_time: editing.checkout_time || "10:00",
                 cleaner: editing.cleaner || "",
-                management_type: editing.management_type ?? "self-managed",
               }}
               onSubmit={handleUpdate}
               submitting={updating}

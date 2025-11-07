@@ -13,7 +13,6 @@ export async function PATCH(
     ical_url,
     checkout_time,
     cleaner,
-    management_type,
     access_codes,
     bin_locations,
     property_address,
@@ -26,12 +25,6 @@ export async function PATCH(
   if (checkout_time !== undefined) updatePayload.checkout_time = checkout_time;
   if (cleaner !== undefined) {
     updatePayload.cleaner = cleaner?.trim() || null;
-  }
-  if (management_type !== undefined) {
-    updatePayload.management_type =
-      management_type === "company-managed"
-        ? "company-managed"
-        : "self-managed";
   }
   if (access_codes !== undefined) {
     updatePayload.access_codes = access_codes?.trim() || null;
@@ -63,32 +56,13 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from("properties")
     .update(updatePayload)
     .eq("id", id)
     .eq("user_id", user.id)
     .select()
     .single();
-
-  if (error && error.message.includes("management_type")) {
-    delete updatePayload.management_type;
-
-    ({ data, error } = await supabase
-      .from("properties")
-      .update(updatePayload)
-      .eq("id", id)
-      .eq("user_id", user.id)
-      .select()
-      .single());
-
-    if (!error && data && management_type !== undefined) {
-      data.management_type =
-        management_type === "company-managed"
-          ? "company-managed"
-          : "self-managed";
-    }
-  }
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

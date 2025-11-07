@@ -72,20 +72,6 @@ export function PropertiesClient({
     await refreshProperties();
   };
 
-  const handleSync = async (id: string) => {
-    setError(null);
-    const response = await fetch("/api/sync", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ propertyId: id }),
-    });
-
-    if (!response.ok) {
-      const { error: message } = await response.json();
-      setError(message ?? "Unable to sync property");
-    }
-  };
-
   return (
     <AppShell email={email}>
       <div className="flex items-center justify-between">
@@ -112,7 +98,6 @@ export function PropertiesClient({
       <PropertyList
         properties={properties}
         onDelete={handleDelete}
-        onSync={handleSync}
         onUpdate={handleUpdate}
       />
 

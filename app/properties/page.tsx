@@ -36,7 +36,6 @@ export default async function PropertiesPage() {
 
     propertiesData = fallbackData?.map((property: any) => ({
       ...property,
-      management_type: null,
       access_codes: null,
       bin_locations: null,
       property_address: null,

@@ -51,30 +51,14 @@ You should see `checkout_time` with type `text` and default `'10:00'`.
 
 Once this migration is complete, you'll be able to add new properties with custom checkout times!
 
-## Adding management_type Column to Properties Table
+## Deprecated: management_type Column
 
-To track whether a property is self-managed or company-managed, add the `management_type` column.
+**Note:** The `management_type` column has been removed from the codebase. Management type is now determined by the `cleaner_type` field in the `cleaners` table. If you have an existing `management_type` column in your database, it can be safely ignored or removed, as it's no longer used by the application.
 
-### SQL (Supabase Dashboard or CLI)
+The dashboard tabs ("Self-managed cleans" and "Company-managed cleans") now filter based on the `cleaner_type` of the cleaner assigned to each property:
 
-```sql
-alter table properties
-add column if not exists management_type text default 'self-managed';
-
-update properties
-set management_type = 'self-managed'
-where management_type is null;
-```
-
-### Verification
-
-```sql
-select column_name, data_type, column_default
-from information_schema.columns
-where table_name = 'properties' and column_name = 'management_type';
-```
-
-You should see `management_type` with type `text` and default `'self-managed'`. Once added, the UI will store and display the selected management type for every property.
+- `cleaner_type = 'individual'` → Self-managed
+- `cleaner_type = 'company'` → Company-managed
 
 ## Creating Cleaners & Cleaner Links Tables
 
