@@ -453,45 +453,52 @@ export function ScheduleClient({
           ) : null}
         </div>
 
-        <div className="rounded-2xl border border-[#124559]/50 bg-[#124559]/20 p-6 shadow-lg shadow-[#01161E]/40">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-wrap items-center gap-3">
+        <div className="rounded-xl border border-[#124559]/50 bg-[#124559]/20 p-3 shadow-lg shadow-[#01161E]/40 sm:rounded-2xl sm:p-6">
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={handleToday}
-                className="rounded-full border border-[#124559]/50 bg-[#124559]/40 px-4 py-2 text-sm font-medium text-[#EFF6E0] transition-colors hover:bg-[#124559]/60"
+                className="rounded-full border border-[#124559]/50 bg-[#124559]/40 px-3 py-2 text-xs font-medium text-[#EFF6E0] transition-colors active:bg-[#124559]/60 sm:px-4 sm:text-sm sm:hover:bg-[#124559]/60"
               >
                 {translations?.today || "Today"}
               </button>
-              <div className="rounded-full bg-[#124559]/35 px-4 py-2 text-sm font-semibold text-[#EFF6E0]">
-                {dateRangeLabel}
+              <div className="rounded-full bg-[#124559]/35 px-3 py-2 text-xs font-semibold text-[#EFF6E0] sm:px-4 sm:text-sm">
+                <span className="hidden sm:inline">{dateRangeLabel}</span>
+                <span className="sm:hidden">
+                  {view === "timeline"
+                    ? format(timelineStart, "d MMM")
+                    : format(selectedMonth, "MMM yyyy")}
+                </span>
               </div>
               <div className="flex overflow-hidden rounded-full border border-[#124559]/50 bg-[#124559]/40">
                 <button
                   type="button"
                   onClick={handlePrevious}
-                  className="p-2 text-[#EFF6E0]/80 transition-colors hover:bg-[#124559]/60 hover:text-[#EFF6E0]"
+                  className="p-2 text-[#EFF6E0]/80 transition-colors active:bg-[#124559]/60 active:text-[#EFF6E0] sm:p-2.5 sm:hover:bg-[#124559]/60 sm:hover:text-[#EFF6E0]"
+                  aria-label="Previous"
                 >
-                  <ChevronLeftIcon className="h-4 w-4" />
+                  <ChevronLeftIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="border-l border-[#124559]/60 p-2 text-[#EFF6E0]/80 transition-colors hover:bg-[#124559]/60 hover:text-[#EFF6E0]"
+                  className="border-l border-[#124559]/60 p-2 text-[#EFF6E0]/80 transition-colors active:bg-[#124559]/60 active:text-[#EFF6E0] sm:p-2.5 sm:hover:bg-[#124559]/60 sm:hover:text-[#EFF6E0]"
+                  aria-label="Next"
                 >
-                  <ChevronRightIcon className="h-4 w-4" />
+                  <ChevronRightIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="relative">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <div className="relative w-full sm:w-auto">
                 <select
                   value={selectedPropertyId}
                   onChange={(event) =>
                     setSelectedPropertyId(event.target.value)
                   }
-                  className="w-48 appearance-none rounded-full border border-[#124559]/50 bg-[#01161E]/40 px-4 py-2 text-sm text-[#EFF6E0] focus:outline-none focus:ring-2 focus:ring-[#598392]"
+                  className="w-full appearance-none rounded-full border border-[#124559]/50 bg-[#01161E]/40 px-4 py-2.5 text-sm text-[#EFF6E0] focus:outline-none focus:ring-2 focus:ring-[#598392] sm:w-48"
                 >
                   <option value="">All properties</option>
                   {properties.map((property) => (
@@ -512,10 +519,10 @@ export function ScheduleClient({
                     type="button"
                     onClick={() => handleViewChange(mode)}
                     className={clsx(
-                      "rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150",
+                      "rounded-full px-3 py-2 text-xs font-medium transition-all duration-150 active:scale-95 sm:px-4 sm:py-1.5 sm:text-sm",
                       mode === view
                         ? "bg-gradient-to-r from-[#124559] to-[#598392] text-[#EFF6E0] shadow-lg"
-                        : "text-[#EFF6E0]/70 hover:text-[#EFF6E0]"
+                        : "text-[#EFF6E0]/70 active:text-[#EFF6E0] sm:hover:text-[#EFF6E0]"
                     )}
                   >
                     {mode === "timeline"
@@ -619,7 +626,9 @@ function TimelineView({
   }, [cleans]);
 
   const columnTemplate = useMemo(() => {
-    return `220px repeat(${days.length}, minmax(120px, 1fr))`;
+    // Mobile: smaller property column, fixed day columns
+    // Desktop: larger property column, flexible day columns
+    return `minmax(160px, 180px) repeat(${days.length}, minmax(100px, 1fr))`;
   }, [days.length]);
 
   if (!properties.length) {
@@ -633,160 +642,185 @@ function TimelineView({
   const hasCleans = cleans.length > 0;
 
   return (
-    <div className="overflow-x-auto">
-      <div
-        className="min-w-[720px] rounded-xl border border-[#124559]/40 bg-[#01161E]/40"
-        style={{ boxShadow: "0 15px 35px rgba(1, 22, 30, 0.35)" }}
-      >
+    <div className="overflow-x-auto -mx-3 sm:mx-0">
+      <div className="inline-block min-w-full px-3 sm:block sm:px-0">
         <div
-          className="grid border-b border-[#124559]/40 bg-[#124559]/30 text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/70"
-          style={{ gridTemplateColumns: columnTemplate }}
+          className="min-w-[640px] rounded-xl border border-[#124559]/40 bg-[#01161E]/40 sm:min-w-0"
+          style={{ boxShadow: "0 15px 35px rgba(1, 22, 30, 0.35)" }}
         >
-          <div className="px-4 py-3 text-left text-[#EFF6E0]">
-            {properties.length}{" "}
-            {properties.length === 1 ? "Property" : "Properties"}
-          </div>
-          {days.map((day) => (
-            <div
-              key={day.toISOString()}
-              className={clsx(
-                "px-4 py-3 text-center text-[#EFF6E0]/80",
-                isSameLocalDay(day, today)
-                  ? "bg-[#EFF6E0]/10 text-[#EFF6E0]"
-                  : ""
-              )}
-            >
-              <div className="text-[0.65rem] tracking-wider">
-                {format(day, "EEE").toUpperCase()}
-              </div>
-              <div className="text-sm font-semibold">
-                {format(day, "d MMM")}
-              </div>
+          <div
+            className="grid border-b border-[#124559]/40 bg-[#124559]/30 text-[0.65rem] font-semibold uppercase tracking-wide text-[#EFF6E0]/70 sm:text-xs"
+            style={{ gridTemplateColumns: columnTemplate }}
+          >
+            <div className="px-2 py-2 text-left text-[#EFF6E0] sm:px-4 sm:py-3">
+              <span className="hidden sm:inline">
+                {properties.length}{" "}
+                {properties.length === 1 ? "Property" : "Properties"}
+              </span>
             </div>
-          ))}
-        </div>
-
-        {properties.map((property) => {
-          const propertyCleans = cleansByProperty.get(property.id) ?? [];
-          const color = propertyColors.get(property.id) ?? PROPERTY_COLORS[0];
-          const indicator = hexToRgba(color, 0.9);
-          const pillBackground = hexToRgba(color, 0.4);
-          const pillBorder = hexToRgba(color, 0.7);
-
-          return (
-            <div
-              key={property.id}
-              className="grid border-b border-[#124559]/35 last:border-b-0"
-              style={{ gridTemplateColumns: columnTemplate }}
-            >
+            {days.map((day) => (
               <div
-                className="flex flex-col gap-1 border-r border-[#124559]/35 px-4 py-4 transition-colors hover:bg-[#124559]/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#598392] cursor-pointer"
-                role="button"
-                tabIndex={0}
-                onClick={() => onPropertyClick(property)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    onPropertyClick(property);
-                  }
-                }}
-                aria-label={`View utility information for ${property.name}`}
+                key={day.toISOString()}
+                className={clsx(
+                  "px-2 py-2 text-center text-[#EFF6E0]/80 sm:px-4 sm:py-3",
+                  isSameLocalDay(day, today)
+                    ? "bg-[#EFF6E0]/10 text-[#EFF6E0]"
+                    : ""
+                )}
               >
-                <div className="flex items-start gap-3">
-                  <span
-                    className="mt-1 inline-block h-8 w-1.5 rounded-full"
-                    style={{ backgroundColor: indicator }}
-                  />
-                  <div>
-                    <p className="text-sm font-semibold text-[#EFF6E0]">
-                      {property.name}
-                    </p>
-                    <p className="text-xs text-[#EFF6E0]/60">
-                      Checkout: {property.checkout_time ?? "10:00"}
-                    </p>
-                    {property.cleaner ? (
-                      <p className="text-xs text-[#EFF6E0]/50">
-                        Cleaner: {property.cleaner}
-                      </p>
-                    ) : null}
-                  </div>
+                <div className="text-[0.6rem] tracking-wider sm:text-[0.65rem]">
+                  {format(day, "EEE").toUpperCase()}
+                </div>
+                <div className="text-xs font-semibold sm:text-sm">
+                  {format(day, "d MMM")}
                 </div>
               </div>
+            ))}
+          </div>
 
-              {days.map((day) => {
-                const cleansForDay = propertyCleans.filter((clean) => {
-                  const scheduled = new Date(clean.scheduled_for);
-                  return isSameLocalDay(scheduled, day);
-                });
+          {properties.map((property) => {
+            const propertyCleans = cleansByProperty.get(property.id) ?? [];
+            const color = propertyColors.get(property.id) ?? PROPERTY_COLORS[0];
+            const indicator = hexToRgba(color, 0.9);
+            const pillBackground = hexToRgba(color, 0.4);
+            const pillBorder = hexToRgba(color, 0.7);
 
-                return (
-                  <div
-                    key={`${property.id}-${day.toISOString()}`}
-                    className={clsx(
-                      "min-h-[96px] border-r border-[#124559]/25 p-3",
-                      isSameLocalDay(day, today) ? "bg-[#EFF6E0]/6" : ""
-                    )}
-                  >
-                    <div className="space-y-2">
-                      {cleansForDay.map((clean) => (
-                        <div
-                          key={clean.id}
-                          className="rounded-lg border px-3 py-2 shadow-sm transition-colors hover:border-[#EFF6E0]/60 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#598392]"
-                          style={{
-                            backgroundColor: pillBackground,
-                            borderColor: pillBorder,
-                          }}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => onCleanClick(clean)}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter" || event.key === " ") {
-                              event.preventDefault();
-                              onCleanClick(clean);
-                            }
-                          }}
-                          aria-label={`Inspect clean scheduled for ${formatTime(
-                            clean.scheduled_for
-                          )} at ${property.name}`}
-                        >
-                          <div className="flex items-center justify-between text-[0.7rem] font-semibold text-white">
-                            <span className="font-bold drop-shadow-sm">
-                              {formatTime(clean.scheduled_for)}
-                            </span>
-                            <span className="uppercase tracking-wide text-[0.6rem] font-semibold text-white/95">
-                              {clean.status}
-                            </span>
-                          </div>
-                          {clean.notes ? (
-                            <p className="mt-1 text-[0.65rem] font-medium text-white/90">
-                              {clean.notes}
-                            </p>
-                          ) : null}
-                          {clean.checkout ? (
-                            <p className="mt-1 text-[0.6rem] font-medium text-white/90">
-                              Checkout: {formatTime(clean.checkout)}
-                            </p>
-                          ) : null}
-                        </div>
-                      ))}
-                      {cleansForDay.length === 0 ? (
-                        <div className="text-center text-[0.65rem] text-[#EFF6E0]/40">
-                          —
-                        </div>
+            return (
+              <div
+                key={property.id}
+                className="grid border-b border-[#124559]/35 last:border-b-0"
+                style={{ gridTemplateColumns: columnTemplate }}
+              >
+                <div
+                  className="flex flex-col gap-1 border-r border-[#124559]/35 px-2 py-3 transition-colors active:bg-[#124559]/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#598392] cursor-pointer sm:px-4 sm:py-4 sm:hover:bg-[#124559]/25"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onPropertyClick(property)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onPropertyClick(property);
+                    }
+                  }}
+                  aria-label={`View utility information for ${property.name}`}
+                >
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <span
+                      className="mt-0.5 inline-block h-6 w-1 rounded-full shrink-0 sm:mt-1 sm:h-8 sm:w-1.5"
+                      style={{ backgroundColor: indicator }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-[#EFF6E0] leading-tight sm:text-sm">
+                        {property.name}
+                      </p>
+                      <p className="mt-0.5 text-[0.65rem] text-[#EFF6E0]/60 sm:text-xs">
+                        {property.checkout_time ?? "10:00"}
+                      </p>
+                      {property.cleaner ? (
+                        <p className="mt-0.5 text-[0.6rem] text-[#EFF6E0]/50 sm:text-xs">
+                          {property.cleaner}
+                        </p>
                       ) : null}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          );
-        })}
+                </div>
 
-        {!hasCleans ? (
-          <div className="px-6 py-8 text-center text-sm text-[#EFF6E0]/60">
-            No cleans scheduled for this range.
-          </div>
-        ) : null}
+                {days.map((day) => {
+                  const cleansForDay = propertyCleans.filter((clean) => {
+                    const scheduled = new Date(clean.scheduled_for);
+                    return isSameLocalDay(scheduled, day);
+                  });
+
+                  return (
+                    <div
+                      key={`${property.id}-${day.toISOString()}`}
+                      className={clsx(
+                        "min-h-[80px] border-r border-[#124559]/25 p-2 sm:min-h-[96px] sm:p-3",
+                        isSameLocalDay(day, today) ? "bg-[#EFF6E0]/6" : ""
+                      )}
+                    >
+                      <div className="space-y-1.5 sm:space-y-2">
+                        {cleansForDay.map((clean) => {
+                          const isCompleted = clean.status === "completed";
+                          const completedBg = "rgba(16, 185, 129, 0.6)"; // emerald-500 with opacity
+                          const completedBorder = "rgba(16, 185, 129, 0.9)"; // emerald-500 with higher opacity
+
+                          return (
+                            <div
+                              key={clean.id}
+                              className={clsx(
+                                "rounded-lg border px-2 py-1.5 shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#598392] sm:px-3 sm:py-2",
+                                isCompleted
+                                  ? "border-emerald-400/80 bg-emerald-500/50 active:border-emerald-300 active:bg-emerald-500/60 sm:hover:border-emerald-300 sm:hover:bg-emerald-500/60"
+                                  : "active:border-[#EFF6E0]/60 active:bg-white/10 sm:hover:border-[#EFF6E0]/60 sm:hover:bg-white/10"
+                              )}
+                              style={
+                                isCompleted
+                                  ? {
+                                      backgroundColor: completedBg,
+                                      borderColor: completedBorder,
+                                    }
+                                  : {
+                                      backgroundColor: pillBackground,
+                                      borderColor: pillBorder,
+                                    }
+                              }
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => onCleanClick(clean)}
+                              onKeyDown={(event) => {
+                                if (
+                                  event.key === "Enter" ||
+                                  event.key === " "
+                                ) {
+                                  event.preventDefault();
+                                  onCleanClick(clean);
+                                }
+                              }}
+                              aria-label={`Inspect clean scheduled for ${formatTime(
+                                clean.scheduled_for
+                              )} at ${property.name}`}
+                            >
+                              <div className="flex items-center justify-between gap-1 text-[0.65rem] font-semibold text-white sm:text-[0.7rem]">
+                                <span className="font-bold drop-shadow-sm truncate">
+                                  {formatTime(clean.scheduled_for)}
+                                </span>
+                                <span className="uppercase tracking-wide text-[0.55rem] font-semibold text-white/95 shrink-0 sm:text-[0.6rem]">
+                                  {clean.status}
+                                </span>
+                              </div>
+                              {clean.notes ? (
+                                <p className="mt-0.5 line-clamp-1 text-[0.6rem] font-medium text-white/90 sm:mt-1 sm:text-[0.65rem]">
+                                  {clean.notes}
+                                </p>
+                              ) : null}
+                              {clean.checkout ? (
+                                <p className="mt-0.5 text-[0.55rem] font-medium text-white/90 sm:mt-1 sm:text-[0.6rem]">
+                                  {formatTime(clean.checkout)}
+                                </p>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                        {cleansForDay.length === 0 ? (
+                          <div className="text-center text-[0.6rem] text-[#EFF6E0]/40 sm:text-[0.65rem]">
+                            —
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+
+          {!hasCleans ? (
+            <div className="px-4 py-6 text-center text-xs text-[#EFF6E0]/60 sm:px-6 sm:py-8 sm:text-sm">
+              No cleans scheduled for this range.
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -829,10 +863,11 @@ function CalendarView({
 
   return (
     <div className="rounded-xl border border-[#124559]/40 bg-[#01161E]/40 shadow-lg shadow-[#01161E]/40">
-      <div className="grid grid-cols-7 border-b border-[#124559]/40 bg-[#124559]/30 text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/70">
+      <div className="grid grid-cols-7 border-b border-[#124559]/40 bg-[#124559]/30 text-[0.65rem] font-semibold uppercase tracking-wide text-[#EFF6E0]/70 sm:text-xs">
         {weekdayLabels.map((label) => (
-          <div key={label} className="px-3 py-3 text-center">
-            {label}
+          <div key={label} className="px-1 py-2 text-center sm:px-3 sm:py-3">
+            <span className="hidden sm:inline">{label}</span>
+            <span className="sm:hidden">{label.slice(0, 1)}</span>
           </div>
         ))}
       </div>
@@ -847,42 +882,57 @@ function CalendarView({
             <div
               key={day.toISOString()}
               className={clsx(
-                "min-h-[120px] border-b border-r border-[#124559]/25 p-3",
+                "min-h-[80px] border-b border-r border-[#124559]/25 p-1.5 sm:min-h-[120px] sm:p-3",
                 isTodayFlag ? "bg-[#EFF6E0]/8" : "",
                 !isCurrentMonth ? "bg-[#01161E]/20 text-[#EFF6E0]/40" : ""
               )}
             >
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center justify-between gap-1">
                 <span
                   className={clsx(
-                    "text-sm font-semibold",
+                    "text-[0.7rem] font-semibold sm:text-sm",
                     isCurrentMonth ? "text-[#EFF6E0]" : "text-[#EFF6E0]/40"
                   )}
                 >
-                  {format(day, "MMM d")}
+                  <span className="hidden sm:inline">
+                    {format(day, "MMM d")}
+                  </span>
+                  <span className="sm:hidden">{format(day, "d")}</span>
                 </span>
                 {entries.length ? (
-                  <span className="rounded-full bg-[#124559]/40 px-2 py-0.5 text-[0.6rem] font-semibold text-[#EFF6E0]/80">
+                  <span className="rounded-full bg-[#124559]/40 px-1.5 py-0.5 text-[0.55rem] font-semibold text-[#EFF6E0]/80 sm:px-2 sm:text-[0.6rem]">
                     {entries.length}
                   </span>
                 ) : null}
               </div>
-              <div className="mt-2 space-y-2">
+              <div className="mt-1 space-y-1 sm:mt-2 sm:space-y-2">
                 {entries.map((clean) => {
+                  const isCompleted = clean.status === "completed";
                   const color =
                     propertyColors.get(clean.property_id) ?? PROPERTY_COLORS[0];
                   const property = propertyLookup.get(clean.property_id);
+
                   return (
                     <div
                       key={clean.id}
                       className={clsx(
-                        "rounded-full border px-3 py-1 text-[0.65rem] font-medium text-white",
-                        property ? "cursor-pointer" : ""
+                        "rounded-full border px-2 py-1 text-[0.6rem] font-medium text-white transition-colors sm:px-3 sm:py-1 sm:text-[0.65rem]",
+                        isCompleted
+                          ? "border-emerald-400/80 bg-emerald-500/60 active:opacity-90 sm:hover:opacity-90"
+                          : "active:opacity-80",
+                        property ? "cursor-pointer active:scale-95" : ""
                       )}
-                      style={{
-                        backgroundColor: hexToRgba(color, 0.55),
-                        borderColor: hexToRgba(color, 0.85),
-                      }}
+                      style={
+                        isCompleted
+                          ? {
+                              backgroundColor: "rgba(16, 185, 129, 0.6)",
+                              borderColor: "rgba(16, 185, 129, 0.9)",
+                            }
+                          : {
+                              backgroundColor: hexToRgba(color, 0.55),
+                              borderColor: hexToRgba(color, 0.85),
+                            }
+                      }
                       role={property ? "button" : undefined}
                       tabIndex={property ? 0 : -1}
                       onClick={() => {
@@ -898,11 +948,16 @@ function CalendarView({
                         }
                       }}
                     >
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center justify-between gap-1 sm:gap-2">
                         <span className="truncate font-semibold">
-                          {clean.property_name}
+                          <span className="hidden sm:inline">
+                            {clean.property_name}
+                          </span>
+                          <span className="sm:hidden">
+                            {clean.property_name.split(" ")[0]}
+                          </span>
                         </span>
-                        <span className="shrink-0 text-[0.6rem] font-semibold">
+                        <span className="hidden shrink-0 text-[0.55rem] font-semibold sm:inline sm:text-[0.6rem]">
                           {formatTime(clean.scheduled_for)}
                         </span>
                       </div>
@@ -910,8 +965,8 @@ function CalendarView({
                   );
                 })}
                 {!entries.length ? (
-                  <p className="text-center text-[0.65rem] text-[#EFF6E0]/30">
-                    No cleans
+                  <p className="text-center text-[0.6rem] text-[#EFF6E0]/30 sm:text-[0.65rem]">
+                    —
                   </p>
                 ) : null}
               </div>

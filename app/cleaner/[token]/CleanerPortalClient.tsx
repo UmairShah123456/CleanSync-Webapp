@@ -38,53 +38,63 @@ function CleanerPortalContent({
 
   return (
     <div className="min-h-screen bg-[#01161E] text-[#EFF6E0]">
-      <div className="mx-auto w-full max-w-screen space-y-8 px-4 py-10 md:px-8">
-        <header className="rounded-3xl border border-[#124559]/60 bg-gradient-to-br from-[#021b27] via-[#01161E] to-[#0b3141] p-6 shadow-2xl shadow-[#01161E]/80">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-[#EFF6E0]">
-                {cleaner.name}
-              </h1>
-              <p className="mt-1 text-xs uppercase tracking-[0.3em] text-[#EFF6E0]/70">
-                {isCompany ? t.cleaningCompany : t.individualCleaner}
-              </p>
-              <div className="mt-3 space-y-1 text-sm text-[#EFF6E0]/70">
-                {cleaner.phone ? (
-                  <p>
-                    {t.phone}: {cleaner.phone}
-                  </p>
-                ) : null}
-                {cleaner.notes ? (
-                  <p>
-                    {t.notes}: {cleaner.notes}
-                  </p>
-                ) : null}
-                {cleaner.payment_details ? (
-                  <p>
-                    {t.payment}: {cleaner.payment_details}
-                  </p>
-                ) : null}
+      <div className="mx-auto w-full max-w-screen space-y-4 px-3 py-4 sm:space-y-6 sm:px-4 sm:py-6 md:px-8 md:py-10">
+        <header className="rounded-2xl border border-[#124559]/60 bg-gradient-to-br from-[#021b27] via-[#01161E] to-[#0b3141] p-4 shadow-2xl shadow-[#01161E]/80 sm:rounded-3xl sm:p-6">
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl font-semibold text-[#EFF6E0] sm:text-2xl">
+                  {cleaner.name}
+                </h1>
+                <p className="mt-1 text-[0.65rem] uppercase tracking-[0.2em] text-[#EFF6E0]/70 sm:text-xs sm:tracking-[0.3em]">
+                  {isCompany ? t.cleaningCompany : t.individualCleaner}
+                </p>
+              </div>
+              <div className="shrink-0">
+                <LanguageSelector />
               </div>
             </div>
-            <div>
-              <LanguageSelector />
+            <div className="space-y-1.5 text-xs text-[#EFF6E0]/70 sm:text-sm">
+              {cleaner.phone ? (
+                <p className="break-words">
+                  <span className="font-medium">{t.phone}:</span>{" "}
+                  <a
+                    href={`tel:${cleaner.phone}`}
+                    className="text-[#598392] underline hover:text-[#85C7BF]"
+                  >
+                    {cleaner.phone}
+                  </a>
+                </p>
+              ) : null}
+              {cleaner.notes ? (
+                <p className="break-words">
+                  <span className="font-medium">{t.notes}:</span>{" "}
+                  {cleaner.notes}
+                </p>
+              ) : null}
+              {cleaner.payment_details ? (
+                <p className="break-words">
+                  <span className="font-medium">{t.payment}:</span>{" "}
+                  {cleaner.payment_details}
+                </p>
+              ) : null}
             </div>
           </div>
 
-          <div className="mt-4 space-y-2 rounded-2xl border border-[#124559]/50 bg-[#01161E]/60 px-4 py-3 text-sm text-[#EFF6E0]/70">
-            <p>{description}</p>
-            <div className="flex flex-wrap gap-2 pt-2">
+          <div className="mt-4 space-y-2 rounded-xl border border-[#124559]/50 bg-[#01161E]/60 p-3 text-xs text-[#EFF6E0]/70 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm">
+            <p className="leading-relaxed">{description}</p>
+            <div className="flex flex-wrap gap-1.5 pt-2 sm:gap-2">
               {properties.length ? (
                 properties.map((property) => (
                   <span
                     key={property.id}
-                    className="rounded-full border border-[#598392]/40 bg-[#124559]/40 px-3 py-1 text-xs font-semibold text-[#EFF6E0]/80"
+                    className="rounded-full border border-[#598392]/40 bg-[#124559]/40 px-2.5 py-1 text-[0.65rem] font-semibold text-[#EFF6E0]/80 sm:px-3 sm:text-xs"
                   >
                     {property.name}
                   </span>
                 ))
               ) : (
-                <span className="text-xs text-[#EFF6E0]/50">
+                <span className="text-[0.65rem] text-[#EFF6E0]/50 sm:text-xs">
                   {t.noPropertiesAssigned}
                 </span>
               )}

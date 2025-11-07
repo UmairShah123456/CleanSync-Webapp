@@ -467,10 +467,10 @@ export function CleanActionsModal({
                   setActionSuccess(null);
                 }}
                 className={clsx(
-                  "rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150",
+                  "rounded-full px-3 py-2 text-xs font-medium transition-all duration-150 active:scale-95 sm:px-4 sm:py-1.5 sm:text-sm",
                   activeTab === "details"
                     ? "bg-gradient-to-r from-[#124559] to-[#598392] text-[#EFF6E0] shadow-lg"
-                    : "text-[#EFF6E0]/70 hover:text-[#EFF6E0]"
+                    : "text-[#EFF6E0]/70 active:text-[#EFF6E0] sm:hover:text-[#EFF6E0]"
                 )}
               >
                 {translations?.utilityDetails || "Utility details"}
@@ -483,10 +483,10 @@ export function CleanActionsModal({
                   setActionSuccess(null);
                 }}
                 className={clsx(
-                  "rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150",
+                  "rounded-full px-3 py-2 text-xs font-medium transition-all duration-150 active:scale-95 sm:px-4 sm:py-1.5 sm:text-sm",
                   activeTab === "actions"
                     ? "bg-gradient-to-r from-[#124559] to-[#598392] text-[#EFF6E0] shadow-lg"
-                    : "text-[#EFF6E0]/70 hover:text-[#EFF6E0]"
+                    : "text-[#EFF6E0]/70 active:text-[#EFF6E0] sm:hover:text-[#EFF6E0]"
                 )}
               >
                 {context.mode === "owner"
@@ -504,23 +504,29 @@ export function CleanActionsModal({
             canManageCleans ? (
               clean ? (
                 <div className="space-y-6 text-sm text-[#EFF6E0]/80">
-                  <div className="rounded-2xl border border-[#124559]/40 bg-[#01161E]/50 p-4">
-                    <p className="text-xs uppercase tracking-wide text-[#EFF6E0]/50">
+                  <div className="rounded-xl border border-[#124559]/40 bg-[#01161E]/50 p-3 sm:rounded-2xl sm:p-4">
+                    <p className="text-[0.65rem] uppercase tracking-wide text-[#EFF6E0]/50 sm:text-xs">
                       {translations?.scheduledFor || "Scheduled for"}
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-[#EFF6E0]">
+                    <p className="mt-1 text-xs font-semibold text-[#EFF6E0] leading-relaxed sm:text-sm">
                       {format(new Date(clean.scheduled_for), "EEE d MMM yyyy")}{" "}
-                      • {formatTime(clean.scheduled_for)}
+                      <span className="hidden sm:inline">•</span>
+                      <span className="block sm:inline sm:ml-1">
+                        {formatTime(clean.scheduled_for)}
+                      </span>
                     </p>
-                    <p className="mt-4 text-xs uppercase tracking-wide text-[#EFF6E0]/50">
+                    <p className="mt-3 text-[0.65rem] uppercase tracking-wide text-[#EFF6E0]/50 sm:mt-4 sm:text-xs">
                       {translations?.currentStatus || "Current status"}
                     </p>
-                    <p className="mt-1 text-sm font-semibold capitalize text-[#EFF6E0]">
+                    <p className="mt-1 text-xs font-semibold capitalize text-[#EFF6E0] sm:text-sm">
                       {clean.status}
                     </p>
                     {clean.notes ? (
-                      <p className="mt-4 text-xs text-[#EFF6E0]/60">
-                        {translations?.hostNote || "Host note"}: {clean.notes}
+                      <p className="mt-3 text-[0.65rem] text-[#EFF6E0]/60 leading-relaxed sm:mt-4 sm:text-xs">
+                        <span className="font-medium">
+                          {translations?.hostNote || "Host note"}:
+                        </span>{" "}
+                        {clean.notes}
                       </p>
                     ) : null}
                   </div>
@@ -535,7 +541,7 @@ export function CleanActionsModal({
                           "Choose the option that best reflects progress."}
                       </p>
                     </div>
-                    <div className="w-full max-w-xs">
+                    <div className="w-full">
                       <div className="relative">
                         <select
                           value={selectedStatus}
@@ -546,7 +552,7 @@ export function CleanActionsModal({
                             setActionError(null);
                             setActionSuccess(null);
                           }}
-                          className="w-full appearance-none rounded-2xl border border-[#124559]/60 bg-[#01161E]/50 px-4 py-2 pr-10 text-sm font-semibold text-[#EFF6E0] focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/40"
+                          className="w-full appearance-none rounded-xl border border-[#124559]/60 bg-[#01161E]/50 px-4 py-3 pr-10 text-sm font-semibold text-[#EFF6E0] focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/40 sm:rounded-2xl sm:py-2"
                         >
                           {getCleanStatusOptions(translations).map((option) => (
                             <option key={option.value} value={option.value}>
@@ -556,7 +562,7 @@ export function CleanActionsModal({
                         </select>
                         <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EFF6E0]/50" />
                       </div>
-                      <p className="mt-2 text-[0.65rem] text-[#EFF6E0]/50">
+                      <p className="mt-2 text-[0.65rem] leading-relaxed text-[#EFF6E0]/50">
                         {getCleanStatusOptions(translations).find(
                           (option) => option.value === selectedStatus
                         )?.description ?? ""}
@@ -574,17 +580,17 @@ export function CleanActionsModal({
                           "Pick the notes that apply to this clean."}
                       </p>
                     </div>
-                    <div className="relative w-full max-w-md">
+                    <div className="relative w-full">
                       <button
                         type="button"
                         onClick={() =>
                           setNotesMenuOpen((previous) => !previous)
                         }
                         className={clsx(
-                          "flex w-full items-center justify-between rounded-2xl border border-[#124559]/60 bg-[#01161E]/50 px-4 py-2 text-sm font-semibold text-[#EFF6E0] transition",
+                          "flex w-full items-center justify-between rounded-xl border border-[#124559]/60 bg-[#01161E]/50 px-4 py-3 text-sm font-semibold text-[#EFF6E0] transition active:scale-[0.98] sm:rounded-2xl sm:py-2",
                           notesMenuOpen
                             ? "border-[#598392]"
-                            : "hover:border-[#598392]/70"
+                            : "active:border-[#598392]/70 sm:hover:border-[#598392]/70"
                         )}
                       >
                         <span className="truncate text-left">
@@ -670,7 +676,7 @@ export function CleanActionsModal({
                             >
                               {isEditing ? (
                                 <div className="space-y-3">
-                                  <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                                  <div className="grid gap-3 sm:grid-cols-2">
                                     <div>
                                       <label className="text-[0.65rem] uppercase tracking-wide text-[#EFF6E0]/50">
                                         {translations?.amount || "Amount"}
@@ -685,7 +691,7 @@ export function CleanActionsModal({
                                             event.target.value
                                           )
                                         }
-                                        className="mt-1 w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/50 px-3 py-2 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/50"
+                                        className="mt-1 w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/50 px-3 py-2.5 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/50"
                                         placeholder="0.00"
                                         inputMode="decimal"
                                       />
@@ -702,18 +708,18 @@ export function CleanActionsModal({
                                             event.target.value
                                           )
                                         }
-                                        className="mt-1 w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/50 px-3 py-2 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/50"
+                                        className="mt-1 w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/50 px-3 py-2.5 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/50"
                                         placeholder={
                                           translations?.item || "Item"
                                         }
                                       />
                                     </div>
                                   </div>
-                                  <div className="flex flex-wrap items-center justify-end gap-2">
+                                  <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
                                     <button
                                       type="button"
                                       onClick={cancelEditingReimbursement}
-                                      className="rounded-full border border-[#598392]/40 bg-transparent px-4 py-2 text-xs font-semibold text-[#EFF6E0]/70 transition hover:border-[#598392]/70 hover:text-[#EFF6E0]"
+                                      className="w-full rounded-full border border-[#598392]/40 bg-transparent px-4 py-2.5 text-xs font-semibold text-[#EFF6E0]/70 transition active:border-[#598392]/70 active:text-[#EFF6E0] sm:w-auto sm:hover:border-[#598392]/70 sm:hover:text-[#EFF6E0]"
                                       disabled={updatingReimbursement}
                                     >
                                       {translations?.cancel || "Cancel"}
@@ -723,7 +729,7 @@ export function CleanActionsModal({
                                       onClick={handleUpdateReimbursement}
                                       disabled={updatingReimbursement}
                                       className={clsx(
-                                        "rounded-full bg-gradient-to-r from-[#124559] to-[#598392] px-4 py-2 text-xs font-semibold text-[#EFF6E0] transition hover:scale-[1.01]",
+                                        "w-full rounded-full bg-gradient-to-r from-[#124559] to-[#598392] px-4 py-2.5 text-xs font-semibold text-[#EFF6E0] transition active:scale-[0.98] sm:w-auto sm:hover:scale-[1.01]",
                                         updatingReimbursement
                                           ? "cursor-not-allowed opacity-60"
                                           : ""
@@ -736,9 +742,9 @@ export function CleanActionsModal({
                                   </div>
                                 </div>
                               ) : (
-                                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                                  <div>
-                                    <p className="text-sm font-semibold text-[#EFF6E0]">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-semibold text-[#EFF6E0] break-words">
                                       {entry.item}
                                     </p>
                                     <span className="mt-1 block text-[0.65rem] text-[#EFF6E0]/50">
@@ -748,8 +754,8 @@ export function CleanActionsModal({
                                       )}
                                     </span>
                                   </div>
-                                  <div className="flex items-center gap-3">
-                                    <span className="text-sm font-semibold text-[#EFF6E0]">
+                                  <div className="flex items-center gap-2 sm:gap-3">
+                                    <span className="text-sm font-semibold text-[#EFF6E0] shrink-0">
                                       {formatCurrency(Number(entry.amount))}
                                     </span>
                                     {canManageCleans ? (
@@ -763,10 +769,12 @@ export function CleanActionsModal({
                                               entry.item
                                             )
                                           }
-                                          className="flex items-center gap-1 rounded-full border border-[#598392]/40 px-3 py-1 text-xs font-semibold text-[#EFF6E0]/80 transition hover:border-[#598392]/70 hover:text-[#EFF6E0]"
+                                          className="flex items-center gap-1 rounded-full border border-[#598392]/40 px-3 py-2 text-xs font-semibold text-[#EFF6E0]/80 transition active:border-[#598392]/70 active:text-[#EFF6E0] sm:py-1 sm:hover:border-[#598392]/70 sm:hover:text-[#EFF6E0]"
                                         >
                                           <PencilSquareIcon className="h-4 w-4" />{" "}
-                                          {translations?.edit || "Edit"}
+                                          <span className="hidden sm:inline">
+                                            {translations?.edit || "Edit"}
+                                          </span>
                                         </button>
                                         <button
                                           type="button"
@@ -775,17 +783,20 @@ export function CleanActionsModal({
                                           }
                                           disabled={isDeleting}
                                           className={clsx(
-                                            "flex items-center gap-1 rounded-full border border-red-400/50 px-3 py-1 text-xs font-semibold text-red-200 transition hover:border-red-300 hover:text-red-100",
+                                            "flex items-center gap-1 rounded-full border border-red-400/50 px-3 py-2 text-xs font-semibold text-red-200 transition active:border-red-300 active:text-red-100 sm:py-1 sm:hover:border-red-300 sm:hover:text-red-100",
                                             isDeleting
                                               ? "cursor-not-allowed opacity-60"
                                               : ""
                                           )}
                                         >
                                           <TrashIcon className="h-4 w-4" />
-                                          {isDeleting
-                                            ? translations?.removing ||
-                                              "Removing..."
-                                            : translations?.delete || "Delete"}
+                                          <span className="hidden sm:inline">
+                                            {isDeleting
+                                              ? translations?.removing ||
+                                                "Removing..."
+                                              : translations?.delete ||
+                                                "Delete"}
+                                          </span>
                                         </button>
                                       </>
                                     ) : null}
@@ -803,8 +814,8 @@ export function CleanActionsModal({
                       </p>
                     )}
 
-                    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
-                      <div className="md:col-span-1">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
                         <label className="text-[0.65rem] uppercase tracking-wide text-[#EFF6E0]/50">
                           {translations?.amount || "Amount"}
                         </label>
@@ -816,12 +827,12 @@ export function CleanActionsModal({
                           onChange={(event) =>
                             setNewReimbursementAmount(event.target.value)
                           }
-                          className="mt-1 w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/50 px-3 py-2 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/50"
+                          className="mt-1 w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/50 px-3 py-2.5 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/50"
                           placeholder="0.00"
                           inputMode="decimal"
                         />
                       </div>
-                      <div className="md:col-span-1 md:col-start-2">
+                      <div>
                         <label className="text-[0.65rem] uppercase tracking-wide text-[#EFF6E0]/50">
                           {translations?.item || "Item"}
                         </label>
@@ -831,20 +842,20 @@ export function CleanActionsModal({
                           onChange={(event) =>
                             setNewReimbursementItem(event.target.value)
                           }
-                          className="mt-1 w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/50 px-3 py-2 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/50"
+                          className="mt-1 w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/50 px-3 py-2.5 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/50"
                           placeholder={
                             translations?.cleaningSuppliesExample ||
                             "e.g. Cleaning supplies"
                           }
                         />
                       </div>
-                      <div className="self-end md:col-span-1">
+                      <div className="sm:col-span-2">
                         <button
                           type="button"
                           onClick={handleAddReimbursement}
                           disabled={addingReimbursement}
                           className={clsx(
-                            "w-full rounded-full border border-[#598392] bg-[#598392]/20 px-4 py-2 text-sm font-semibold text-[#EFF6E0] transition-all duration-150 hover:bg-[#598392]/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#598392]",
+                            "w-full rounded-full border border-[#598392] bg-[#598392]/20 px-4 py-3 text-sm font-semibold text-[#EFF6E0] transition-all duration-150 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#598392] sm:py-2 sm:hover:bg-[#598392]/30",
                             addingReimbursement
                               ? "cursor-not-allowed opacity-60"
                               : ""
@@ -875,7 +886,7 @@ export function CleanActionsModal({
                     onClick={handleSave}
                     disabled={savingClean}
                     className={clsx(
-                      "w-full rounded-full bg-gradient-to-r from-[#124559] to-[#598392] px-6 py-3 text-sm font-semibold text-[#EFF6E0] shadow-lg shadow-[#01161E]/40 transition-transform duration-150 hover:scale-[1.01] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#598392]",
+                      "w-full rounded-full bg-gradient-to-r from-[#124559] to-[#598392] px-6 py-3.5 text-sm font-semibold text-[#EFF6E0] shadow-lg shadow-[#01161E]/40 transition-transform duration-150 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#598392] sm:py-3 sm:hover:scale-[1.01]",
                       savingClean ? "cursor-not-allowed opacity-60" : ""
                     )}
                   >
@@ -915,20 +926,22 @@ function UtilityDetails({ property }: { property: ScheduleProperty }) {
   );
 
   return (
-    <div className="space-y-4 text-sm text-[#EFF6E0]/80">
+    <div className="space-y-3 text-xs text-[#EFF6E0]/80 sm:space-y-4 sm:text-sm">
       {details
         .filter((detail) => detail.value && detail.value.trim().length > 0)
         .map((detail) => (
           <div key={detail.label} className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/60">
+            <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-[#EFF6E0]/60 sm:text-xs">
               {detail.label}
             </p>
-            <p className="whitespace-pre-wrap text-[#EFF6E0]">{detail.value}</p>
+            <p className="whitespace-pre-wrap break-words text-[#EFF6E0] leading-relaxed">
+              {detail.value}
+            </p>
           </div>
         ))}
 
       {!hasDetails ? (
-        <p className="text-sm text-[#EFF6E0]/60">
+        <p className="text-xs text-[#EFF6E0]/60 sm:text-sm">
           No utility details recorded for this property yet.
         </p>
       ) : null}
