@@ -25,17 +25,18 @@ import type { Translations } from "@/lib/translations/cleanerPortal";
 type ScheduleView = "timeline" | "calendar";
 
 // Purple/blue color palette for scheduled cleans (distinct from green completed cleans)
+// Using varied shades with different saturation and lightness for better distinction
 const PROPERTY_COLORS = [
-  "#A78BFA", // violet-400
-  "#8B5CF6", // violet-500
-  "#7C3AED", // violet-600
-  "#9333EA", // purple-600
-  "#C084FC", // purple-400
-  "#A855F7", // purple-500
-  "#818CF8", // indigo-400
-  "#6366F1", // indigo-500
-  "#8B5CF6", // violet-500 (duplicate for variety)
-  "#A78BFA", // violet-400 (duplicate for variety)
+  "#C084FC", // purple-400 - light purple
+  "#7C3AED", // violet-600 - deep violet
+  "#818CF8", // indigo-400 - light indigo-blue
+  "#9333EA", // purple-600 - deep purple
+  "#A78BFA", // violet-400 - light violet
+  "#6366F1", // indigo-500 - medium indigo-blue
+  "#A855F7", // purple-500 - medium purple
+  "#8B5CF6", // violet-500 - medium violet
+  "#C084FC", // purple-400 - light purple (repeat)
+  "#7C3AED", // violet-600 - deep violet (repeat)
 ];
 
 const WEEKDAY_LABELS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
