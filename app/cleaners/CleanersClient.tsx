@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
-import { CleanerForm, type CleanerPayload } from "@/components/forms/CleanerForm";
+import {
+  CleanerForm,
+  type CleanerPayload,
+} from "@/components/forms/CleanerForm";
 import { Modal } from "@/components/ui/Modal";
 import { CleanerList } from "./components/CleanerList";
 
@@ -15,7 +18,12 @@ export type CleanerWithAssignments = {
   payment_details?: string | null;
   created_at?: string | null;
   assigned_properties: { id: string; name: string }[];
-  link: { id: string; token: string; created_at?: string | null; updated_at?: string | null } | null;
+  link: {
+    id: string;
+    token: string;
+    created_at?: string | null;
+    updated_at?: string | null;
+  } | null;
 };
 
 export function CleanersClient({
@@ -118,6 +126,15 @@ export function CleanersClient({
 
   const handleDelete = async () => {
     if (!editingCleaner) return;
+
+    if (
+      !confirm(
+        `Are you sure you want to delete "${editingCleaner.name}"? This action cannot be undone and will remove all associated cleaner links.`
+      )
+    ) {
+      return;
+    }
+
     setDeleting(true);
     setError(null);
     try {
@@ -183,6 +200,17 @@ export function CleanersClient({
   };
 
   const handleDeleteLink = async (cleanerId: string) => {
+    const cleaner = cleaners.find((c) => c.id === cleanerId);
+    const cleanerName = cleaner?.name || "this cleaner";
+
+    if (
+      !confirm(
+        `Are you sure you want to delete the link for "${cleanerName}"? The cleaner will lose access until you generate a new one.`
+      )
+    ) {
+      return;
+    }
+
     setLinkDeleting(true);
     setLinkError(null);
     try {
@@ -363,7 +391,9 @@ export function CleanersClient({
           {selectedCleanerIdForLink ? (
             <LinkPreview
               cleaner={
-                cleaners.find((cleaner) => cleaner.id === selectedCleanerIdForLink)!
+                cleaners.find(
+                  (cleaner) => cleaner.id === selectedCleanerIdForLink
+                )!
               }
               onGenerate={() =>
                 handleGenerateLink(selectedCleanerIdForLink).catch(() => {})
@@ -475,7 +505,9 @@ function LinkPreview({
             <button
               type="button"
               onClick={() => {
-                if (confirm("Delete this link? The cleaner will lose access.")) {
+                if (
+                  confirm("Delete this link? The cleaner will lose access.")
+                ) {
                   onDelete();
                 }
               }}

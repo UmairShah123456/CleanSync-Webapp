@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useState,
-  useEffect,
-  type ChangeEvent,
-  type FormEvent,
-} from "react";
+import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
 import { TrashIcon } from "@heroicons/react/24/outline";
 
 export type CleanerPayload = {
@@ -17,12 +12,30 @@ export type CleanerPayload = {
 };
 
 const COUNTRIES = [
-  { code: "GB", name: "United Kingdom", dial: "+44", minLength: 10, maxLength: 10 },
-  { code: "US", name: "United States", dial: "+1", minLength: 10, maxLength: 10 },
+  {
+    code: "GB",
+    name: "United Kingdom",
+    dial: "+44",
+    minLength: 10,
+    maxLength: 10,
+  },
+  {
+    code: "US",
+    name: "United States",
+    dial: "+1",
+    minLength: 10,
+    maxLength: 10,
+  },
   { code: "IE", name: "Ireland", dial: "+353", minLength: 9, maxLength: 9 },
   { code: "ES", name: "Spain", dial: "+34", minLength: 9, maxLength: 9 },
   { code: "FR", name: "France", dial: "+33", minLength: 9, maxLength: 9 },
-  { code: "AE", name: "United Arab Emirates", dial: "+971", minLength: 9, maxLength: 9 },
+  {
+    code: "AE",
+    name: "United Arab Emirates",
+    dial: "+971",
+    minLength: 9,
+    maxLength: 9,
+  },
 ];
 
 export function CleanerForm({
@@ -112,7 +125,11 @@ export function CleanerForm({
     const digitsOnly = formState.phone?.replace(/\D/g, "") ?? "";
     const selected = selectedCountry;
 
-    if (digitsOnly && (digitsOnly.length < selected.minLength || digitsOnly.length > selected.maxLength)) {
+    if (
+      digitsOnly &&
+      (digitsOnly.length < selected.minLength ||
+        digitsOnly.length > selected.maxLength)
+    ) {
       setError(
         `Phone number must be ${selected.minLength}${
           selected.minLength !== selected.maxLength
@@ -135,9 +152,7 @@ export function CleanerForm({
       await onSubmit({
         ...formState,
         name: formState.name.trim(),
-        phone: digitsOnly
-          ? `${selected.dial}${digitsOnly}`
-          : null,
+        phone: digitsOnly ? `${selected.dial}${digitsOnly}` : null,
         notes: formState.notes?.trim() || null,
         payment_details: formState.payment_details?.trim() || null,
       });
@@ -204,7 +219,8 @@ export function CleanerForm({
                   onChange={(event) =>
                     setFormState((prev) => ({
                       ...prev,
-                      cleaner_type: event.target.value as CleanerPayload["cleaner_type"],
+                      cleaner_type: event.target
+                        .value as CleanerPayload["cleaner_type"],
                     }))
                   }
                   className="hidden"
@@ -319,7 +335,15 @@ export function CleanerForm({
         {onDelete ? (
           <button
             type="button"
-            onClick={onDelete}
+            onClick={() => {
+              if (
+                confirm(
+                  `Are you sure you want to delete "${formState.name}"? This action cannot be undone and will remove all associated cleaner links.`
+                )
+              ) {
+                onDelete();
+              }
+            }}
             disabled={deleting || submitting}
             className="inline-flex items-center gap-2 rounded-full border border-red-500/60 bg-red-500/10 px-5 py-2.5 text-sm font-semibold text-red-200 transition-all duration-200 hover:border-red-400 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
           >

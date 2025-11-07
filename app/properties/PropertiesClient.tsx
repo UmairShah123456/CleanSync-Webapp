@@ -44,6 +44,17 @@ export function PropertiesClient({
   };
 
   const handleDelete = async (id: string) => {
+    const property = properties.find((p) => p.id === id);
+    const propertyName = property?.name || "this property";
+
+    if (
+      !confirm(
+        `Are you sure you want to delete "${propertyName}"? This action cannot be undone and will remove all associated cleans and bookings.`
+      )
+    ) {
+      return;
+    }
+
     setError(null);
     const response = await fetch(`/api/properties/${id}`, { method: "DELETE" });
     if (!response.ok) {

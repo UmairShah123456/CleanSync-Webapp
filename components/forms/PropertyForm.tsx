@@ -220,7 +220,15 @@ export function PropertyForm({
         {onDelete ? (
           <button
             type="button"
-            onClick={onDelete}
+            onClick={() => {
+              if (
+                confirm(
+                  `Are you sure you want to delete "${formState.name}"? This action cannot be undone and will remove all associated cleans and bookings.`
+                )
+              ) {
+                onDelete();
+              }
+            }}
             disabled={deleting || submitting}
             className="inline-flex items-center gap-2 rounded-full border border-red-500/60 bg-red-500/10 px-5 py-2.5 text-sm font-semibold text-red-200 transition-all duration-200 hover:border-red-400 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
           >

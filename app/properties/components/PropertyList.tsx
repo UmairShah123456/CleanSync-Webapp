@@ -271,6 +271,15 @@ export function PropertyList({
 
   const handleDeleteFromModal = async () => {
     if (!editing) return;
+
+    if (
+      !confirm(
+        `Are you sure you want to delete "${editing.name}"? This action cannot be undone and will remove all associated cleans and bookings.`
+      )
+    ) {
+      return;
+    }
+
     setDeleting(true);
     setModalError(null);
     try {
