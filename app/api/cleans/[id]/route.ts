@@ -163,7 +163,6 @@ export async function PATCH(
         notes,
         maintenance_notes,
         clean_reimbursements ( id, amount, item, created_at ),
-        bookings(checkin, checkout),
         properties(id, name, cleaner)
       `
     )
@@ -177,6 +176,25 @@ export async function PATCH(
     );
   }
 
+  // Fetch booking separately since we no longer have a foreign key relationship
+  let booking: { checkin: string | null; checkout: string | null } | null =
+    null;
+  if (updatedCleanData.booking_uid && updatedCleanData.property_id) {
+    const { data: bookingData } = await supabase
+      .from("bookings")
+      .select("checkin, checkout")
+      .eq("uid", updatedCleanData.booking_uid)
+      .eq("property_id", updatedCleanData.property_id)
+      .maybeSingle();
+
+    if (bookingData) {
+      booking = {
+        checkin: bookingData.checkin,
+        checkout: bookingData.checkout,
+      };
+    }
+  }
+
   // Map to ScheduleClean format
   const property = (updatedCleanData.properties as any) ?? {};
   const cleanResponse = {
@@ -187,8 +205,8 @@ export async function PATCH(
     scheduled_for: updatedCleanData.scheduled_for,
     status: updatedCleanData.status,
     notes: updatedCleanData.notes ?? null,
-    checkin: (updatedCleanData.bookings as any)?.checkin ?? null,
-    checkout: (updatedCleanData.bookings as any)?.checkout ?? null,
+    checkin: booking?.checkin ?? null,
+    checkout: booking?.checkout ?? null,
     cleaner: property.cleaner ?? null,
     maintenance_notes: updatedCleanData.maintenance_notes ?? [],
     reimbursements: (

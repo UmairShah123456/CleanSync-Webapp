@@ -70,7 +70,7 @@ const upsertBooking = async (
       status: "active",
       updated_at: new Date().toISOString(),
     },
-    { onConflict: "uid" }
+    { onConflict: "uid,property_id" }
   );
 
   if (error) {
@@ -99,6 +99,7 @@ const ensureClean = async (
     .from("cleans")
     .select("id, status")
     .eq("booking_uid", event.uid)
+    .eq("property_id", propertyId)
     .maybeSingle();
 
   if (error) {
@@ -160,13 +161,18 @@ const ensureClean = async (
   }
 };
 
-const cancelBookingAndClean = async (supabase: SupabaseClient, uid: string) => {
+const cancelBookingAndClean = async (
+  supabase: SupabaseClient,
+  uid: string,
+  propertyId: string
+) => {
   const timestamp = new Date().toISOString();
 
   const { error: bookingError } = await supabase
     .from("bookings")
     .update({ status: "cancelled", updated_at: timestamp })
-    .eq("uid", uid);
+    .eq("uid", uid)
+    .eq("property_id", propertyId);
 
   if (bookingError) {
     throw new Error(`Failed to cancel booking ${uid}: ${bookingError.message}`);
@@ -179,7 +185,8 @@ const cancelBookingAndClean = async (supabase: SupabaseClient, uid: string) => {
       notes: CANCELLATION_NOTE,
       updated_at: timestamp,
     })
-    .eq("booking_uid", uid);
+    .eq("booking_uid", uid)
+    .eq("property_id", propertyId);
 
   if (cleanError) {
     throw new Error(
@@ -260,7 +267,9 @@ export const syncProperty = async (
         property.checkout_time
       );
       updated += 1;
-    } else if (sameDay) {
+    } else {
+      // Booking exists and hasn't changed, but we still need to ensure clean exists
+      // This handles cases where the clean might be missing or needs updating
       await ensureClean(
         supabase,
         property.id,
@@ -324,7 +333,7 @@ export const syncProperty = async (
       }
     }
 
-    await cancelBookingAndClean(supabase, uid);
+    await cancelBookingAndClean(supabase, uid, property.id);
     removed += 1;
   }
 

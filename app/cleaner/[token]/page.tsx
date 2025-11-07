@@ -100,8 +100,7 @@ export default async function CleanerPortalPage({
             property_id,
             scheduled_for,
             status,
-            notes,
-            bookings(checkin, checkout)
+            notes
           `
         )
         .in("property_id", propertyIds)
@@ -111,19 +110,52 @@ export default async function CleanerPortalPage({
         .order("scheduled_for", { ascending: true })
     : { data: [] };
 
-  const initialCleans: ScheduleClean[] = (cleansData ?? []).map((clean: any) => ({
-    id: clean.id,
-    booking_uid: clean.booking_uid,
-    property_id: clean.property_id,
-    property_name:
-      propertyNameLookup.get(clean.property_id) ?? "Unknown property",
-    scheduled_for: clean.scheduled_for,
-    status: clean.status,
-    notes: clean.notes,
-    checkin: clean.bookings?.checkin ?? null,
-    checkout: clean.bookings?.checkout ?? null,
-    cleaner: propertyCleanerLookup.get(clean.property_id) ?? null,
-  }));
+  // Fetch bookings separately since we no longer have a foreign key relationship
+  const cleansWithBookings = (cleansData ?? []).filter(
+    (c: any) => c.booking_uid
+  );
+  const bookingMap = new Map<
+    string,
+    { checkin: string | null; checkout: string | null }
+  >();
+
+  if (cleansWithBookings.length > 0 && propertyIds.length > 0) {
+    const { data: bookings } = await supabase
+      .from("bookings")
+      .select("uid, property_id, checkin, checkout")
+      .in("property_id", propertyIds);
+
+    if (bookings) {
+      bookings.forEach((b: any) => {
+        const key = `${b.uid}:${b.property_id}`;
+        bookingMap.set(key, { checkin: b.checkin, checkout: b.checkout });
+      });
+    }
+  }
+
+  const initialCleans: ScheduleClean[] = (cleansData ?? []).map(
+    (clean: any) => {
+      // Match booking by both uid and property_id
+      const bookingKey = clean.booking_uid
+        ? `${clean.booking_uid}:${clean.property_id}`
+        : null;
+      const booking = bookingKey ? bookingMap.get(bookingKey) : null;
+
+      return {
+        id: clean.id,
+        booking_uid: clean.booking_uid,
+        property_id: clean.property_id,
+        property_name:
+          propertyNameLookup.get(clean.property_id) ?? "Unknown property",
+        scheduled_for: clean.scheduled_for,
+        status: clean.status,
+        notes: clean.notes,
+        checkin: booking?.checkin ?? null,
+        checkout: booking?.checkout ?? null,
+        cleaner: propertyCleanerLookup.get(clean.property_id) ?? null,
+      };
+    }
+  );
 
   const initialRange: ScheduleRange = { from: fromIso, to: toIso };
 

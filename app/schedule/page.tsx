@@ -67,8 +67,7 @@ export default async function SchedulePage() {
           status,
           notes,
           maintenance_notes,
-          clean_reimbursements ( id, amount, item, created_at ),
-          bookings(checkin, checkout)
+          clean_reimbursements ( id, amount, item, created_at )
         `
       )
       .in("property_id", propertyIds)
@@ -77,6 +76,29 @@ export default async function SchedulePage() {
       .neq("status", "deleted")
       .order("scheduled_for", { ascending: true });
 
+    // Fetch bookings separately since we no longer have a foreign key relationship
+    const cleansWithBookings = (cleansData ?? []).filter(
+      (c: any) => c.booking_uid
+    );
+    const bookingMap = new Map<
+      string,
+      { checkin: string | null; checkout: string | null }
+    >();
+
+    if (cleansWithBookings.length > 0) {
+      const { data: bookings } = await supabase
+        .from("bookings")
+        .select("uid, property_id, checkin, checkout")
+        .in("property_id", propertyIds);
+
+      if (bookings) {
+        bookings.forEach((b: any) => {
+          const key = `${b.uid}:${b.property_id}`;
+          bookingMap.set(key, { checkin: b.checkin, checkout: b.checkout });
+        });
+      }
+    }
+
     // Extra safeguard: filter out any cleans that don't have valid properties
     const validPropertyIds = new Set(propertyIds);
     cleans = (cleansData ?? [])
@@ -84,27 +106,35 @@ export default async function SchedulePage() {
         (clean: any) =>
           clean.property_id && validPropertyIds.has(clean.property_id)
       )
-      .map((clean: any) => ({
-        id: clean.id,
-        booking_uid: clean.booking_uid,
-        property_id: clean.property_id,
-        property_name:
-          propertyNameLookup.get(clean.property_id) ?? "Unknown property",
-        scheduled_for: clean.scheduled_for,
-        status: clean.status,
-        notes: clean.notes,
-        checkin: clean.bookings?.checkin ?? null,
-        checkout: clean.bookings?.checkout ?? null,
-        cleaner: propertyCleanerLookup.get(clean.property_id) ?? null,
-        maintenance_notes: clean.maintenance_notes ?? [],
-        reimbursements:
-          (clean.clean_reimbursements ?? []).map((entry: any) => ({
-            id: entry.id,
-            amount: Number(entry.amount),
-            item: entry.item,
-            created_at: entry.created_at,
-          })) ?? [],
-      }));
+      .map((clean: any) => {
+        // Match booking by both uid and property_id
+        const bookingKey = clean.booking_uid
+          ? `${clean.booking_uid}:${clean.property_id}`
+          : null;
+        const booking = bookingKey ? bookingMap.get(bookingKey) : null;
+
+        return {
+          id: clean.id,
+          booking_uid: clean.booking_uid,
+          property_id: clean.property_id,
+          property_name:
+            propertyNameLookup.get(clean.property_id) ?? "Unknown property",
+          scheduled_for: clean.scheduled_for,
+          status: clean.status,
+          notes: clean.notes,
+          checkin: booking?.checkin ?? null,
+          checkout: booking?.checkout ?? null,
+          cleaner: propertyCleanerLookup.get(clean.property_id) ?? null,
+          maintenance_notes: clean.maintenance_notes ?? [],
+          reimbursements:
+            (clean.clean_reimbursements ?? []).map((entry: any) => ({
+              id: entry.id,
+              amount: Number(entry.amount),
+              item: entry.item,
+              created_at: entry.created_at,
+            })) ?? [],
+        };
+      });
   }
 
   return (

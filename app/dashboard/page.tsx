@@ -61,41 +61,55 @@ export default async function DashboardPage() {
   );
 
   // Fetch related booking check-in/out times for these cleans
+  // Now we need to match by both uid and property_id since the same uid can exist for multiple properties
   let bookingMap = new Map<
     string,
     { checkin: string | null; checkout: string | null }
   >();
   if (cleans.length) {
-    const bookingUids = cleans.map((c: any) => c.booking_uid);
+    const propertyIds = Array.from(
+      new Set(cleans.map((c: any) => c.property_id))
+    );
     const { data: bookings } = await supabase
       .from("bookings")
-      .select("uid, checkin, checkout")
-      .in("uid", bookingUids);
-    bookings?.forEach((b: any) =>
-      bookingMap.set(b.uid, { checkin: b.checkin, checkout: b.checkout })
-    );
+      .select("uid, property_id, checkin, checkout")
+      .in("property_id", propertyIds);
+    bookings?.forEach((b: any) => {
+      // Use composite key (uid, property_id) to uniquely identify bookings
+      const key = `${b.uid}:${b.property_id}`;
+      bookingMap.set(key, { checkin: b.checkin, checkout: b.checkout });
+    });
   }
 
-  const initialCleans = cleans.map((clean: any) => ({
-    id: clean.id,
-    booking_uid: clean.booking_uid,
-    property_id: clean.property_id,
-    property_name: propertyLookup.get(clean.property_id) ?? "Unknown property",
-    scheduled_for: clean.scheduled_for,
-    status: clean.status,
-    notes: clean.notes,
-    checkin: bookingMap.get(clean.booking_uid)?.checkin ?? null,
-    checkout: bookingMap.get(clean.booking_uid)?.checkout ?? null,
-    cleaner: propertyCleanerLookup.get(clean.property_id) ?? null,
-    maintenance_notes: clean.maintenance_notes ?? [],
-    reimbursements:
-      (clean.clean_reimbursements ?? []).map((entry: any) => ({
-        id: entry.id,
-        amount: Number(entry.amount),
-        item: entry.item,
-        created_at: entry.created_at,
-      })) ?? [],
-  }));
+  const initialCleans = cleans.map((clean: any) => {
+    // Use composite key to match booking with correct property
+    const bookingKey = clean.booking_uid
+      ? `${clean.booking_uid}:${clean.property_id}`
+      : null;
+    const booking = bookingKey ? bookingMap.get(bookingKey) : null;
+
+    return {
+      id: clean.id,
+      booking_uid: clean.booking_uid,
+      property_id: clean.property_id,
+      property_name:
+        propertyLookup.get(clean.property_id) ?? "Unknown property",
+      scheduled_for: clean.scheduled_for,
+      status: clean.status,
+      notes: clean.notes,
+      checkin: booking?.checkin ?? null,
+      checkout: booking?.checkout ?? null,
+      cleaner: propertyCleanerLookup.get(clean.property_id) ?? null,
+      maintenance_notes: clean.maintenance_notes ?? [],
+      reimbursements:
+        (clean.clean_reimbursements ?? []).map((entry: any) => ({
+          id: entry.id,
+          amount: Number(entry.amount),
+          item: entry.item,
+          created_at: entry.created_at,
+        })) ?? [],
+    };
+  });
 
   return (
     <DashboardClient

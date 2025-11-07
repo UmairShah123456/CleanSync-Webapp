@@ -1,7 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ScheduleClean } from "@/app/schedule/types";
 
-export const CLEAN_STATUS_VALUES = ["scheduled", "completed", "cancelled"] as const;
+export const CLEAN_STATUS_VALUES = [
+  "scheduled",
+  "completed",
+  "cancelled",
+] as const;
 
 export class CleanerAccessError extends Error {
   status: number;
@@ -103,8 +107,7 @@ export async function ensureIndividualCleanerAccess(
         scheduled_for,
         status,
         notes,
-        maintenance_notes,
-        bookings(checkin, checkout)
+        maintenance_notes
       `
     )
     .eq("id", cleanId)
@@ -116,6 +119,23 @@ export async function ensureIndividualCleanerAccess(
 
   if (!cleanData) {
     throw new CleanerAccessError("Clean not found.", 404);
+  }
+
+  // Fetch booking separately since we no longer have a foreign key relationship
+  if (cleanData.booking_uid && cleanData.property_id) {
+    const { data: bookingData } = await supabase
+      .from("bookings")
+      .select("checkin, checkout")
+      .eq("uid", cleanData.booking_uid)
+      .eq("property_id", cleanData.property_id)
+      .maybeSingle();
+
+    if (bookingData) {
+      cleanData.bookings = {
+        checkin: bookingData.checkin,
+        checkout: bookingData.checkout,
+      };
+    }
   }
 
   const { data: propertyData, error: propertyError } = await supabase
@@ -198,8 +218,7 @@ export async function fetchCleanWithRelations(
         status,
         notes,
         maintenance_notes,
-        clean_reimbursements ( id, amount, item, created_at ),
-        bookings(checkin, checkout)
+        clean_reimbursements ( id, amount, item, created_at )
       `
     )
     .eq("id", cleanId)
@@ -211,6 +230,23 @@ export async function fetchCleanWithRelations(
 
   if (!data) {
     throw new CleanerAccessError("Clean not found.", 404);
+  }
+
+  // Fetch booking separately since we no longer have a foreign key relationship
+  if (data.booking_uid && data.property_id) {
+    const { data: bookingData } = await supabase
+      .from("bookings")
+      .select("checkin, checkout")
+      .eq("uid", data.booking_uid)
+      .eq("property_id", data.property_id)
+      .maybeSingle();
+
+    if (bookingData) {
+      data.bookings = {
+        checkin: bookingData.checkin,
+        checkout: bookingData.checkout,
+      };
+    }
   }
 
   return data;
