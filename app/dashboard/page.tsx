@@ -110,25 +110,25 @@ export default async function DashboardPage() {
     const booking = bookingKey ? bookingMap.get(bookingKey) : null;
 
     return {
-      id: clean.id,
-      booking_uid: clean.booking_uid,
-      property_id: clean.property_id,
+    id: clean.id,
+    booking_uid: clean.booking_uid,
+    property_id: clean.property_id,
       property_name:
         propertyLookup.get(clean.property_id) ?? "Unknown property",
-      scheduled_for: clean.scheduled_for,
-      status: clean.status,
-      notes: clean.notes,
+    scheduled_for: clean.scheduled_for,
+    status: clean.status,
+    notes: clean.notes,
       checkin: booking?.checkin ?? null,
       checkout: booking?.checkout ?? null,
-      cleaner: propertyCleanerLookup.get(clean.property_id) ?? null,
-      maintenance_notes: clean.maintenance_notes ?? [],
-      reimbursements:
-        (clean.clean_reimbursements ?? []).map((entry: any) => ({
-          id: entry.id,
-          amount: Number(entry.amount),
-          item: entry.item,
-          created_at: entry.created_at,
-        })) ?? [],
+    cleaner: propertyCleanerLookup.get(clean.property_id) ?? null,
+    maintenance_notes: clean.maintenance_notes ?? [],
+    reimbursements:
+      (clean.clean_reimbursements ?? []).map((entry: any) => ({
+        id: entry.id,
+        amount: Number(entry.amount),
+        item: entry.item,
+        created_at: entry.created_at,
+      })) ?? [],
     };
   });
 

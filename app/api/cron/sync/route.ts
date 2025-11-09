@@ -9,7 +9,7 @@ export const runtime = "nodejs";
  * Cron endpoint to sync all properties automatically
  * Secured by checking for Vercel Cron secret header
  * 
- * Schedule: Once per day at midnight UTC (Hobby plan compatible)
+ * Schedule: Once per day at 5:00 AM UTC (runs between 5:00-5:59 AM UTC on Hobby plan)
  * For more frequent syncing (every 6 hours), upgrade to Pro plan and change schedule to "0 *\/6 * * *"
  */
 export async function GET(request: Request) {

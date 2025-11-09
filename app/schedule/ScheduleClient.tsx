@@ -646,101 +646,101 @@ function TimelineView({
   return (
     <div className="overflow-x-auto -mx-3 sm:mx-0">
       <div className="inline-block min-w-full px-3 sm:block sm:px-0">
-        <div
+      <div
           className="min-w-[640px] rounded-xl border border-[#124559]/40 bg-[#01161E]/40 sm:min-w-0"
-          style={{ boxShadow: "0 15px 35px rgba(1, 22, 30, 0.35)" }}
-        >
-          <div
+        style={{ boxShadow: "0 15px 35px rgba(1, 22, 30, 0.35)" }}
+      >
+        <div
             className="grid border-b border-[#124559]/40 bg-[#124559]/30 text-[0.65rem] font-semibold uppercase tracking-wide text-[#EFF6E0]/70 sm:text-xs"
-            style={{ gridTemplateColumns: columnTemplate }}
-          >
+          style={{ gridTemplateColumns: columnTemplate }}
+        >
             <div className="px-2 py-2 text-left text-[#EFF6E0] sm:px-4 sm:py-3">
               <span className="hidden sm:inline">
-                {properties.length}{" "}
-                {properties.length === 1 ? "Property" : "Properties"}
+            {properties.length}{" "}
+            {properties.length === 1 ? "Property" : "Properties"}
               </span>
-            </div>
-            {days.map((day) => (
-              <div
-                key={day.toISOString()}
-                className={clsx(
-                  "px-2 py-2 text-center text-[#EFF6E0]/80 sm:px-4 sm:py-3",
-                  isSameLocalDay(day, today)
-                    ? "bg-[#EFF6E0]/10 text-[#EFF6E0]"
-                    : ""
-                )}
-              >
-                <div className="text-[0.6rem] tracking-wider sm:text-[0.65rem]">
-                  {format(day, "EEE").toUpperCase()}
-                </div>
-                <div className="text-xs font-semibold sm:text-sm">
-                  {format(day, "d MMM")}
-                </div>
-              </div>
-            ))}
           </div>
+          {days.map((day) => (
+            <div
+              key={day.toISOString()}
+              className={clsx(
+                  "px-2 py-2 text-center text-[#EFF6E0]/80 sm:px-4 sm:py-3",
+                isSameLocalDay(day, today)
+                  ? "bg-[#EFF6E0]/10 text-[#EFF6E0]"
+                  : ""
+              )}
+            >
+                <div className="text-[0.6rem] tracking-wider sm:text-[0.65rem]">
+                {format(day, "EEE").toUpperCase()}
+              </div>
+                <div className="text-xs font-semibold sm:text-sm">
+                {format(day, "d MMM")}
+              </div>
+            </div>
+          ))}
+        </div>
 
-          {properties.map((property) => {
-            const propertyCleans = cleansByProperty.get(property.id) ?? [];
-            const color = propertyColors.get(property.id) ?? PROPERTY_COLORS[0];
-            const indicator = hexToRgba(color, 0.9);
-            const pillBackground = hexToRgba(color, 0.4);
-            const pillBorder = hexToRgba(color, 0.7);
+        {properties.map((property) => {
+          const propertyCleans = cleansByProperty.get(property.id) ?? [];
+          const color = propertyColors.get(property.id) ?? PROPERTY_COLORS[0];
+          const indicator = hexToRgba(color, 0.9);
+          const pillBackground = hexToRgba(color, 0.4);
+          const pillBorder = hexToRgba(color, 0.7);
 
-            return (
+          return (
+            <div
+              key={property.id}
+              className="grid border-b border-[#124559]/35 last:border-b-0"
+              style={{ gridTemplateColumns: columnTemplate }}
+            >
               <div
-                key={property.id}
-                className="grid border-b border-[#124559]/35 last:border-b-0"
-                style={{ gridTemplateColumns: columnTemplate }}
-              >
-                <div
                   className="flex flex-col gap-1 border-r border-[#124559]/35 px-2 py-3 transition-colors active:bg-[#124559]/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#598392] cursor-pointer sm:px-4 sm:py-4 sm:hover:bg-[#124559]/25"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => onPropertyClick(property)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      onPropertyClick(property);
-                    }
-                  }}
-                  aria-label={`View utility information for ${property.name}`}
-                >
+                role="button"
+                tabIndex={0}
+                onClick={() => onPropertyClick(property)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onPropertyClick(property);
+                  }
+                }}
+                aria-label={`View utility information for ${property.name}`}
+              >
                   <div className="flex items-start gap-2 sm:gap-3">
-                    <span
+                  <span
                       className="mt-0.5 inline-block h-6 w-1 rounded-full shrink-0 sm:mt-1 sm:h-8 sm:w-1.5"
-                      style={{ backgroundColor: indicator }}
-                    />
+                    style={{ backgroundColor: indicator }}
+                  />
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-semibold text-[#EFF6E0] leading-tight sm:text-sm">
-                        {property.name}
-                      </p>
+                      {property.name}
+                    </p>
                       <p className="mt-0.5 text-[0.65rem] text-[#EFF6E0]/60 sm:text-xs">
                         {property.checkout_time ?? "10:00"}
-                      </p>
-                      {property.cleaner ? (
+                    </p>
+                    {property.cleaner ? (
                         <p className="mt-0.5 text-[0.6rem] text-[#EFF6E0]/50 sm:text-xs">
                           {property.cleaner}
-                        </p>
-                      ) : null}
-                    </div>
+                      </p>
+                    ) : null}
                   </div>
                 </div>
+              </div>
 
-                {days.map((day) => {
-                  const cleansForDay = propertyCleans.filter((clean) => {
-                    const scheduled = new Date(clean.scheduled_for);
-                    return isSameLocalDay(scheduled, day);
-                  });
+              {days.map((day) => {
+                const cleansForDay = propertyCleans.filter((clean) => {
+                  const scheduled = new Date(clean.scheduled_for);
+                  return isSameLocalDay(scheduled, day);
+                });
 
-                  return (
-                    <div
-                      key={`${property.id}-${day.toISOString()}`}
-                      className={clsx(
+                return (
+                  <div
+                    key={`${property.id}-${day.toISOString()}`}
+                    className={clsx(
                         "min-h-[80px] border-r border-[#124559]/25 p-2 sm:min-h-[96px] sm:p-3",
-                        isSameLocalDay(day, today) ? "bg-[#EFF6E0]/6" : ""
-                      )}
-                    >
+                      isSameLocalDay(day, today) ? "bg-[#EFF6E0]/6" : ""
+                    )}
+                  >
                       <div className="space-y-1.5 sm:space-y-2">
                         {cleansForDay.map((clean) => {
                           const isCompleted = clean.status === "completed";
@@ -748,8 +748,8 @@ function TimelineView({
                           const completedBorder = "rgba(16, 185, 129, 0.9)"; // emerald-500 with higher opacity
 
                           return (
-                            <div
-                              key={clean.id}
+                        <div
+                          key={clean.id}
                               className={clsx(
                                 "rounded-lg border px-2 py-1.5 shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#598392] sm:px-3 sm:py-2",
                                 isCompleted
@@ -763,60 +763,60 @@ function TimelineView({
                                       borderColor: completedBorder,
                                     }
                                   : {
-                                      backgroundColor: pillBackground,
-                                      borderColor: pillBorder,
+                            backgroundColor: pillBackground,
+                            borderColor: pillBorder,
                                     }
                               }
-                              role="button"
-                              tabIndex={0}
-                              onClick={() => onCleanClick(clean)}
-                              onKeyDown={(event) => {
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => onCleanClick(clean)}
+                          onKeyDown={(event) => {
                                 if (
                                   event.key === "Enter" ||
                                   event.key === " "
                                 ) {
-                                  event.preventDefault();
-                                  onCleanClick(clean);
-                                }
-                              }}
-                              aria-label={`Inspect clean scheduled for ${formatTime(
-                                clean.scheduled_for
-                              )} at ${property.name}`}
-                            >
+                              event.preventDefault();
+                              onCleanClick(clean);
+                            }
+                          }}
+                          aria-label={`Inspect clean scheduled for ${formatTime(
+                            clean.scheduled_for
+                          )} at ${property.name}`}
+                        >
                               <div className="flex items-center justify-between gap-1 text-[0.65rem] font-semibold text-white sm:text-[0.7rem]">
                                 <span className="font-bold drop-shadow-sm truncate">
-                                  {formatTime(clean.scheduled_for)}
-                                </span>
+                              {formatTime(clean.scheduled_for)}
+                            </span>
                                 <span className="uppercase tracking-wide text-[0.55rem] font-semibold text-white/95 shrink-0 sm:text-[0.6rem]">
-                                  {clean.status}
-                                </span>
-                              </div>
-                              {clean.notes ? (
+                              {clean.status}
+                            </span>
+                          </div>
+                          {clean.notes ? (
                                 <p className="mt-0.5 line-clamp-1 text-[0.6rem] font-medium text-white/90 sm:mt-1 sm:text-[0.65rem]">
-                                  {clean.notes}
-                                </p>
-                              ) : null}
-                            </div>
+                              {clean.notes}
+                            </p>
+                          ) : null}
+                        </div>
                           );
                         })}
-                        {cleansForDay.length === 0 ? (
+                      {cleansForDay.length === 0 ? (
                           <div className="text-center text-[0.6rem] text-[#EFF6E0]/40 sm:text-[0.65rem]">
-                            —
-                          </div>
-                        ) : null}
-                      </div>
+                          —
+                        </div>
+                      ) : null}
                     </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-
-          {!hasCleans ? (
-            <div className="px-4 py-6 text-center text-xs text-[#EFF6E0]/60 sm:px-6 sm:py-8 sm:text-sm">
-              No cleans scheduled for this range.
+                  </div>
+                );
+              })}
             </div>
-          ) : null}
+          );
+        })}
+
+        {!hasCleans ? (
+            <div className="px-4 py-6 text-center text-xs text-[#EFF6E0]/60 sm:px-6 sm:py-8 sm:text-sm">
+            No cleans scheduled for this range.
+          </div>
+        ) : null}
         </div>
       </div>
     </div>
@@ -892,7 +892,7 @@ function CalendarView({
                   )}
                 >
                   <span className="hidden sm:inline">
-                    {format(day, "MMM d")}
+                  {format(day, "MMM d")}
                   </span>
                   <span className="sm:hidden">{format(day, "d")}</span>
                 </span>
@@ -926,8 +926,8 @@ function CalendarView({
                               borderColor: "rgba(16, 185, 129, 0.9)",
                             }
                           : {
-                              backgroundColor: hexToRgba(color, 0.55),
-                              borderColor: hexToRgba(color, 0.85),
+                        backgroundColor: hexToRgba(color, 0.55),
+                        borderColor: hexToRgba(color, 0.85),
                             }
                       }
                       role={property ? "button" : undefined}
@@ -948,8 +948,8 @@ function CalendarView({
                       <div className="flex items-center justify-between gap-1 sm:gap-2">
                         <span className="truncate font-semibold">
                           <span className="hidden sm:inline">
-                            {clean.property_name}
-                          </span>
+                          {clean.property_name}
+                        </span>
                           <span className="sm:hidden">
                             {clean.property_name.split(" ")[0]}
                           </span>
