@@ -258,7 +258,7 @@ export function CleansTable({
                 <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
                   Cleaner
                 </th>
-                <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
+                <th className="hidden py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
                   Check-in / Check-out
                 </th>
                 <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
@@ -469,7 +469,7 @@ function DesktopTableRow({
       </td>
       <td
         className={clsx(
-          "py-4 text-sm",
+          "hidden py-4 text-sm",
           isCancelled
             ? "text-[#EFF6E0]/50"
             : isCompleted
