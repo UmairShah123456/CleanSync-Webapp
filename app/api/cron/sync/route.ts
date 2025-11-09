@@ -1,0 +1,96 @@
+import { NextResponse } from "next/server";
+import { getServiceSupabaseClient } from "@/lib/db";
+import { syncPropertyCalendar } from "@/lib/syncUtils";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+/**
+ * Cron endpoint to sync all properties every 6 hours
+ * Secured by checking for Vercel Cron secret header
+ */
+export async function GET(request: Request) {
+  // Verify this is a legitimate cron request from Vercel
+  const authHeader = request.headers.get("authorization");
+  const cronSecret = process.env.CRON_SECRET;
+
+  // If CRON_SECRET is set, require it for security
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  const supabase = getServiceSupabaseClient();
+
+  try {
+    // Fetch all properties from all users
+    const { data: properties, error: propertiesError } = await supabase
+      .from("properties")
+      .select("id, user_id, name, ical_url, checkout_time");
+
+    if (propertiesError) {
+      console.error("Error fetching properties:", propertiesError);
+      return NextResponse.json(
+        { error: propertiesError.message },
+        { status: 500 }
+      );
+    }
+
+    if (!properties || properties.length === 0) {
+      return NextResponse.json({
+        message: "No properties to sync.",
+        results: [],
+        syncedAt: new Date().toISOString(),
+      });
+    }
+
+    const results = [];
+    let successCount = 0;
+    let errorCount = 0;
+
+    // Sync each property
+    for (const property of properties) {
+      try {
+        const stats = await syncPropertyCalendar(supabase, property);
+        results.push({
+          propertyId: property.id,
+          propertyName: property.name,
+          userId: property.user_id,
+          ...stats,
+        });
+        successCount++;
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Unexpected error";
+        console.error(`Error syncing property ${property.id}:`, message);
+        results.push({
+          propertyId: property.id,
+          propertyName: property.name,
+          userId: property.user_id,
+          error: message,
+        });
+        errorCount++;
+      }
+    }
+
+    return NextResponse.json({
+      message: `Synced ${successCount} properties successfully, ${errorCount} errors.`,
+      totalProperties: properties.length,
+      successCount,
+      errorCount,
+      results,
+      syncedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unexpected error";
+    console.error("Cron sync error:", message);
+    return NextResponse.json(
+      { error: message },
+      { status: 500 }
+    );
+  }
+}
+
