@@ -56,7 +56,7 @@ export async function POST(request: Request) {
 
   for (const property of properties) {
     try {
-      const stats = await syncPropertyCalendar(adminClient, property);
+      const stats = await syncPropertyCalendar(adminClient, property, "manual");
       results.push({
         propertyId: property.id,
         propertyName: property.name,

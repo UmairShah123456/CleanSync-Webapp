@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase
     .from("sync_logs")
     .select(
-      "id, property_id, run_at, bookings_added, bookings_removed, bookings_updated"
+      "id, property_id, run_at, bookings_added, bookings_removed, bookings_updated, sync_type"
     )
     .in("property_id", propertyIds)
     .order("run_at", { ascending: false })

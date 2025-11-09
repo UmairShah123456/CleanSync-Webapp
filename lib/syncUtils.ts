@@ -188,7 +188,8 @@ const bookingChanged = (existing: BookingRecord, event: CalendarEvent) => {
 
 export const syncPropertyCalendar = async (
   supabase: SupabaseClient,
-  property: PropertyRecord
+  property: PropertyRecord,
+  syncType: "manual" | "automatic" = "manual"
 ) => {
   const events = await fetchCalendarEvents(property.ical_url);
 
@@ -320,6 +321,7 @@ export const syncPropertyCalendar = async (
     bookings_removed: removed,
     bookings_updated: updated,
     run_at: new Date().toISOString(),
+    sync_type: syncType,
   });
 
   if (logError) {

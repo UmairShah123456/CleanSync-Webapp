@@ -7,6 +7,7 @@ export type LogRow = {
   bookings_added: number;
   bookings_removed: number;
   bookings_updated: number;
+  sync_type: "manual" | "automatic";
 };
 
 export function LogTable({
@@ -42,6 +43,9 @@ export function LogTable({
                 Run at
               </th>
               <th className="py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#598392]">
+                Type
+              </th>
+              <th className="py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#598392]">
                 Property
               </th>
               <th className="py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#598392]">
@@ -63,6 +67,17 @@ export function LogTable({
               >
                 <td className="py-4 text-sm text-[#EFF6E0]/70">
                   {formatDateTime(log.run_at)}
+                </td>
+                <td className="py-4">
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                      log.sync_type === "automatic"
+                        ? "bg-[#598392]/30 text-[#9AD1D4] border border-[#598392]/50"
+                        : "bg-[#124559]/50 text-[#EFF6E0]/80 border border-[#124559]/70"
+                    }`}
+                  >
+                    {log.sync_type === "automatic" ? "Auto" : "Manual"}
+                  </span>
                 </td>
                 <td className="py-4 text-sm text-[#EFF6E0]/70">
                   {log.property_name}

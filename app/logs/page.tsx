@@ -52,7 +52,7 @@ export default async function LogsPage() {
   const { data: logsData } = await supabase
     .from("sync_logs")
     .select(
-      "id, property_id, run_at, bookings_added, bookings_removed, bookings_updated"
+      "id, property_id, run_at, bookings_added, bookings_removed, bookings_updated, sync_type"
     )
     .in("property_id", propertyIds)
     .order("run_at", { ascending: false })

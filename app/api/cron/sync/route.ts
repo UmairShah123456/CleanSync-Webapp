@@ -66,7 +66,7 @@ export async function GET(request: Request) {
     // Sync each property
     for (const property of properties) {
       try {
-        const stats = await syncPropertyCalendar(supabase, property);
+        const stats = await syncPropertyCalendar(supabase, property, "automatic");
         results.push({
           propertyId: property.id,
           propertyName: property.name,
