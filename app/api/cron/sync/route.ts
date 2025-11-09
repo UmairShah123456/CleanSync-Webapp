@@ -6,8 +6,11 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 /**
- * Cron endpoint to sync all properties every 6 hours
+ * Cron endpoint to sync all properties automatically
  * Secured by checking for Vercel Cron secret header
+ * 
+ * Schedule: Once per day at midnight UTC (Hobby plan compatible)
+ * For more frequent syncing (every 6 hours), upgrade to Pro plan and change schedule to "0 */6 * * *"
  */
 export async function GET(request: Request) {
   // Verify this is a legitimate cron request from Vercel
