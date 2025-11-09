@@ -72,7 +72,7 @@ const DetailRow = ({
   );
 };
 
-const UtilityDetailsModal = ({
+export const UtilityDetailsModal = ({
   property,
   onClose,
   onUpdate,
