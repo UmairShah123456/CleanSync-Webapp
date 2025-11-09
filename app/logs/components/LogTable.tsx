@@ -64,6 +64,7 @@ export function LogTable({
   }
 
   // Group logs by their displayed time format (same minute) and sync type
+  // Note: These logs are already paginated, so we're just grouping what we received
   const groupedLogs = logs.reduce((groups, log) => {
     const displayTime = formatDateTime(log.run_at);
     const syncType = log.sync_type;
@@ -87,7 +88,15 @@ export function LogTable({
   return (
     <div className="rounded-xl bg-[#124559] p-6 border border-[#124559]/50 animate-fadeIn">
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full md:table-fixed">
+          <colgroup className="hidden md:table-column-group">
+            <col className="w-[180px]" />
+            <col className="w-[100px]" />
+            <col className="w-[250px]" />
+            <col className="w-[80px]" />
+            <col className="w-[80px]" />
+            <col className="w-[100px]" />
+          </colgroup>
           <thead>
             <tr className="border-b border-[#598392]/30">
               <th className="py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#598392]">

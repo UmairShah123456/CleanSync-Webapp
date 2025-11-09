@@ -45,10 +45,11 @@ export default async function LogsPage() {
     .in("property_id", propertyIds);
 
   const totalCount = count ?? 0;
-  const limit = 15; // Default page size
+  // Fetch a large batch to allow client-side grouping and pagination
+  const limit = 1000; // Fetch up to 1000 logs for client-side grouping
   const page = 1;
 
-  // Get first page of logs
+  // Get logs (fetch more to allow proper grouping on client)
   const { data: logsData } = await supabase
     .from("sync_logs")
     .select(
@@ -56,7 +57,7 @@ export default async function LogsPage() {
     )
     .in("property_id", propertyIds)
     .order("run_at", { ascending: false })
-    .range(0, limit - 1);
+    .limit(limit);
 
   const logs = logsData ?? [];
 

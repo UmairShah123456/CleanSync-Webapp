@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { LogTable } from "./components/LogTable";
 import type { LogRow } from "./components/LogTable";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import { formatDateTime } from "@/lib/utils";
 
 type PaginationData = {
   page: number;
@@ -19,15 +20,61 @@ export function LogsClient({
   initialLogs: LogRow[];
   initialPagination: PaginationData;
 }) {
-  const [logs, setLogs] = useState(initialLogs);
-  const [pagination, setPagination] = useState(initialPagination);
+  const [allLogs, setAllLogs] = useState(initialLogs);
   const [loading, setLoading] = useState(false);
-  const [pageSize, setPageSize] = useState(pagination.limit);
+  // Default to 15 groups per page
+  const [pageSize, setPageSize] = useState(15);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const fetchLogs = useCallback(async (page: number, limit: number) => {
+  // Group logs by their displayed time format (same minute) and sync type
+  // Every log entry becomes a group, even if it's a group of 1
+  const groupedLogs = useMemo(() => {
+    const groups = allLogs.reduce((acc, log) => {
+      const displayTime = formatDateTime(log.run_at);
+      const syncType = log.sync_type;
+      const groupKey = `${displayTime}|${syncType}`;
+      
+      if (!acc[groupKey]) {
+        acc[groupKey] = [];
+      }
+      acc[groupKey].push(log);
+      return acc;
+    }, {} as Record<string, LogRow[]>);
+
+    return Object.entries(groups).sort((a, b) => {
+      const aTime = new Date(a[1][0].run_at).getTime();
+      const bTime = new Date(b[1][0].run_at).getTime();
+      return bTime - aTime;
+    });
+  }, [allLogs]);
+
+  // Calculate pagination based on groups
+  const totalGroups = groupedLogs.length;
+  const totalPages = Math.ceil(totalGroups / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedGroups = groupedLogs.slice(startIndex, endIndex);
+  
+  // Flatten only the logs from the paginated groups for the table
+  // The table will re-group them, but since we've already paginated by groups,
+  // it will only show the groups from the current page
+  const paginatedLogs = useMemo(() => {
+    // Only include logs from the groups on the current page
+    return paginatedGroups.flatMap(([_, logs]) => logs);
+  }, [paginatedGroups]);
+
+  const pagination: PaginationData = {
+    page: currentPage,
+    limit: pageSize,
+    total: totalGroups,
+    totalPages,
+  };
+
+  const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/logs?page=${page}&limit=${limit}`, {
+      // Fetch all logs (or a large batch) to group them properly
+      const response = await fetch(`/api/logs?page=1&limit=1000`, {
         cache: "no-store",
       });
 
@@ -36,8 +83,8 @@ export function LogsClient({
       }
 
       const data = await response.json();
-      setLogs(data.logs);
-      setPagination(data.pagination);
+      setAllLogs(data.logs);
+      setCurrentPage(1); // Reset to first page when fetching new data
     } catch (error) {
       console.error("Error fetching logs:", error);
     } finally {
@@ -46,14 +93,14 @@ export function LogsClient({
   }, []);
 
   const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= pagination.totalPages) {
-      fetchLogs(newPage, pageSize);
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
     }
   };
 
   const handlePageSizeChange = (newSize: number) => {
     setPageSize(newSize);
-    fetchLogs(1, newSize);
+    setCurrentPage(1); // Reset to first page when changing page size
   };
 
   const startRecord = (pagination.page - 1) * pagination.limit + 1;
@@ -113,7 +160,7 @@ export function LogsClient({
           </div>
         </div>
       )}
-      <LogTable logs={logs} loading={loading} />
+      <LogTable logs={paginatedLogs} loading={loading} />
     </div>
   );
 }
