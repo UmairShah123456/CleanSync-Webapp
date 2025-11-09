@@ -10,18 +10,28 @@ export const runtime = "nodejs";
  * Secured by checking for Vercel Cron secret header
  * 
  * Schedule: Once per day at midnight UTC (Hobby plan compatible)
- * For more frequent syncing (every 6 hours), upgrade to Pro plan and change schedule to "0 */6 * * *"
+ * For more frequent syncing (every 6 hours), upgrade to Pro plan and change schedule to "0 *\/6 * * *"
  */
 export async function GET(request: Request) {
-  // Verify this is a legitimate cron request from Vercel
+  // Vercel cron jobs are automatically secured by Vercel
+  // Optional: Add CRON_SECRET check for additional security
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
 
-  // If CRON_SECRET is set, require it for security
+  // If CRON_SECRET is configured, require it
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json(
       { error: "Unauthorized" },
       { status: 401 }
+    );
+  }
+
+  // Check if service role key is available (required for cron)
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error("SUPABASE_SERVICE_ROLE_KEY is not configured");
+    return NextResponse.json(
+      { error: "Service role key not configured" },
+      { status: 500 }
     );
   }
 
