@@ -552,10 +552,41 @@ export function CleanActionsModal({
                             setActionError(null);
                             setActionSuccess(null);
                           }}
-                          className="w-full appearance-none rounded-xl border border-[#124559]/60 bg-[#01161E]/50 px-4 py-3 pr-10 text-sm font-semibold text-[#EFF6E0] focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/40 sm:rounded-2xl sm:py-2"
+                          className="w-full appearance-none rounded-xl border border-[#124559]/60 bg-[#01161E]/50 px-4 py-3 pr-10 text-sm font-semibold text-[#EFF6E0] focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/40 sm:rounded-2xl sm:py-2 [&>option]:bg-[#01161E]"
+                          style={{
+                            backgroundColor:
+                              selectedStatus === "cancelled"
+                                ? "rgba(239, 68, 68, 0.2)"
+                                : selectedStatus === "completed"
+                                ? "rgba(16, 185, 129, 0.2)"
+                                : selectedStatus === "scheduled"
+                                ? "rgba(168, 85, 247, 0.2)"
+                                : "#01161E",
+                          }}
                         >
                           {getCleanStatusOptions(translations).map((option) => (
-                            <option key={option.value} value={option.value}>
+                            <option
+                              key={option.value}
+                              value={option.value}
+                              style={{
+                                backgroundColor:
+                                  option.value === "cancelled"
+                                    ? "#1f1f1f"
+                                    : option.value === "completed"
+                                    ? "#1f1f1f"
+                                    : option.value === "scheduled"
+                                    ? "#1f1f1f"
+                                    : "#01161E",
+                                color:
+                                  option.value === "cancelled"
+                                    ? "#ef4444"
+                                    : option.value === "completed"
+                                    ? "#10b981"
+                                    : option.value === "scheduled"
+                                    ? "#a855f7"
+                                    : "#EFF6E0",
+                              }}
+                            >
                               {option.label}
                             </option>
                           ))}

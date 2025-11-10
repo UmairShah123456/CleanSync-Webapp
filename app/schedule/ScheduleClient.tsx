@@ -744,8 +744,11 @@ function TimelineView({
                       <div className="space-y-1.5 sm:space-y-2">
                         {cleansForDay.map((clean) => {
                           const isCompleted = clean.status === "completed";
+                          const isCancelled = clean.status === "cancelled";
                           const completedBg = "rgba(16, 185, 129, 0.6)"; // emerald-500 with opacity
                           const completedBorder = "rgba(16, 185, 129, 0.9)"; // emerald-500 with higher opacity
+                          const cancelledBg = "rgba(239, 68, 68, 0.6)"; // red-500 with opacity
+                          const cancelledBorder = "rgba(239, 68, 68, 0.9)"; // red-500 with higher opacity
 
                           return (
                         <div
@@ -754,6 +757,8 @@ function TimelineView({
                                 "rounded-lg border px-2 py-1.5 shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#598392] sm:px-3 sm:py-2",
                                 isCompleted
                                   ? "border-emerald-400/80 bg-emerald-500/50 active:border-emerald-300 active:bg-emerald-500/60 sm:hover:border-emerald-300 sm:hover:bg-emerald-500/60"
+                                  : isCancelled
+                                  ? "border-red-400/80 bg-red-500/50 active:border-red-300 active:bg-red-500/60 sm:hover:border-red-300 sm:hover:bg-red-500/60"
                                   : "active:border-[#EFF6E0]/60 active:bg-white/10 sm:hover:border-[#EFF6E0]/60 sm:hover:bg-white/10"
                               )}
                               style={
@@ -761,6 +766,11 @@ function TimelineView({
                                   ? {
                                       backgroundColor: completedBg,
                                       borderColor: completedBorder,
+                                    }
+                                  : isCancelled
+                                  ? {
+                                      backgroundColor: cancelledBg,
+                                      borderColor: cancelledBorder,
                                     }
                                   : {
                             backgroundColor: pillBackground,
@@ -905,6 +915,7 @@ function CalendarView({
               <div className="mt-1 space-y-1 sm:mt-2 sm:space-y-2">
                 {entries.map((clean) => {
                   const isCompleted = clean.status === "completed";
+                  const isCancelled = clean.status === "cancelled";
                   const color =
                     propertyColors.get(clean.property_id) ?? PROPERTY_COLORS[0];
                   const property = propertyLookup.get(clean.property_id);
@@ -916,6 +927,8 @@ function CalendarView({
                         "rounded-full border px-2 py-1 text-[0.6rem] font-medium text-white transition-colors sm:px-3 sm:py-1 sm:text-[0.65rem]",
                         isCompleted
                           ? "border-emerald-400/80 bg-emerald-500/60 active:opacity-90 sm:hover:opacity-90"
+                          : isCancelled
+                          ? "border-red-400/80 bg-red-500/60 active:opacity-90 sm:hover:opacity-90"
                           : "active:opacity-80",
                         property ? "cursor-pointer active:scale-95" : ""
                       )}
@@ -924,6 +937,11 @@ function CalendarView({
                           ? {
                               backgroundColor: "rgba(16, 185, 129, 0.6)",
                               borderColor: "rgba(16, 185, 129, 0.9)",
+                            }
+                          : isCancelled
+                          ? {
+                              backgroundColor: "rgba(239, 68, 68, 0.6)",
+                              borderColor: "rgba(239, 68, 68, 0.9)",
                             }
                           : {
                         backgroundColor: hexToRgba(color, 0.55),
