@@ -902,7 +902,7 @@ export function CleanActionsModal({
                   </section>
 
                   {actionError ? (
-                    <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-xs text-red-200">
+                    <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-xs text-red-200 ">
                       {actionError}
                     </div>
                   ) : null}
