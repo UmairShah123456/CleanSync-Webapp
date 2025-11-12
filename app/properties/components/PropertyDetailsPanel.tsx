@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import clsx from "clsx";
 import {
   ClockIcon,
@@ -607,6 +607,45 @@ function CleaningChecklistTab({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set());
+  const [showRoomSuggestions, setShowRoomSuggestions] = useState(false);
+  const [filteredRooms, setFilteredRooms] = useState<string[]>([]);
+
+  // Get unique room names from existing checklist items
+  const existingRooms = useMemo(() => {
+    const rooms = new Set<string>();
+    checklistData.items.forEach((item) => {
+      if (item.room.trim()) {
+        rooms.add(item.room);
+      }
+    });
+    return Array.from(rooms).sort();
+  }, [checklistData.items]);
+
+  // All available room options (existing + predefined)
+  const allRoomOptions = useMemo(() => {
+    const all = [...existingRooms];
+    ROOM_OPTIONS.forEach((room) => {
+      if (!all.includes(room)) {
+        all.push(room);
+      }
+    });
+    return all;
+  }, [existingRooms]);
+
+  // Filter rooms based on input
+  useEffect(() => {
+    const input = newChecklistItem.room.toLowerCase().trim();
+    if (input.length > 0) {
+      const filtered = allRoomOptions.filter((room) =>
+        room.toLowerCase().includes(input)
+      );
+      setFilteredRooms(filtered);
+      setShowRoomSuggestions(filtered.length > 0);
+    } else {
+      setFilteredRooms([]);
+      setShowRoomSuggestions(false);
+    }
+  }, [newChecklistItem.room, allRoomOptions]);
 
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -745,23 +784,59 @@ function CleaningChecklistTab({
               <label className="text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/60">
                 Room
               </label>
-              <select
-                value={newChecklistItem.room}
-                onChange={(e) =>
-                  setNewChecklistItem({
-                    ...newChecklistItem,
-                    room: e.target.value,
-                  })
-                }
-                className="mt-1 w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/70 px-3 py-2.5 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/60"
-              >
-                <option value="">Select a room</option>
-                {ROOM_OPTIONS.map((room) => (
-                  <option key={room} value={room}>
-                    {room}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={newChecklistItem.room}
+                  onChange={(e) =>
+                    setNewChecklistItem({
+                      ...newChecklistItem,
+                      room: e.target.value,
+                    })
+                  }
+                  onFocus={() => {
+                    if (filteredRooms.length > 0) {
+                      setShowRoomSuggestions(true);
+                    }
+                  }}
+                  onBlur={() => {
+                    // Delay hiding to allow clicking on suggestions
+                    setTimeout(() => setShowRoomSuggestions(false), 200);
+                  }}
+                  className="mt-1 w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/70 px-3 py-2.5 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/60"
+                  placeholder="Enter room name or select from existing"
+                />
+                {showRoomSuggestions && filteredRooms.length > 0 && (
+                  <div className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-xl border border-[#124559]/60 bg-[#01161E] shadow-lg">
+                    {filteredRooms.map((room) => (
+                      <button
+                        key={room}
+                        type="button"
+                        onClick={() => {
+                          setNewChecklistItem({
+                            ...newChecklistItem,
+                            room: room,
+                          });
+                          setShowRoomSuggestions(false);
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm text-[#EFF6E0] transition-colors hover:bg-[#124559]/50 first:rounded-t-xl last:rounded-b-xl"
+                      >
+                        {room}
+                        {existingRooms.includes(room) && (
+                          <span className="ml-2 text-xs text-[#598392]">
+                            (existing)
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-[#EFF6E0]/50">
+                {existingRooms.length > 0
+                  ? `Existing rooms: ${existingRooms.join(", ")}`
+                  : "You can add multiple rooms of the same type"}
+              </p>
             </div>
 
             <div>
