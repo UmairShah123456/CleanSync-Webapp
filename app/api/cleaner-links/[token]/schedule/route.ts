@@ -51,6 +51,7 @@ export async function GET(
 
   const cleaner = linkData.cleaner;
 
+  // Get properties with their basic details
   const { data: propertiesData, error: propertiesError } = await supabase
     .from("properties")
     .select(
@@ -66,7 +67,25 @@ export async function GET(
     );
   }
 
-  const propertyIds = (propertiesData ?? []).map((property) => property.id);
+  // For each property, get its cleaning checklists
+  const propertiesWithChecklists = await Promise.all(
+    (propertiesData ?? []).map(async (property) => {
+      const { data: checklists } = await supabase
+        .from("cleaning_checklists")
+        .select("*")
+        .eq("property_id", property.id)
+        .order("sort_order", { ascending: true });
+
+      return {
+        ...property,
+        cleaning_checklists: checklists || [],
+      };
+    })
+  );
+
+  const propertyIds = (propertiesWithChecklists ?? []).map(
+    (property) => property.id
+  );
 
   if (!propertyIds.length) {
     return NextResponse.json([]);
@@ -78,7 +97,7 @@ export async function GET(
 
   const filteredPropertyIds = propertyId ? [propertyId] : propertyIds;
   const propertyRecords = new Map(
-    (propertiesData ?? []).map((property) => [property.id, property])
+    (propertiesWithChecklists ?? []).map((property) => [property.id, property])
   );
 
   const { data: cleansData, error: cleansError } = await supabase
@@ -128,6 +147,44 @@ export async function GET(
     }
   }
 
+  // Fetch checklist completions separately
+  const cleanIds = (cleansData ?? []).map((c: any) => c.id);
+  const checklistCompletionsMap = new Map<
+    string,
+    Array<{
+      id: string;
+      checklist_item_id: string;
+      completed: boolean;
+      completed_at: string | null;
+      created_at: string;
+      updated_at: string;
+    }>
+  >();
+
+  if (cleanIds.length > 0) {
+    const { data: completions } = await supabase
+      .from("clean_checklist_completions")
+      .select(
+        "id, clean_id, checklist_item_id, completed, completed_at, created_at, updated_at"
+      )
+      .in("clean_id", cleanIds);
+
+    if (completions) {
+      completions.forEach((comp: any) => {
+        const existing = checklistCompletionsMap.get(comp.clean_id) || [];
+        existing.push({
+          id: comp.id,
+          checklist_item_id: comp.checklist_item_id,
+          completed: comp.completed,
+          completed_at: comp.completed_at,
+          created_at: comp.created_at,
+          updated_at: comp.updated_at,
+        });
+        checklistCompletionsMap.set(comp.clean_id, existing);
+      });
+    }
+  }
+
   const response: ScheduleClean[] = (cleansData ?? []).map((clean: any) => {
     const property = propertyRecords.get(clean.property_id);
     // Match booking by both uid and property_id
@@ -155,6 +212,7 @@ export async function GET(
           item: entry.item,
           created_at: entry.created_at,
         })) ?? [],
+      checklist_completions: checklistCompletionsMap.get(clean.id) ?? [],
     };
   });
 

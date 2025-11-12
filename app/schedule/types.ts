@@ -5,8 +5,16 @@ export type ScheduleProperty = {
   cleaner?: string | null;
   access_codes?: string | null;
   bin_locations?: string | null;
-  property_address?: string | null;
+ property_address?: string | null;
   key_locations?: string | null;
+  cleaning_checklists?: Array<{
+    id: string;
+    room: string;
+    task: string;
+    sort_order: number;
+    created_at: string;
+    updated_at: string;
+  }> | null;
 };
 
 export type CleanReimbursement = {
@@ -29,6 +37,14 @@ export type ScheduleClean = {
   cleaner?: string | null;
   maintenance_notes?: string[] | null;
   reimbursements?: CleanReimbursement[];
+  checklist_completions?: Array<{
+    id: string;
+    checklist_item_id: string;
+    completed: boolean;
+    completed_at: string | null;
+    created_at: string;
+    updated_at: string;
+  }> | null;
 };
 
 export type ScheduleRange = {

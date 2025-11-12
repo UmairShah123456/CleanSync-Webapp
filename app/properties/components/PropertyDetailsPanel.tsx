@@ -11,6 +11,7 @@ import {
   TrashIcon,
   XMarkIcon,
   ArrowLeftIcon,
+  ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import {
   PropertyForm,
@@ -40,24 +41,27 @@ const DetailRow = ({
   );
 };
 
-type ActiveTab = "details" | "utility";
+type ActiveTab = "details" | "utility" | "checklist";
 
 export function PropertyDetailsPanel({
   property,
   onClose,
   onUpdate,
   onDelete,
+  onRefresh,
   isMobile,
 }: {
   property: Property | null;
   onClose: () => void;
   onUpdate: (id: string, payload: PropertyPayload) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onRefresh?: () => Promise<void>;
   isMobile?: boolean;
 }) {
   const [activeTab, setActiveTab] = useState<ActiveTab>("details");
   const [editing, setEditing] = useState(false);
   const [editingUtility, setEditingUtility] = useState(false);
+  const [editingChecklist, setEditingChecklist] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,11 +71,19 @@ export function PropertyDetailsPanel({
     property_address: "",
     key_locations: "",
   });
+  const [checklistData, setChecklistData] = useState({
+    items: property?.cleaning_checklists || [],
+  });
+  const [newChecklistItem, setNewChecklistItem] = useState({
+    room: "",
+    task: "",
+  });
 
   // Reset editing state when property changes
   useEffect(() => {
     setEditing(false);
     setEditingUtility(false);
+    setEditingChecklist(false);
     setError(null);
     if (property) {
       setUtilityFormData({
@@ -80,8 +92,11 @@ export function PropertyDetailsPanel({
         property_address: property.property_address || "",
         key_locations: property.key_locations || "",
       });
+      setChecklistData({
+        items: property.cleaning_checklists || [],
+      });
     }
-  }, [property?.id]);
+  }, [property?.id, property?.cleaning_checklists]);
 
   if (!property) {
     return (
@@ -186,16 +201,18 @@ export function PropertyDetailsPanel({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {!editing && !editingUtility && (
+              {!editing && !editingUtility && !editingChecklist && (
                 <button
                   onClick={() => {
                     if (activeTab === "details") {
                       setEditing(true);
                     } else if (activeTab === "utility") {
                       setEditingUtility(true);
+                    } else if (activeTab === "checklist") {
+                      setEditingChecklist(true);
                     }
                   }}
-                  className="rounded-lg border border-[#124559]/50 bg-[#124559]/40 p-2 text-[#EFF6E0]/80 transition-colors hover:border-[#598392]/60 hover:bg-[#124559]/60 hover:text-[#EFF6E0]"
+                  className="rounded-lg border-[#124559]/50 bg-[#124559]/40 p-2 text-[#EFF6E0]/80 transition-colors hover:border-[#598392]/60 hover:bg-[#124559]/60 hover:text-[#EFF6E0]"
                   type="button"
                   aria-label="Edit"
                 >
@@ -225,6 +242,7 @@ export function PropertyDetailsPanel({
                 setActiveTab("details");
                 setEditing(false);
                 setEditingUtility(false);
+                setEditingChecklist(false);
               }}
               className={clsx(
                 "rounded-t-lg border-b-2 px-4 py-3 text-sm font-medium transition-colors",
@@ -241,6 +259,7 @@ export function PropertyDetailsPanel({
                 setActiveTab("utility");
                 setEditing(false);
                 setEditingUtility(false);
+                setEditingChecklist(false);
               }}
               className={clsx(
                 "rounded-t-lg border-b-2 px-4 py-3 text-sm font-medium transition-colors",
@@ -250,6 +269,23 @@ export function PropertyDetailsPanel({
               )}
             >
               Utility Details
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("checklist");
+                setEditing(false);
+                setEditingUtility(false);
+                setEditingChecklist(false);
+              }}
+              className={clsx(
+                "rounded-t-lg border-b-2 px-4 py-3 text-sm font-medium transition-colors",
+                activeTab === "checklist"
+                  ? "border-[#598392] text-[#EFF6E0]"
+                  : "border-transparent text-[#EFF6E0]/70 hover:text-[#EFF6E0]"
+              )}
+            >
+              Cleaning Checklist
             </button>
           </div>
         </div>
@@ -498,8 +534,432 @@ export function PropertyDetailsPanel({
               )}
             </div>
           )}
+
+          {activeTab === "checklist" && (
+            <div className="space-y-4">
+              <CleaningChecklistTab
+                checklistData={checklistData}
+                setChecklistData={setChecklistData}
+                newChecklistItem={newChecklistItem}
+                setNewChecklistItem={setNewChecklistItem}
+                propertyId={property.id}
+                onRefresh={onRefresh}
+              />
+            </div>
+          )}
         </div>
       </div>
     </>
+  );
+}
+
+// Room options for the cleaning checklist
+const ROOM_OPTIONS = [
+  "Bedroom",
+  "Living Room",
+  "Bathroom",
+  "Kitchen",
+  "Entrance",
+  "Hallway",
+  "Patio",
+  "Garden",
+  "Other",
+];
+
+// Component for the cleaning checklist tab
+function CleaningChecklistTab({
+  checklistData,
+  setChecklistData,
+  newChecklistItem,
+  setNewChecklistItem,
+  propertyId,
+  onRefresh,
+}: {
+  checklistData: {
+    items: Array<{
+      id: string;
+      room: string;
+      task: string;
+      sort_order: number;
+      created_at: string;
+      updated_at: string;
+    }>;
+  };
+  setChecklistData: React.Dispatch<
+    React.SetStateAction<{
+      items: Array<{
+        id: string;
+        room: string;
+        task: string;
+        sort_order: number;
+        created_at: string;
+        updated_at: string;
+      }>;
+    }>
+  >;
+  newChecklistItem: { room: string; task: string };
+  setNewChecklistItem: React.Dispatch<
+    React.SetStateAction<{ room: string; task: string }>
+  >;
+  propertyId: string;
+  onRefresh?: () => Promise<void>;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set());
+
+  const handleAddItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newChecklistItem.room.trim() || !newChecklistItem.task.trim()) {
+      setError("Both room and task are required.");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      // Call the API to add the new checklist item
+      const response = await fetch(`/api/properties/${propertyId}/checklist`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          room: newChecklistItem.room,
+          task: newChecklistItem.task,
+          sort_order: checklistData.items.length,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Unable to add checklist item.");
+      }
+
+      const result = await response.json();
+
+      // Add the new item to the local state with the ID from the API
+      const updatedItems = [
+        ...checklistData.items,
+        {
+          id: result.id,
+          room: result.room,
+          task: result.task,
+          sort_order: result.sort_order,
+          created_at: result.created_at,
+          updated_at: result.updated_at,
+        },
+      ];
+
+      setChecklistData({ items: updatedItems });
+      setNewChecklistItem({ room: "", task: "" });
+
+      // Refresh property data to ensure it's in sync
+      if (onRefresh) {
+        await onRefresh();
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Unable to add checklist item."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteItem = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this checklist item?")) {
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      // Call the API to delete the checklist item
+      const response = await fetch(
+        `/api/properties/${propertyId}/checklist/${id}`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Unable to delete checklist item.");
+      }
+
+      // Remove the item from the local state
+      const updatedItems = checklistData.items.filter((item) => item.id !== id);
+      setChecklistData({ items: updatedItems });
+
+      // Refresh property data to ensure it's in sync
+      if (onRefresh) {
+        await onRefresh();
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Unable to delete checklist item."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleMoveItem = (id: string, direction: "up" | "down") => {
+    const items = [...checklistData.items];
+    const index = items.findIndex((item) => item.id === id);
+
+    if (index !== -1) {
+      if (direction === "up" && index > 0) {
+        [items[index - 1], items[index]] = [items[index], items[index - 1]];
+      } else if (direction === "down" && index < items.length - 1) {
+        [items[index + 1], items[index]] = [items[index], items[index + 1]];
+      }
+
+      // Update sort_order based on new positions
+      const updatedItems = items.map((item, idx) => ({
+        ...item,
+        sort_order: idx,
+      }));
+
+      setChecklistData({ items: updatedItems });
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold text-[#EFF6E0]">
+          Add New Checklist Item
+        </h3>
+        <form onSubmit={handleAddItem} className="space-y-3">
+          {error && (
+            <div className="rounded-xl border border-red-500/40 bg-red-500/15 p-3 text-sm text-red-200">
+              {error}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/60">
+                Room
+              </label>
+              <select
+                value={newChecklistItem.room}
+                onChange={(e) =>
+                  setNewChecklistItem({
+                    ...newChecklistItem,
+                    room: e.target.value,
+                  })
+                }
+                className="mt-1 w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/70 px-3 py-2.5 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/60"
+              >
+                <option value="">Select a room</option>
+                {ROOM_OPTIONS.map((room) => (
+                  <option key={room} value={room}>
+                    {room}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wide text-[#EFF6E0]/60">
+                Task
+              </label>
+              <input
+                type="text"
+                value={newChecklistItem.task}
+                onChange={(e) =>
+                  setNewChecklistItem({
+                    ...newChecklistItem,
+                    task: e.target.value,
+                  })
+                }
+                className="mt-1 w-full rounded-xl border border-[#124559]/60 bg-[#01161E]/70 px-3 py-2.5 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/60"
+                placeholder="Enter cleaning task"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full rounded-full bg-gradient-to-r from-[#124559] to-[#598392] px-4 py-2.5 text-sm font-semibold text-[#EFF6E0] shadow-lg shadow-[#01161E]/50 transition-all duration-200 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {saving ? "Adding..." : "Add Checklist Item"}
+          </button>
+        </form>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-[#EFF6E0]">
+            Current Checklist
+          </h3>
+          <span className="text-sm text-[#EFF6E0]/70">
+            {checklistData.items.length}{" "}
+            {checklistData.items.length === 1 ? "item" : "items"}
+          </span>
+        </div>
+
+        {checklistData.items.length === 0 ? (
+          <p className="text-sm text-[#EFF6E0]/60">
+            No checklist items added yet. Add items using the form above.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {(() => {
+              // Group items by room
+              const groupedByRoom = checklistData.items.reduce((acc, item) => {
+                if (!acc[item.room]) {
+                  acc[item.room] = [];
+                }
+                acc[item.room].push(item);
+                return acc;
+              }, {} as Record<string, typeof checklistData.items>);
+
+              // Sort rooms and items within each room
+              const sortedRooms = Object.keys(groupedByRoom).sort();
+
+              return sortedRooms.map((room) => {
+                const roomItems = groupedByRoom[room].sort(
+                  (a, b) => a.sort_order - b.sort_order
+                );
+                const isExpanded = expandedRooms.has(room);
+
+                return (
+                  <div
+                    key={room}
+                    className="rounded-xl border border-[#124559]/40 bg-[#01161E]/40 overflow-hidden"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setExpandedRooms((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(room)) {
+                            next.delete(room);
+                          } else {
+                            next.add(room);
+                          }
+                          return next;
+                        });
+                      }}
+                      className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#124559]/20 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <ChevronDownIcon
+                          className={clsx(
+                            "h-4 w-4 text-[#598392] transition-transform",
+                            isExpanded ? "rotate-180" : ""
+                          )}
+                        />
+                        <span className="text-sm font-semibold text-[#EFF6E0]">
+                          {room}
+                        </span>
+                        <span className="text-xs text-[#EFF6E0]/60">
+                          ({roomItems.length}{" "}
+                          {roomItems.length === 1 ? "item" : "items"})
+                        </span>
+                      </div>
+                    </button>
+
+                    {isExpanded && (
+                      <div className="border-t border-[#124559]/40 space-y-2 p-2">
+                        {roomItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center gap-3 rounded-lg border border-[#124559]/30 bg-[#01161E]/60 px-3 py-2"
+                          >
+                            <div className="flex-1">
+                              <div className="font-medium text-[#EFF6E0]">
+                                {item.task}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleMoveItem(item.id, "up")}
+                                disabled={item.sort_order === 0}
+                                className="rounded-lg border border-[#124559]/50 bg-[#124559]/40 p-1.5 text-[#EFF6E0]/80 transition-colors hover:border-[#598392]/60 hover:bg-[#124559]/60 hover:text-[#EFF6E0] disabled:opacity-40"
+                                aria-label="Move up"
+                              >
+                                <svg
+                                  className="h-3.5 w-3.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M5 15l7-7 7 7"
+                                  />
+                                </svg>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleMoveItem(item.id, "down")}
+                                disabled={
+                                  item.sort_order ===
+                                  checklistData.items.length - 1
+                                }
+                                className="rounded-lg border border-[#124559]/50 bg-[#124559]/40 p-1.5 text-[#EFF6E0]/80 transition-colors hover:border-[#598392]/60 hover:bg-[#124559]/60 hover:text-[#EFF6E0] disabled:opacity-40"
+                                aria-label="Move down"
+                              >
+                                <svg
+                                  className="h-3.5 w-3.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 9l-7 7-7-7"
+                                  />
+                                </svg>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteItem(item.id)}
+                                disabled={saving}
+                                className="rounded-lg border border-red-500/50 bg-red-500/20 p-1.5 text-red-200 transition-colors hover:border-red-400/60 hover:bg-red-500/30"
+                                aria-label="Delete item"
+                              >
+                                <svg
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

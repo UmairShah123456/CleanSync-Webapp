@@ -26,6 +26,14 @@ export type Property = {
   bin_locations?: string | null;
   property_address?: string | null;
   key_locations?: string | null;
+  cleaning_checklists?: Array<{
+    id: string;
+    room: string;
+    task: string;
+    sort_order: number;
+    created_at: string;
+    updated_at: string;
+  }> | null;
 };
 
 const getInitials = (name: string): string => {

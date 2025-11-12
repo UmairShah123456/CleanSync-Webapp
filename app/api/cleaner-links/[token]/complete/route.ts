@@ -49,10 +49,6 @@ export async function POST(
     return NextResponse.json({ error: "Invalid link." }, { status: 404 });
   }
 
-  if (linkData.cleaner.cleaner_type !== "individual") {
-    return NextResponse.json({ error: "This link cannot modify cleans." }, { status: 403 });
-  }
-
   const { data: cleanRecord, error: cleanError } = await supabase
     .from("cleans")
     .select("id, property_id, status")

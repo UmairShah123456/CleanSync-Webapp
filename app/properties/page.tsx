@@ -44,7 +44,21 @@ export default async function PropertiesPage() {
     error = null;
   }
 
-  const properties = propertiesData ?? [];
+  // For each property, get its cleaning checklists
+  const properties = await Promise.all(
+    (propertiesData || []).map(async (property: any) => {
+      const { data: checklists } = await supabase
+        .from("cleaning_checklists")
+        .select("*")
+        .eq("property_id", property.id)
+        .order("sort_order", { ascending: true });
+      
+      return {
+        ...property,
+        cleaning_checklists: checklists || [],
+      };
+    })
+  );
 
   return (
     <PropertiesClient

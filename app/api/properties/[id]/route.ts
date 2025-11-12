@@ -71,6 +71,52 @@ export async function PATCH(
   return NextResponse.json(data);
 }
 
+export async function GET(
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const supabase = await getServerSupabaseClient();
+  const { id } = await context.params;
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    return NextResponse.json({ error: userError.message }, { status: 500 });
+  }
+
+ if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Get the property
+  const { data: property, error } = await supabase
+    .from("properties")
+    .select("*")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Get the property's cleaning checklists
+ const { data: checklists } = await supabase
+    .from("cleaning_checklists")
+    .select("*")
+    .eq("property_id", id)
+    .order("sort_order", { ascending: true });
+
+  // Return property with its checklists
+  return NextResponse.json({
+    ...property,
+    cleaning_checklists: checklists || [],
+  });
+}
+
 export async function DELETE(
   _request: NextRequest,
   context: { params: Promise<{ id: string }> }

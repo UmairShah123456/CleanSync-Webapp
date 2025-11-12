@@ -93,13 +93,11 @@ export function CleanActionsModal({
   translations,
 }: CleanActionsModalProps) {
   const isCleanerContext = context.mode === "cleaner";
-  const isIndividualCleaner =
-    isCleanerContext && context.cleanerType === "individual";
-  const canManageCleans = context.mode === "owner" || isIndividualCleaner;
+  const canManageCleans = context.mode === "owner" || isCleanerContext;
 
-  const [activeTab, setActiveTab] = useState<"details" | "actions">(
-    canManageCleans ? "actions" : "details"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "details" | "actions" | "checklist"
+  >(canManageCleans ? "actions" : "details");
   const [selectedStatus, setSelectedStatus] = useState<
     "scheduled" | "completed" | "cancelled"
   >("scheduled");
@@ -475,6 +473,24 @@ export function CleanActionsModal({
               >
                 {translations?.utilityDetails || "Utility details"}
               </button>
+              {isCleanerContext ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("checklist");
+                    setActionError(null);
+                    setActionSuccess(null);
+                  }}
+                  className={clsx(
+                    "rounded-full px-3 py-2 text-xs font-medium transition-all duration-150 active:scale-95 sm:px-4 sm:py-1.5 sm:text-sm",
+                    activeTab === "checklist"
+                      ? "bg-gradient-to-r from-[#124559] to-[#598392] text-[#EFF6E0] shadow-lg"
+                      : "text-[#EFF6E0]/70 active:text-[#EFF6E0] sm:hover:text-[#EFF6E0]"
+                  )}
+                >
+                  {"Checklist"}
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => {
@@ -498,6 +514,16 @@ export function CleanActionsModal({
 
           {activeTab === "details" ? (
             <UtilityDetails property={property} />
+          ) : null}
+
+          {activeTab === "checklist" ? (
+            <ChecklistTab
+              property={property}
+              clean={clean}
+              context={context}
+              onCleanUpdated={onCleanUpdated}
+              translations={translations}
+            />
           ) : null}
 
           {activeTab === "actions" ? (
@@ -976,6 +1002,319 @@ function UtilityDetails({ property }: { property: ScheduleProperty }) {
           No utility details recorded for this property yet.
         </p>
       ) : null}
+    </div>
+  );
+}
+
+// Checklist tab component for cleaners to mark items as completed
+function ChecklistTab({
+  property,
+  clean,
+  context,
+  onCleanUpdated,
+  translations,
+}: {
+  property: ScheduleProperty;
+  clean: ScheduleClean | null;
+  context: CleanActionsContext;
+  onCleanUpdated: (clean: ScheduleClean) => void;
+  translations?: Translations;
+}) {
+  const [checklistItems, setChecklistItems] = useState(() => {
+    if (property?.cleaning_checklists && clean?.checklist_completions) {
+      return property.cleaning_checklists.map((item) => {
+        const completion = clean.checklist_completions?.find(
+          (comp) => comp.checklist_item_id === item.id
+        );
+        return {
+          ...item,
+          completed: completion?.completed || false,
+          completed_at: completion?.completed_at || null,
+        };
+      });
+    }
+    return (
+      property?.cleaning_checklists?.map((item) => ({
+        ...item,
+        completed: false,
+        completed_at: null,
+      })) || []
+    );
+  });
+
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set());
+  const isCleanerContext = context.mode === "cleaner";
+  const baseChecklistEndpoint = useMemo(() => {
+    if (!clean?.id) return null;
+    if (isCleanerContext && context.token) {
+      return `/api/cleaner-links/${context.token}/clean/${clean.id}/checklist`;
+    }
+    return `/api/cleans/${clean.id}/checklist`;
+  }, [clean?.id, isCleanerContext, context]);
+
+  // Update checklist items when property or clean changes
+  useEffect(() => {
+    if (property?.cleaning_checklists && clean?.checklist_completions) {
+      setChecklistItems(
+        property.cleaning_checklists.map((item) => {
+          const completion = clean.checklist_completions?.find(
+            (comp) => comp.checklist_item_id === item.id
+          );
+          return {
+            ...item,
+            completed: completion?.completed || false,
+            completed_at: completion?.completed_at || null,
+          };
+        })
+      );
+    } else {
+      setChecklistItems(
+        property?.cleaning_checklists?.map((item) => ({
+          ...item,
+          completed: false,
+          completed_at: null,
+        })) || []
+      );
+    }
+  }, [property?.cleaning_checklists, clean?.checklist_completions]);
+
+  const toggleChecklistItem = useCallback(
+    async (itemId: string) => {
+      if (!isCleanerContext || !baseChecklistEndpoint) {
+        return;
+      }
+
+      const itemIndex = checklistItems.findIndex((item) => item.id === itemId);
+      if (itemIndex === -1) return;
+
+      const currentItem = checklistItems[itemIndex];
+      const newCompletedStatus = !currentItem.completed;
+
+      setSaving(true);
+      setError(null);
+      setSuccess(null);
+
+      try {
+        const response = await fetch(baseChecklistEndpoint, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            checklist_item_id: itemId,
+            completed: newCompletedStatus,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(
+            errorData?.error || "Unable to update checklist item."
+          );
+        }
+
+        const result = await response.json();
+
+        // If the API returns the updated clean object, update the parent
+        if (result.clean) {
+          onCleanUpdated(result.clean);
+        }
+
+        // Update the checklist items with the new status
+        const updatedItems = [...checklistItems];
+        updatedItems[itemIndex] = {
+          ...currentItem,
+          completed: newCompletedStatus,
+          completed_at: newCompletedStatus ? new Date().toISOString() : null,
+        };
+
+        setChecklistItems(updatedItems);
+        setSuccess(
+          newCompletedStatus
+            ? "Item marked as completed"
+            : "Item marked as incomplete"
+        );
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to update checklist item."
+        );
+      } finally {
+        setSaving(false);
+      }
+    },
+    [checklistItems, isCleanerContext, baseChecklistEndpoint]
+  );
+
+  if (
+    !property?.cleaning_checklists ||
+    property.cleaning_checklists.length === 0
+  ) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-sm text-[#EFF6E0]/60">
+          No checklist items set for this property.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {error && (
+        <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-xs text-red-200">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-200">
+          {success}
+        </div>
+      )}
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-[#EFF6E0]">
+            Cleaning Checklist
+          </h3>
+          <span className="text-sm text-[#EFF6E0]/70">
+            {checklistItems.filter((item) => item.completed).length} /{" "}
+            {checklistItems.length} completed
+          </span>
+        </div>
+
+        <div className="space-y-2">
+          {(() => {
+            // Group items by room
+            const groupedByRoom = checklistItems.reduce((acc, item) => {
+              if (!acc[item.room]) {
+                acc[item.room] = [];
+              }
+              acc[item.room].push(item);
+              return acc;
+            }, {} as Record<string, typeof checklistItems>);
+
+            // Sort rooms and items within each room
+            const sortedRooms = Object.keys(groupedByRoom).sort();
+
+            return sortedRooms.map((room) => {
+              const roomItems = groupedByRoom[room].sort(
+                (a, b) => a.sort_order - b.sort_order
+              );
+              const completedCount = roomItems.filter(
+                (item) => item.completed
+              ).length;
+              const isExpanded = expandedRooms.has(room);
+
+              return (
+                <div
+                  key={room}
+                  className="rounded-xl border border-[#124559]/40 bg-[#01161E]/40 overflow-hidden"
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setExpandedRooms((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(room)) {
+                          next.delete(room);
+                        } else {
+                          next.add(room);
+                        }
+                        return next;
+                      });
+                    }}
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#124559]/20 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <ChevronDownIcon
+                        className={clsx(
+                          "h-4 w-4 text-[#598392] transition-transform",
+                          isExpanded ? "rotate-180" : ""
+                        )}
+                      />
+                      <span className="text-sm font-semibold text-[#EFF6E0]">
+                        {room}
+                      </span>
+                      <span className="text-xs text-[#EFF6E0]/60">
+                        ({completedCount} / {roomItems.length})
+                      </span>
+                    </div>
+                  </button>
+
+                  {isExpanded && (
+                    <div className="border-t border-[#124559]/40 space-y-2 p-2">
+                      {roomItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-start gap-3 rounded-lg border border-[#124559]/30 bg-[#01161E]/60 px-3 py-2"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleChecklistItem(item.id)}
+                            disabled={saving || !isCleanerContext}
+                            className={clsx(
+                              "mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border transition",
+                              item.completed
+                                ? "border-emerald-500/80 bg-emerald-500/30"
+                                : "border-[#598392]/60 bg-[#01161E]/50",
+                              saving || !isCleanerContext
+                                ? "opacity-50"
+                                : "hover:border-[#598392]/80"
+                            )}
+                            aria-label={
+                              item.completed
+                                ? "Mark as incomplete"
+                                : "Mark as complete"
+                            }
+                          >
+                            {item.completed && (
+                              <svg
+                                className="h-4 w-4 text-emerald-400"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={3}
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            )}
+                          </button>
+
+                          <div className="flex-1 min-w-0">
+                            <span
+                              className={clsx(
+                                "font-medium block",
+                                item.completed
+                                  ? "text-emerald-400 line-through"
+                                  : "text-[#EFF6E0]"
+                              )}
+                            >
+                              {item.task}
+                            </span>
+                            {item.completed_at && (
+                              <p className="mt-1 text-xs text-emerald-400/80">
+                                Completed:{" "}
+                                {new Date(item.completed_at).toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            });
+          })()}
+        </div>
+      </div>
     </div>
   );
 }

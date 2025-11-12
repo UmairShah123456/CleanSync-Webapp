@@ -18,17 +18,34 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data, error } = await supabase
+  // First get properties
+  const { data: properties, error: propertiesError } = await supabase
     .from("properties")
     .select("*")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (propertiesError) {
+    return NextResponse.json({ error: propertiesError.message }, { status: 500 });
   }
 
-  return NextResponse.json(data ?? []);
+  // For each property, get its cleaning checklists
+  const propertiesWithChecklists = await Promise.all(
+    properties.map(async (property) => {
+      const { data: checklists } = await supabase
+        .from("cleaning_checklists")
+        .select("*")
+        .eq("property_id", property.id)
+        .order("sort_order", { ascending: true });
+      
+      return {
+        ...property,
+        cleaning_checklists: checklists || [],
+      };
+    })
+  );
+
+  return NextResponse.json(propertiesWithChecklists);
 }
 
 export async function POST(request: Request) {

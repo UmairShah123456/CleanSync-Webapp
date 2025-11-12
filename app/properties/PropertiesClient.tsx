@@ -181,6 +181,7 @@ export function PropertiesClient({
                 onClose={() => setSelectedPropertyId(null)}
                 onUpdate={handleUpdate}
                 onDelete={handleDelete}
+                onRefresh={refreshProperties}
               />
             </div>
           </div>
@@ -203,6 +204,7 @@ export function PropertiesClient({
                   }}
                   onUpdate={handleUpdate}
                   onDelete={handleDelete}
+                  onRefresh={refreshProperties}
                   isMobile={true}
                 />
               </div>

@@ -124,8 +124,6 @@ export function ScheduleClient({
 }) {
   const [view, setView] = useState<ScheduleView>("timeline");
   const isCleanerPortal = portalContext?.type === "cleaner";
-  const isIndividualCleaner =
-    isCleanerPortal && portalContext?.cleanerType === "individual";
   const cleanerToken = isCleanerPortal ? portalContext?.token ?? null : null;
   const [timelineStart, setTimelineStart] = useState(() => {
     const initial = new Date(initialRange.from);

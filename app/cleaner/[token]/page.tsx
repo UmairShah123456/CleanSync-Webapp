@@ -61,7 +61,23 @@ export default async function CleanerPortalPage({
     .eq("user_id", cleaner.user_id)
     .ilike("cleaner", cleaner.name);
 
-  const scheduleProperties: ScheduleProperty[] = (propertiesData ?? []).map(
+  // For each property, get its cleaning checklists
+  const propertiesWithChecklists = await Promise.all(
+    (propertiesData ?? []).map(async (property) => {
+      const { data: checklists } = await supabase
+        .from("cleaning_checklists")
+        .select("*")
+        .eq("property_id", property.id)
+        .order("sort_order", { ascending: true });
+      
+      return {
+        ...property,
+        cleaning_checklists: checklists || [],
+      };
+    })
+  );
+
+  const scheduleProperties: ScheduleProperty[] = (propertiesWithChecklists ?? []).map(
     (property) => ({
       id: property.id,
       name: property.name,
@@ -71,6 +87,7 @@ export default async function CleanerPortalPage({
       bin_locations: property.bin_locations ?? null,
       property_address: property.property_address ?? null,
       key_locations: property.key_locations ?? null,
+      cleaning_checklists: property.cleaning_checklists || [],
     })
   );
 
@@ -100,7 +117,8 @@ export default async function CleanerPortalPage({
             property_id,
             scheduled_for,
             status,
-            notes
+            notes,
+            checklist_completions ( id, checklist_item_id, completed, completed_at, created_at, updated_at )
           `
         )
         .in("property_id", propertyIds)
@@ -153,6 +171,7 @@ export default async function CleanerPortalPage({
         checkin: booking?.checkin ?? null,
         checkout: booking?.checkout ?? null,
         cleaner: propertyCleanerLookup.get(clean.property_id) ?? null,
+        checklist_completions: clean.checklist_completions ?? [],
       };
     }
   );

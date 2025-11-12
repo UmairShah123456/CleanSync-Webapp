@@ -41,6 +41,14 @@ export type CleanRecord = {
     item: string;
     created_at: string;
   }>;
+  checklist_completions?: Array<{
+    id: string;
+    checklist_item_id: string;
+    completed: boolean;
+    completed_at: string | null;
+    created_at: string;
+    updated_at: string;
+  }>;
 };
 
 type PropertyRecord = {
@@ -88,13 +96,6 @@ export async function ensureIndividualCleanerAccess(
 
   if (!linkData || !linkData.cleaner) {
     throw new CleanerAccessError("Invalid link.", 404);
-  }
-
-  if (linkData.cleaner.cleaner_type !== "individual") {
-    throw new CleanerAccessError(
-      "This link is read-only for the selected cleaner.",
-      403
-    );
   }
 
   const { data: cleanData, error: cleanError } = await supabase
@@ -200,6 +201,7 @@ export function mapCleanRecordToScheduleClean(
       item: entry.item,
       created_at: entry.created_at,
     })),
+    checklist_completions: clean.checklist_completions ?? [],
   };
 }
 
@@ -247,6 +249,27 @@ export async function fetchCleanWithRelations(
         checkout: bookingData.checkout,
       };
     }
+  }
+
+  // Fetch checklist completions separately since we no longer have a foreign key relationship
+  const { data: completions } = await supabase
+    .from("clean_checklist_completions")
+    .select(
+      "id, checklist_item_id, completed, completed_at, created_at, updated_at"
+    )
+    .eq("clean_id", cleanId);
+
+  if (completions) {
+    data.checklist_completions = completions.map((comp: any) => ({
+      id: comp.id,
+      checklist_item_id: comp.checklist_item_id,
+      completed: comp.completed,
+      completed_at: comp.completed_at,
+      created_at: comp.created_at,
+      updated_at: comp.updated_at,
+    }));
+  } else {
+    data.checklist_completions = [];
   }
 
   return data;
