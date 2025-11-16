@@ -96,7 +96,7 @@ export function CleanActionsModal({
   const canManageCleans = context.mode === "owner" || isCleanerContext;
 
   const [activeTab, setActiveTab] = useState<
-    "details" | "actions" | "checklist"
+    "details" | "actions" | "checklist" | "maintenance"
   >(canManageCleans ? "actions" : "details");
   const [selectedStatus, setSelectedStatus] = useState<
     "scheduled" | "completed" | "cancelled"
@@ -509,6 +509,27 @@ export function CleanActionsModal({
                   ? translations?.manageClean || "Manage clean"
                   : translations?.cleanerActions || "Cleaner actions"}
               </button>
+              {clean?.maintenance_notes && clean.maintenance_notes.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("maintenance");
+                    setActionError(null);
+                    setActionSuccess(null);
+                  }}
+                  className={clsx(
+                    "rounded-full px-3 py-2 text-xs font-medium transition-all duration-150 active:scale-95 sm:px-4 sm:py-1.5 sm:text-sm relative",
+                    activeTab === "maintenance"
+                      ? "bg-gradient-to-r from-[#124559] to-[#598392] text-[#EFF6E0] shadow-lg"
+                      : "text-[#EFF6E0]/70 active:text-[#EFF6E0] sm:hover:text-[#EFF6E0]"
+                  )}
+                >
+                  Cleaner Notes
+                  <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-orange-500/30 text-[10px] text-orange-300">
+                    {clean.maintenance_notes.length}
+                  </span>
+                </button>
+              )}
             </div>
           ) : null}
 
@@ -548,12 +569,14 @@ export function CleanActionsModal({
                       {clean.status}
                     </p>
                     {clean.notes ? (
-                      <p className="mt-3 text-[0.65rem] text-[#EFF6E0]/60 leading-relaxed sm:mt-4 sm:text-xs">
-                        <span className="font-medium">
-                          {translations?.hostNote || "Host note"}:
-                        </span>{" "}
-                        {clean.notes}
-                      </p>
+                      <div className="mt-3">
+                        <p className="text-[0.65rem] uppercase tracking-wide text-[#EFF6E0]/50 sm:text-xs">
+                          {translations?.notes || "Host Notes"}
+                        </p>
+                        <p className="mt-1 text-xs text-[#EFF6E0]/80 whitespace-pre-wrap">
+                          {clean.notes}
+                        </p>
+                      </div>
                     ) : null}
                   </div>
 
@@ -627,16 +650,17 @@ export function CleanActionsModal({
                     </div>
                   </section>
 
-                  <section className="space-y-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-[#EFF6E0]/50">
-                        {translations?.maintenanceNotes || "Maintenance notes"}
-                      </p>
-                      <p className="text-xs text-[#EFF6E0]/60">
-                        {translations?.pickNotesApplyToClean ||
-                          "Pick the notes that apply to this clean."}
-                      </p>
-                    </div>
+                  {isCleanerContext && (
+                    <section className="space-y-3">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-[#EFF6E0]/50">
+                          {translations?.maintenanceNotes || "Cleaner Notes"}
+                        </p>
+                        <p className="text-xs text-[#EFF6E0]/60">
+                          {translations?.pickNotesApplyToClean ||
+                            "Pick the notes that apply to this clean."}
+                        </p>
+                      </div>
                     <div className="relative w-full">
                       <button
                         type="button"
@@ -658,7 +682,7 @@ export function CleanActionsModal({
                                   : translations?.notesPlural || "notes"
                               } ${translations?.selected || "selected"}`
                             : translations?.selectMaintenanceNotes ||
-                              "Select maintenance notes"}
+                              "Select notes"}
                         </span>
                         <ChevronDownIcon
                           className={clsx(
@@ -708,13 +732,15 @@ export function CleanActionsModal({
                           "The host will see any notes you select alongside this clean."}
                       </p>
                     )}
-                  </section>
+                    </section>
+                  )}
 
-                  <section className="space-y-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-[#EFF6E0]/50">
-                        {translations?.reimbursements || "Reimbursements"}
-                      </p>
+                  {isCleanerContext && (
+                    <section className="space-y-4">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-[#EFF6E0]/50">
+                          {translations?.reimbursements || "Reimbursements"}
+                        </p>
                       <p className="text-xs text-[#EFF6E0]/60">
                         {translations?.logItemsPurchasedForRefund ||
                           "Log items you purchased so the host can refund you."}
@@ -925,7 +951,8 @@ export function CleanActionsModal({
                         </button>
                       </div>
                     </div>
-                  </section>
+                    </section>
+                  )}
 
                   {actionError ? (
                     <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-xs text-red-200 ">
@@ -963,6 +990,46 @@ export function CleanActionsModal({
                 {translations?.readOnly || "This view is read-only."}
               </p>
             )
+          ) : null}
+
+          {activeTab === "maintenance" && clean?.maintenance_notes && clean.maintenance_notes.length > 0 ? (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-[#124559]/40 bg-[#01161E]/50 p-4">
+                <h3 className="mb-3 text-sm font-semibold text-[#EFF6E0]">
+                  Notes from Cleaner
+                </h3>
+                <div className="space-y-2">
+                  {clean.maintenance_notes.map((note, index) => (
+                    <div
+                      key={index}
+                      className="flex items-start gap-3 rounded-lg border border-orange-500/30 bg-orange-500/10 p-3"
+                    >
+                      <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-orange-500/30">
+                        <svg
+                          className="h-4 w-4 text-orange-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm text-orange-200">{note}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <p className="text-xs text-[#EFF6E0]/60">
+                These notes were added by the cleaner during or after the clean. Please review and address them as needed.
+              </p>
+            </div>
           ) : null}
         </div>
       )}

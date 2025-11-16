@@ -445,7 +445,7 @@ export function ScheduleClient({
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-6 h-full flex flex-col">
         <div>
           <h1 className="text-2xl font-semibold text-[#EFF6E0]">{title}</h1>
           {description ? (
@@ -453,7 +453,7 @@ export function ScheduleClient({
           ) : null}
         </div>
 
-        <div className="rounded-xl border border-[#124559]/50 bg-[#124559]/20 p-3 shadow-lg shadow-[#01161E]/40 sm:rounded-2xl sm:p-6">
+        <div className="rounded-xl border-[#124559]/50 bg-[#124559]/20 p-3 shadow-lg shadow-[#01161E]/40 sm:rounded-2xl sm:p-6">
           <div className="flex flex-col gap-3 sm:gap-4">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <button
@@ -491,7 +491,7 @@ export function ScheduleClient({
               </div>
             </div>
 
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
               <div className="relative w-full sm:w-auto">
                 <select
                   value={selectedPropertyId}
@@ -540,7 +540,7 @@ export function ScheduleClient({
             </div>
           ) : null}
 
-          <div className="relative mt-6">
+          <div className="relative mt-6 flex-1 overflow-y-auto">
             {loading ? (
               <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-[#01161E]/70">
                 <Spinner
@@ -642,10 +642,10 @@ function TimelineView({
   const hasCleans = cleans.length > 0;
 
   return (
-    <div className="overflow-x-auto -mx-3 sm:mx-0">
-      <div className="inline-block min-w-full px-3 sm:block sm:px-0">
+    <div className="overflow-x-auto">
+      <div className="inline-block min-w-full sm:block">
       <div
-          className="min-w-[640px] rounded-xl border border-[#124559]/40 bg-[#01161E]/40 sm:min-w-0"
+          className="min-w-[640px] rounded-xl border border-[#124559]/40 bg-[#01161E]/40"
         style={{ boxShadow: "0 15px 35px rgba(1, 22, 30, 0.35)" }}
       >
         <div

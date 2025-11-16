@@ -27,6 +27,32 @@ const scheduleFromCheckout = (checkout: Date): string => {
   return addHours(checkout, 1).toISOString();
 };
 
+/**
+ * Merges user notes with the same-day check-in warning.
+ * Removes the warning if it shouldn't be present, adds it if it should be.
+ * Preserves any other user-added notes.
+ */
+const mergeNotesWithSameDayWarning = (
+  existingNotes: string | null,
+  hasSameDayCheckIn: boolean
+): string | null => {
+  // Remove any existing same-day warning from the notes
+  let userNotes = (existingNotes || "")
+    .replace(/⚠️\s*Same-day check-in\.?\s*/gi, "")
+    .replace(/⚠️\s*Same day check-in\.?\s*/gi, "")
+    .trim();
+
+  // If same-day check-in, prepend the warning
+  if (hasSameDayCheckIn) {
+    return userNotes
+      ? `${SAME_DAY_NOTE} ${userNotes}`
+      : SAME_DAY_NOTE;
+  }
+
+  // Return user notes without the warning, or null if empty
+  return userNotes || null;
+};
+
 const upsertBooking = async (
   supabase: SupabaseClient,
   propertyId: string,
@@ -66,11 +92,10 @@ const ensureClean = async (
   checkoutDate.setHours(hours || 10, minutes || 0, 0, 0);
   // Set scheduled_for to the checkout time (no 1 hour delay)
   const scheduledFor = checkoutDate.toISOString();
-  const notes = hasSameDayCheckIn ? SAME_DAY_NOTE : null;
 
   const { data, error } = await supabase
     .from("cleans")
-    .select("id, status")
+    .select("id, status, notes")
     .eq("booking_uid", event.uid)
     .eq("property_id", propertyId)
     .maybeSingle();
@@ -82,6 +107,8 @@ const ensureClean = async (
   }
 
   if (!data) {
+    // For new cleans, add the same-day warning if applicable
+    const notes = hasSameDayCheckIn ? SAME_DAY_NOTE : null;
     const { error: insertError } = await supabase.from("cleans").insert({
       booking_uid: event.uid,
       property_id: propertyId,
@@ -106,6 +133,12 @@ const ensureClean = async (
   // Don't override manually set statuses (completed, cancelled) - only update scheduled ones
   const shouldUpdateStatus = data.status === "scheduled";
 
+  // Merge existing user notes with the same-day warning
+  const mergedNotes = mergeNotesWithSameDayWarning(
+    data.notes,
+    hasSameDayCheckIn
+  );
+
   const updateData: {
     scheduled_for: string;
     notes: string | null;
@@ -113,7 +146,7 @@ const ensureClean = async (
     updated_at: string;
   } = {
     scheduled_for: scheduledFor,
-    notes,
+    notes: mergedNotes,
     updated_at: new Date().toISOString(),
   };
 

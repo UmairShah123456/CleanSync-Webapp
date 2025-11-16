@@ -11,6 +11,7 @@ import {
 type UpdatePayload = {
   status?: "scheduled" | "completed" | "cancelled";
   maintenance_notes?: string[];
+  notes?: string | null;
 };
 
 export async function PATCH(
@@ -26,11 +27,11 @@ export async function PATCH(
     body = {};
   }
 
-  const { status, maintenance_notes } = body;
+  const { status, maintenance_notes, notes } = body;
 
-  if (typeof status === "undefined" && typeof maintenance_notes === "undefined") {
+  if (typeof status === "undefined" && typeof maintenance_notes === "undefined" && typeof notes === "undefined") {
     return NextResponse.json(
-      { error: "Provide a status or maintenance notes to update." },
+      { error: "Provide a status, maintenance notes, or notes to update." },
       { status: 400 }
     );
   }
@@ -91,6 +92,10 @@ export async function PATCH(
 
     if (typeof nextNotes !== "undefined") {
       updatePayload.maintenance_notes = nextNotes;
+    }
+
+    if (typeof notes !== "undefined") {
+      updatePayload.notes = notes?.trim() || null;
     }
 
     const { error: updateError } = await supabase

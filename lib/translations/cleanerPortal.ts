@@ -98,7 +98,7 @@ const translations: Record<Language, Translations> = {
     cleaningCompany: "Cleaning company",
     individualCleaner: "Individual cleaner",
     phone: "Phone",
-    notes: "Notes",
+    notes: "Host Notes",
     payment: "Payment",
     descriptionCompany:
       "This link is read-only. You can review every scheduled clean for the properties assigned to your team.",
@@ -124,7 +124,7 @@ const translations: Record<Language, Translations> = {
     selectCleanToUpdate:
       "Select a clean from the timeline or table to update its status, add notes, or request reimbursements.",
     readOnly: "This view is read-only.",
-    maintenanceNotes: "Maintenance Notes",
+    maintenanceNotes: "Cleaner Notes",
     maintenanceNoteOptions: [
       "Restocked toiletries and consumables",
       "Left fresh linens and towels ready for guests",
@@ -169,7 +169,7 @@ const translations: Record<Language, Translations> = {
     pickNotesApplyToClean: "Pick the notes that apply to this clean.",
     hostWillSeeNotesSelected:
       "The host will see any notes you select alongside this clean.",
-    selectMaintenanceNotes: "Select maintenance notes",
+    selectMaintenanceNotes: "Select notes",
     note: "note",
     notesPlural: "notes",
     selected: "selected",
@@ -185,7 +185,7 @@ const translations: Record<Language, Translations> = {
     cleaningCompany: "Empresa de limpieza",
     individualCleaner: "Limpieza individual",
     phone: "Teléfono",
-    notes: "Notas",
+    notes: "Notas del Anfitrión",
     payment: "Pago",
     descriptionCompany:
       "Este enlace es de solo lectura. Puedes revisar cada limpieza programada para las propiedades asignadas a tu equipo.",
@@ -212,7 +212,7 @@ const translations: Record<Language, Translations> = {
     selectCleanToUpdate:
       "Selecciona una limpieza de la línea de tiempo o tabla para actualizar su estado, agregar notas o solicitar reembolsos.",
     readOnly: "Esta vista es de solo lectura.",
-    maintenanceNotes: "Notas de Mantenimiento",
+    maintenanceNotes: "Notas del Limpiador",
     maintenanceNoteOptions: [
       "Reabastecido artículos de tocador y consumibles",
       "Dejado ropa de cama y toallas frescas listas para los huéspedes",
@@ -257,7 +257,7 @@ const translations: Record<Language, Translations> = {
     pickNotesApplyToClean: "Elige las notas que se aplican a esta limpieza.",
     hostWillSeeNotesSelected:
       "El anfitrión verá las notas que selecciones junto con esta limpieza.",
-    selectMaintenanceNotes: "Seleccionar notas de mantenimiento",
+    selectMaintenanceNotes: "Seleccionar notas",
     note: "nota",
     notesPlural: "notas",
     selected: "seleccionada",
@@ -273,7 +273,7 @@ const translations: Record<Language, Translations> = {
     cleaningCompany: "Companie de curățenie",
     individualCleaner: "Curățenie individuală",
     phone: "Telefon",
-    notes: "Note",
+    notes: "Note Gazdă",
     payment: "Plată",
     descriptionCompany:
       "Acest link este doar pentru citire. Poți revizui fiecare curățenie programată pentru proprietățile alocate echipei tale.",
@@ -301,7 +301,7 @@ const translations: Record<Language, Translations> = {
     selectCleanToUpdate:
       "Selectează o curățenie din cronologie sau tabel pentru a actualiza statusul, a adăuga note sau a solicita rambursări.",
     readOnly: "Această vedere este doar pentru citire.",
-    maintenanceNotes: "Note de Mentenanță",
+    maintenanceNotes: "Note Curățător",
     maintenanceNoteOptions: [
       "Reîncărcat articole de toaletă și consumabile",
       "Lăsat lenjerie și prosoape proaspete gata pentru oaspeți",
@@ -346,7 +346,7 @@ const translations: Record<Language, Translations> = {
     pickNotesApplyToClean: "Alege notele care se aplică acestei curățenii.",
     hostWillSeeNotesSelected:
       "Gazda va vedea notele pe care le selectezi împreună cu această curățenie.",
-    selectMaintenanceNotes: "Selectează note de întreținere",
+    selectMaintenanceNotes: "Selectează note",
     note: "notă",
     notesPlural: "note",
     selected: "selectate",
@@ -362,7 +362,7 @@ const translations: Record<Language, Translations> = {
     cleaningCompany: "Empresa de limpeza",
     individualCleaner: "Limpeza individual",
     phone: "Telefone",
-    notes: "Notas",
+    notes: "Notas do Anfitrião",
     payment: "Pagamento",
     descriptionCompany:
       "Este link é somente leitura. Você pode revisar cada limpeza agendada para as propriedades atribuídas à sua equipe.",
@@ -389,7 +389,7 @@ const translations: Record<Language, Translations> = {
     selectCleanToUpdate:
       "Selecione uma limpeza da linha do tempo ou tabela para atualizar seu status, adicionar notas ou solicitar reembolsos.",
     readOnly: "Esta visualização é somente leitura.",
-    maintenanceNotes: "Notas de Manutenção",
+    maintenanceNotes: "Notas do Limpador",
     maintenanceNoteOptions: [
       "Reabastecido produtos de higiene e consumíveis",
       "Deixado roupas de cama e toalhas frescas prontas para os hóspedes",
@@ -434,7 +434,7 @@ const translations: Record<Language, Translations> = {
     pickNotesApplyToClean: "Escolha as notas que se aplicam a esta limpeza.",
     hostWillSeeNotesSelected:
       "O anfitrião verá as notas que você selecionar junto com esta limpeza.",
-    selectMaintenanceNotes: "Selecionar notas de manutenção",
+    selectMaintenanceNotes: "Selecionar notas",
     note: "nota",
     notesPlural: "notas",
     selected: "selecionada",
@@ -450,7 +450,7 @@ const translations: Record<Language, Translations> = {
     cleaningCompany: "सफाई कंपनी",
     individualCleaner: "व्यक्तिगत सफाई",
     phone: "फोन",
-    notes: "नोट्स",
+    notes: "मेजबान नोट्स",
     payment: "भुगतान",
     descriptionCompany:
       "यह लिंक केवल पढ़ने के लिए है। आप अपनी टीम को सौंपी गई संपत्तियों के लिए प्रत्येक निर्धारित सफाई की समीक्षा कर सकते हैं।",
@@ -477,7 +477,7 @@ const translations: Record<Language, Translations> = {
     selectCleanToUpdate:
       "इसकी स्थिति अपडेट करने, नोट्स जोड़ने, या प्रतिपूर्ति अनुरोध करने के लिए टाइमलाइन या तालिका से एक सफाई चुनें।",
     readOnly: "यह दृश्य केवल पढ़ने के लिए है।",
-    maintenanceNotes: "रखरखाव नोट्स",
+    maintenanceNotes: "सफाईकर्मी नोट्स",
     maintenanceNoteOptions: [
       "टॉयलेटरी और उपभोग्य सामग्री फिर से भरी गई",
       "मेहमानों के लिए ताजे बिस्तर और तौलिए तैयार छोड़े गए",
@@ -522,7 +522,7 @@ const translations: Record<Language, Translations> = {
     pickNotesApplyToClean: "इस सफाई पर लागू होने वाले नोट्स चुनें।",
     hostWillSeeNotesSelected:
       "मेजबान आपके द्वारा चुने गए नोट्स को इस सफाई के साथ देखेगा।",
-    selectMaintenanceNotes: "रखरखाव नोट्स चुनें",
+    selectMaintenanceNotes: "नोट्स चुनें",
     note: "नोट",
     notesPlural: "नोट्स",
     selected: "चयनित",

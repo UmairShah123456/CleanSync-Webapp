@@ -62,8 +62,8 @@ export function AppShell({
         </aside>
 
         {/* Main Content */}
-        <div className="flex flex-1 flex-col">
-          <main className="flex-1 overflow-y-auto bg-[#01161E] p-6 md:p-8">
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <main className="flex-1 bg-[#01161E] p-6 md:p-8 overflow-y-auto">
             <div className="space-y-6">{children}</div>
           </main>
         </div>
