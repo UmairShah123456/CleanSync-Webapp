@@ -58,6 +58,7 @@ export function CleansTable({
   const [notesEditValue, setNotesEditValue] = useState<string>("");
   const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
   const [reimbursementsModalClean, setReimbursementsModalClean] = useState<CleanRow | null>(null);
+  const [cleanerNotesModalClean, setCleanerNotesModalClean] = useState<CleanRow | null>(null);
 
   const handleDelete = async (id: string) => {
     if (
@@ -356,6 +357,7 @@ export function CleansTable({
                   handleCancelEditingNotes={handleCancelEditingNotes}
                   handleSaveNotes={handleSaveNotes}
                   onViewReimbursements={setReimbursementsModalClean}
+                  onViewCleanerNotes={setCleanerNotesModalClean}
                 />
               ))}
             </tbody>
@@ -387,6 +389,7 @@ export function CleansTable({
               handleCancelEditingNotes={handleCancelEditingNotes}
               handleSaveNotes={handleSaveNotes}
               onViewReimbursements={setReimbursementsModalClean}
+              onViewCleanerNotes={setCleanerNotesModalClean}
             />
             {/* Divider between cards */}
             {index < cleans.length - 1 && (
@@ -401,6 +404,14 @@ export function CleansTable({
         <ReimbursementsModal
           clean={reimbursementsModalClean}
           onClose={() => setReimbursementsModalClean(null)}
+        />
+      )}
+
+      {/* Cleaner Notes Modal */}
+      {cleanerNotesModalClean && (
+        <CleanerNotesModal
+          clean={cleanerNotesModalClean}
+          onClose={() => setCleanerNotesModalClean(null)}
         />
       )}
     </div>
@@ -428,6 +439,7 @@ function DesktopTableRow({
   handleCancelEditingNotes,
   handleSaveNotes,
   onViewReimbursements,
+  onViewCleanerNotes,
 }: {
   clean: CleanRow;
   deletingId: string | null;
@@ -449,6 +461,7 @@ function DesktopTableRow({
   handleCancelEditingNotes: () => void;
   handleSaveNotes: (id: string) => Promise<void>;
   onViewReimbursements: (clean: CleanRow) => void;
+  onViewCleanerNotes: (clean: CleanRow) => void;
 }) {
   const status = clean.status.toLowerCase();
   const isCancelled = status === "cancelled";
@@ -678,16 +691,13 @@ function DesktopTableRow({
         )}
       >
         {clean.maintenance_notes && clean.maintenance_notes.length > 0 ? (
-          <div className="flex flex-wrap gap-1">
-            {clean.maintenance_notes.map((note, index) => (
-              <span
-                key={index}
-                className="inline-flex items-center rounded-full bg-orange-500/20 px-2 py-0.5 text-xs text-orange-300 border border-orange-500/30"
-              >
-                {note}
-              </span>
-            ))}
-          </div>
+          <button
+            onClick={() => onViewCleanerNotes(clean)}
+            className="inline-flex items-center gap-1 rounded-full bg-orange-500/20 px-3 py-1 text-xs font-medium text-orange-300 border border-orange-500/30 hover:bg-orange-500/30 transition-colors"
+          >
+            <span>{clean.maintenance_notes.length}</span>
+            <span>{clean.maintenance_notes.length === 1 ? 'note' : 'notes'}</span>
+          </button>
         ) : (
           <span className="text-sm text-[#EFF6E0]/40">—</span>
         )}
@@ -814,6 +824,7 @@ function MobileCard({
   handleCancelEditingNotes,
   handleSaveNotes,
   onViewReimbursements,
+  onViewCleanerNotes,
 }: {
   clean: CleanRow;
   deletingId: string | null;
@@ -835,6 +846,7 @@ function MobileCard({
   handleCancelEditingNotes: () => void;
   handleSaveNotes: (id: string) => Promise<void>;
   onViewReimbursements: (clean: CleanRow) => void;
+  onViewCleanerNotes: (clean: CleanRow) => void;
 }) {
   const status = clean.status.toLowerCase();
   const isCancelled = status === "cancelled";
@@ -1139,16 +1151,13 @@ function MobileCard({
         {clean.maintenance_notes && clean.maintenance_notes.length > 0 && (
           <div className="mt-2 pt-2 border-t border-[#598392]/20">
             <p className="text-xs text-[#EFF6E0]/50 mb-1">Cleaner Notes:</p>
-            <div className="flex flex-wrap gap-1">
-              {clean.maintenance_notes.map((note, index) => (
-                <span
-                  key={index}
-                  className="inline-flex items-center rounded-full bg-orange-500/20 px-2 py-0.5 text-xs text-orange-300 border border-orange-500/30"
-                >
-                  {note}
-                </span>
-              ))}
-            </div>
+            <button
+              onClick={() => onViewCleanerNotes(clean)}
+              className="inline-flex items-center gap-1 rounded-full bg-orange-500/20 px-3 py-1.5 text-xs font-medium text-orange-300 border border-orange-500/30 hover:bg-orange-500/30 transition-colors"
+            >
+              <span>{clean.maintenance_notes.length}</span>
+              <span>{clean.maintenance_notes.length === 1 ? 'note' : 'notes'}</span>
+            </button>
           </div>
         )}
 
@@ -1314,6 +1323,98 @@ function ReimbursementsModal({
           ) : (
             <p className="text-center text-sm text-[#EFF6E0]/50 py-8">
               No reimbursements logged
+            </p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="sticky bottom-0 border-t border-[#124559]/40 bg-[#01161E] px-6 py-4">
+          <button
+            onClick={onClose}
+            className="w-full rounded-full bg-gradient-to-r from-[#124559] to-[#598392] px-4 py-2 text-sm font-semibold text-[#EFF6E0] transition hover:scale-105"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return createPortal(modalContent, document.body);
+}
+
+function CleanerNotesModal({
+  clean,
+  onClose,
+}: {
+  clean: CleanRow;
+  onClose: () => void;
+}) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
+  if (!mounted) return null;
+
+  const modalContent = (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" style={{ position: 'fixed' }}>
+      <div className="relative w-full max-w-2xl max-h-[80vh] overflow-auto rounded-2xl border border-[#124559]/60 bg-[#01161E] shadow-2xl">
+        {/* Header */}
+        <div className="sticky top-0 z-10 border-b border-[#124559]/40 bg-[#01161E] px-6 py-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-[#EFF6E0]">
+                Cleaner Notes
+              </h2>
+              <p className="mt-1 text-sm text-[#EFF6E0]/60">
+                {clean.property_name}
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="rounded-full p-2 text-[#EFF6E0]/60 transition hover:bg-[#124559]/40 hover:text-[#EFF6E0]"
+            >
+              <XMarkIcon className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-3">
+          {clean.maintenance_notes && clean.maintenance_notes.length > 0 ? (
+            <>
+              {clean.maintenance_notes.map((note, index) => (
+                <div
+                  key={index}
+                  className="rounded-xl border border-[#124559]/40 bg-[#01161E]/50 p-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-500/20 border border-orange-500/30">
+                        <span className="text-xs font-semibold text-orange-300">
+                          {index + 1}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-[#EFF6E0] whitespace-pre-wrap">
+                        {note}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : (
+            <p className="text-center text-sm text-[#EFF6E0]/50 py-8">
+              No cleaner notes logged
             </p>
           )}
         </div>
