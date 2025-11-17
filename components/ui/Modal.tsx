@@ -9,9 +9,10 @@ export type ModalProps = PropsWithChildren<{
   open: boolean;
   onClose: () => void;
   footer?: React.ReactNode;
+  headerRight?: React.ReactNode;
 }>;
 
-export function Modal({ title, open, onClose, children, footer }: ModalProps) {
+export function Modal({ title, open, onClose, children, footer, headerRight }: ModalProps) {
   return (
     <Transition show={open} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
@@ -44,14 +45,17 @@ export function Modal({ title, open, onClose, children, footer }: ModalProps) {
                   <Dialog.Title className="text-xl font-semibold text-[#EFF6E0]">
                     {title}
                   </Dialog.Title>
-                  <button
-                    type="button"
-                    aria-label="Close modal"
-                    onClick={onClose}
-                    className="rounded-full border border-transparent bg-[#124559]/40 p-2 text-[#EFF6E0]/70 transition-colors hover:border-[#598392]/60 hover:bg-[#124559]/70 hover:text-[#EFF6E0]"
-                  >
-                    <XMarkIcon className="h-5 w-5" />
-                  </button>
+                  <div className="flex items-center gap-3">
+                    {headerRight}
+                    <button
+                      type="button"
+                      aria-label="Close modal"
+                      onClick={onClose}
+                      className="rounded-full border border-transparent bg-[#124559]/40 p-2 text-[#EFF6E0]/70 transition-colors hover:border-[#598392]/60 hover:bg-[#124559]/70 hover:text-[#EFF6E0]"
+                    >
+                      <XMarkIcon className="h-5 w-5" />
+                    </button>
+                  </div>
                 </div>
                 <div className="px-6 pb-6 pt-4">
                   <div className="rounded-2xl border border-[#124559]/40 bg-[#01161E]/60 p-5 backdrop-blur-sm">

@@ -441,12 +441,67 @@ export function CleanActionsModal({
 
   const activeReimbursements = clean?.reimbursements ?? [];
 
+  const statusDropdown = canManageCleans && clean ? (
+    <div className="relative">
+      <select
+        value={selectedStatus}
+        onChange={(event) => {
+          setSelectedStatus(
+            normalizeStatusValue(event.target.value)
+          );
+          setActionError(null);
+          setActionSuccess(null);
+        }}
+        className="appearance-none rounded-xl border border-[#124559]/60 bg-[#01161E]/50 px-3 py-2 pr-8 text-sm font-semibold text-[#EFF6E0] focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/40 [&>option]:bg-[#01161E]"
+        style={{
+          backgroundColor:
+            selectedStatus === "cancelled"
+              ? "rgba(239, 68, 68, 0.2)"
+              : selectedStatus === "completed"
+              ? "rgba(16, 185, 129, 0.2)"
+              : selectedStatus === "scheduled"
+              ? "rgba(168, 85, 247, 0.2)"
+              : "#01161E",
+        }}
+      >
+        {getCleanStatusOptions(translations).map((option) => (
+          <option
+            key={option.value}
+            value={option.value}
+            style={{
+              backgroundColor:
+                option.value === "cancelled"
+                  ? "#1f1f1f"
+                  : option.value === "completed"
+                  ? "#1f1f1f"
+                  : option.value === "scheduled"
+                  ? "#1f1f1f"
+                  : "#01161E",
+              color:
+                option.value === "cancelled"
+                  ? "#ef4444"
+                  : option.value === "completed"
+                  ? "#10b981"
+                  : option.value === "scheduled"
+                  ? "#a855f7"
+                  : "#EFF6E0",
+            }}
+          >
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDownIcon className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EFF6E0]/50" />
+    </div>
+  ) : null;
+
   return (
     <Modal
       title={property?.name ?? "Property details"}
       open={open}
       onClose={onClose}
       footer={null}
+      headerRight={statusDropdown}
     >
       {!property ? (
         <p className="text-sm text-[#EFF6E0]/70">
@@ -579,76 +634,6 @@ export function CleanActionsModal({
                       </div>
                     ) : null}
                   </div>
-
-                  <section className="space-y-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-[#EFF6E0]/50">
-                        {translations?.updateStatus || "Update status"}
-                      </p>
-                      <p className="text-xs text-[#EFF6E0]/60">
-                        {translations?.chooseOptionBestReflectsProgress ||
-                          "Choose the option that best reflects progress."}
-                      </p>
-                    </div>
-                    <div className="w-full">
-                      <div className="relative">
-                        <select
-                          value={selectedStatus}
-                          onChange={(event) => {
-                            setSelectedStatus(
-                              normalizeStatusValue(event.target.value)
-                            );
-                            setActionError(null);
-                            setActionSuccess(null);
-                          }}
-                          className="w-full appearance-none rounded-xl border border-[#124559]/60 bg-[#01161E]/50 px-4 py-3 pr-10 text-sm font-semibold text-[#EFF6E0] focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392]/40 sm:rounded-2xl sm:py-2 [&>option]:bg-[#01161E]"
-                          style={{
-                            backgroundColor:
-                              selectedStatus === "cancelled"
-                                ? "rgba(239, 68, 68, 0.2)"
-                                : selectedStatus === "completed"
-                                ? "rgba(16, 185, 129, 0.2)"
-                                : selectedStatus === "scheduled"
-                                ? "rgba(168, 85, 247, 0.2)"
-                                : "#01161E",
-                          }}
-                        >
-                          {getCleanStatusOptions(translations).map((option) => (
-                            <option
-                              key={option.value}
-                              value={option.value}
-                              style={{
-                                backgroundColor:
-                                  option.value === "cancelled"
-                                    ? "#1f1f1f"
-                                    : option.value === "completed"
-                                    ? "#1f1f1f"
-                                    : option.value === "scheduled"
-                                    ? "#1f1f1f"
-                                    : "#01161E",
-                                color:
-                                  option.value === "cancelled"
-                                    ? "#ef4444"
-                                    : option.value === "completed"
-                                    ? "#10b981"
-                                    : option.value === "scheduled"
-                                    ? "#a855f7"
-                                    : "#EFF6E0",
-                              }}
-                            >
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EFF6E0]/50" />
-                      </div>
-                      <p className="mt-2 text-[0.65rem] leading-relaxed text-[#EFF6E0]/50">
-                        {getCleanStatusOptions(translations).find(
-                          (option) => option.value === selectedStatus
-                        )?.description ?? ""}
-                      </p>
-                    </div>
-                  </section>
 
                   {isCleanerContext && (
                     <section className="space-y-3">
