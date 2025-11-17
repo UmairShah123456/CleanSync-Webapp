@@ -158,7 +158,7 @@ export function DashboardClient({
   cleanerTypeMap: Array<[string, "individual" | "company"]>;
 }) {
   const [cleans, setCleans] = useState(initialCleans);
-  const [filters, setFilters] = useState<FilterState>({});
+  const [filters, setFilters] = useState<FilterState>({ status: "scheduled" });
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);

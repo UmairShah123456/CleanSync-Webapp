@@ -19,9 +19,9 @@ type BookingRecord = {
   status: string;
 };
 
-const SAME_DAY_NOTE = "⚠️ Same-day check-in.";
+const SAME_DAY_NOTE = "⚠️ Same-day check-in";
 const CANCELLATION_NOTE =
-  "❌ This clean has been removed due to a cancellation.";
+  "❌ This clean has been cancelled";
 
 const scheduleFromCheckout = (checkout: Date): string => {
   return addHours(checkout, 1).toISOString();

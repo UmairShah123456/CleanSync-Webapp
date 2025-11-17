@@ -51,7 +51,7 @@ export async function PATCH(
 
   // Validate status value if provided
   if (status) {
-    const validStatuses = ["scheduled", "completed", "cancelled"];
+    const validStatuses = ["scheduled", "completed", "cancelled", "missed"];
     if (!validStatuses.includes(status.toLowerCase())) {
       return NextResponse.json(
         {

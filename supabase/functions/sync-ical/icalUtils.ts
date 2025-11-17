@@ -24,7 +24,7 @@ type CalendarEvent = {
 
 const SAME_DAY_NOTE = "⚠️ Same-day check-in detected.";
 const CANCELLATION_NOTE =
-  "❌ This clean has been removed due to a cancellation.";
+  "❌ This clean has been cancelled";
 
 const isSameDay = (a: Date, b: Date) =>
   a.getUTCFullYear() === b.getUTCFullYear() &&

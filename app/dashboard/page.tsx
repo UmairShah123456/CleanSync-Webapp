@@ -64,6 +64,7 @@ export default async function DashboardPage() {
         `
       )
       .in("property_id", propertyIds)
+      .eq("status", "scheduled")
       .order("scheduled_for", { ascending: true });
 
     // Extra safeguard: filter out any cleans that don't have valid properties

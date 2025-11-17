@@ -320,7 +320,7 @@ export function CleansTable({
                 <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
                   Reimbursements
                 </th>
-                <th className="py-3 text-left text-xs font-bold uppercase tracking-wider text-[#598392]">
+                <th className="py-3 text-center text-xs font-bold uppercase tracking-wider text-[#598392]">
                   Status
                 </th>
                 <th className="py-3 text-right text-xs font-bold uppercase tracking-wider text-[#598392]">
@@ -466,6 +466,7 @@ function DesktopTableRow({
   const status = clean.status.toLowerCase();
   const isCancelled = status === "cancelled";
   const isCompleted = status === "completed";
+  const isMissed = status === "missed";
 
   const formatDateOnly = (value: string | Date): string => {
     const date = value instanceof Date ? value : new Date(value);
@@ -491,9 +492,11 @@ function DesktopTableRow({
       className={clsx(
         "transition-colors duration-200",
         isCancelled
-          ? "bg-[#2a1f2e]/30 opacity-75 hover:bg-[#2a1f2e]/40"
+          ? "bg-red-950/40 hover:bg-red-950/50"
           : isCompleted
           ? "bg-[#1a2530]/40 opacity-80 hover:bg-[#1a2530]/50"
+          : isMissed
+          ? "bg-amber-500/10 hover:bg-amber-500/15"
           : "hover:bg-[#124559]/50"
       )}
     >
@@ -506,6 +509,8 @@ function DesktopTableRow({
                 ? "text-[#EFF6E0]/50 line-through"
                 : isCompleted
                 ? "text-[#EFF6E0]/60"
+                : isMissed
+                ? "text-amber-200"
                 : "text-[#EFF6E0]"
             )}
           >
@@ -519,6 +524,8 @@ function DesktopTableRow({
                   ? "text-[#EFF6E0]/40 line-through"
                   : isCompleted
                   ? "text-[#EFF6E0]/50"
+                  : isMissed
+                  ? "text-amber-200/80"
                   : "text-[#EFF6E0]/70"
               )}
             >
@@ -725,44 +732,50 @@ function DesktopTableRow({
         )}
       </td>
       <td className="py-4 relative z-10">
-        <select
-          value={clean.status}
-          onChange={(e) => handleStatusChange(clean.id, e.target.value)}
-          disabled={updatingStatusId === clean.id}
-          suppressHydrationWarning
-          className={clsx(
-            "rounded-full px-3 py-1 text-xs font-medium border-0 outline-none transition-colors duration-200",
-            updatingStatusId === clean.id
-              ? "cursor-wait opacity-50"
-              : "cursor-pointer",
-            "focus:ring-2 focus:ring-[#598392] focus:ring-offset-2 focus:ring-offset-[#124559]",
-            "hover:opacity-90"
-          )}
-          style={{
-            backgroundColor:
-              status === "scheduled"
-                ? "#AEC3B0"
-                : status === "completed"
-                ? "transparent"
-                : status === "cancelled"
-                ? "#ef4444"
-                : "#124559",
-            color:
-              status === "scheduled"
-                ? "#01161E"
-                : status === "completed"
-                ? "#EFF6E0"
-                : status === "cancelled"
-                ? "white"
-                : "#EFF6E0",
-            border: status === "completed" ? "1px solid #EFF6E0" : "none",
-            pointerEvents: updatingStatusId === clean.id ? "none" : "auto",
-          }}
-        >
-          <option value="scheduled">Scheduled</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
+        {isCancelled ? (
+          <span className="inline-block rounded-full px-3 py-1 text-xs font-medium bg-red-500 text-white">
+            Cancelled
+          </span>
+        ) : (
+          <select
+            value={clean.status}
+            onChange={(e) => handleStatusChange(clean.id, e.target.value)}
+            disabled={updatingStatusId === clean.id}
+            suppressHydrationWarning
+            className={clsx(
+              "rounded-full px-3 py-1 text-xs font-medium border-0 outline-none transition-colors duration-200",
+              updatingStatusId === clean.id
+                ? "cursor-wait opacity-50"
+                : "cursor-pointer",
+              "focus:ring-2 focus:ring-[#598392] focus:ring-offset-2 focus:ring-offset-[#124559]",
+              "hover:opacity-90"
+            )}
+            style={{
+              backgroundColor:
+                status === "scheduled"
+                  ? "#AEC3B0"
+                  : status === "completed"
+                  ? "transparent"
+                  : status === "missed"
+                  ? "#fb923c"
+                  : "#124559",
+              color:
+                status === "scheduled"
+                  ? "#01161E"
+                  : status === "completed"
+                  ? "#EFF6E0"
+                  : status === "missed"
+                  ? "white"
+                  : "#EFF6E0",
+              border: status === "completed" ? "1px solid #EFF6E0" : "none",
+              pointerEvents: updatingStatusId === clean.id ? "none" : "auto",
+            }}
+          >
+            <option value="scheduled">Scheduled</option>
+            <option value="completed">Completed</option>
+            <option value="missed">Missed</option>
+          </select>
+        )}
       </td>
       <td className="py-4">
         <div className="flex items-center justify-end">
@@ -851,6 +864,7 @@ function MobileCard({
   const status = clean.status.toLowerCase();
   const isCancelled = status === "cancelled";
   const isCompleted = status === "completed";
+  const isMissed = status === "missed";
 
   const formatDateOnly = (value: string | Date): string => {
     const date = value instanceof Date ? value : new Date(value);
@@ -876,9 +890,11 @@ function MobileCard({
       className={clsx(
         "rounded-lg p-2 border-2 transition-colors duration-200 relative mb-4",
         isCancelled
-          ? "bg-[#2a1f2e]/30 border-[#2a1f2e]/60 opacity-75"
+          ? "bg-red-950/40 border-red-800/60"
           : isCompleted
           ? "bg-[#1a2530]/40 border-[#1a2530]/60 opacity-80"
+          : isMissed
+          ? "bg-amber-500/10 border-amber-500/40"
           : "bg-[#124559]/30 border-[#124559]/60"
       )}
       style={{ overflow: "visible" }}
@@ -895,6 +911,8 @@ function MobileCard({
                   ? "text-[#EFF6E0]/50"
                   : isCompleted
                   ? "text-[#EFF6E0]/60"
+                  : isMissed
+                  ? "text-amber-300"
                   : "text-[#EFF6E0]/80"
               )}
             />
@@ -905,6 +923,8 @@ function MobileCard({
                   ? "text-[#EFF6E0]/50 line-through"
                   : isCompleted
                   ? "text-[#EFF6E0]/60"
+                  : isMissed
+                  ? "text-amber-200"
                   : "text-[#EFF6E0]"
               )}
             >
@@ -950,50 +970,56 @@ function MobileCard({
             </div>
           </div>
         </div>
-        {/* Right: Status Dropdown */}
+        {/* Right: Status Dropdown or Cancelled Pill */}
         <div className="shrink-0">
-          <div className="relative z-10">
-            <select
-              value={clean.status}
-              onChange={(e) => handleStatusChange(clean.id, e.target.value)}
-              disabled={updatingStatusId === clean.id}
-              suppressHydrationWarning
-              className={clsx(
-                "rounded-full pl-2.5 pr-7 py-1.5 text-xs font-medium border-0 outline-none transition-colors duration-200 appearance-none",
-                updatingStatusId === clean.id
-                  ? "cursor-wait opacity-50"
-                  : "cursor-pointer",
-                "focus:ring-2 focus:ring-[#598392]"
-              )}
-              style={{
-                backgroundColor:
-                  status === "scheduled"
-                    ? "#AEC3B0"
-                    : status === "completed"
-                    ? "transparent"
-                    : status === "cancelled"
-                    ? "#ef4444"
-                    : "#124559",
-                color:
-                  status === "scheduled"
-                    ? "#01161E"
-                    : status === "completed"
-                    ? "#EFF6E0"
-                    : status === "cancelled"
-                    ? "white"
-                    : "#EFF6E0",
-                border: status === "completed" ? "1px solid #EFF6E0" : "none",
-                pointerEvents: updatingStatusId === clean.id ? "none" : "auto",
-                minWidth: "90px",
-                maxWidth: "110px",
-              }}
-            >
-              <option value="scheduled">Scheduled</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-            <ChevronDownIcon className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-current opacity-70" />
-          </div>
+          {isCancelled ? (
+            <span className="inline-block rounded-full px-2.5 py-1.5 text-xs font-medium bg-red-500 text-white">
+              Cancelled
+            </span>
+          ) : (
+            <div className="relative z-10">
+              <select
+                value={clean.status}
+                onChange={(e) => handleStatusChange(clean.id, e.target.value)}
+                disabled={updatingStatusId === clean.id}
+                suppressHydrationWarning
+                className={clsx(
+                  "rounded-full pl-2.5 pr-7 py-1.5 text-xs font-medium border-0 outline-none transition-colors duration-200 appearance-none",
+                  updatingStatusId === clean.id
+                    ? "cursor-wait opacity-50"
+                    : "cursor-pointer",
+                  "focus:ring-2 focus:ring-[#598392]"
+                )}
+                style={{
+                  backgroundColor:
+                    status === "scheduled"
+                      ? "#AEC3B0"
+                      : status === "completed"
+                      ? "transparent"
+                      : status === "missed"
+                      ? "#fb923c"
+                      : "#124559",
+                  color:
+                    status === "scheduled"
+                      ? "#01161E"
+                      : status === "completed"
+                      ? "#EFF6E0"
+                      : status === "missed"
+                      ? "white"
+                      : "#EFF6E0",
+                  border: status === "completed" ? "1px solid #EFF6E0" : "none",
+                  pointerEvents: updatingStatusId === clean.id ? "none" : "auto",
+                  minWidth: "90px",
+                  maxWidth: "110px",
+                }}
+              >
+                <option value="scheduled">Scheduled</option>
+                <option value="completed">Completed</option>
+                <option value="missed">Missed</option>
+              </select>
+              <ChevronDownIcon className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-current opacity-70" />
+            </div>
+          )}
         </div>
       </div>
 

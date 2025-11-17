@@ -9,7 +9,7 @@ import {
 } from "../../../utils";
 
 type UpdatePayload = {
-  status?: "scheduled" | "completed" | "cancelled";
+  status?: "scheduled" | "completed" | "cancelled" | "missed";
   maintenance_notes?: string[];
   notes?: string | null;
 };

@@ -5,6 +5,7 @@ export const CLEAN_STATUS_VALUES = [
   "scheduled",
   "completed",
   "cancelled",
+  "missed",
 ] as const;
 
 export class CleanerAccessError extends Error {

@@ -40,11 +40,10 @@ const getCleanStatusOptions = (t?: Translations) => [
       "Confirm once the clean is finished and walkthrough is done.",
   },
   {
-    value: "cancelled" as const,
-    label: t?.cancelled || "Cancelled",
+    value: "missed" as const,
+    label: "Missed",
     description:
-      t?.cancelledDescription ||
-      "Only use if the clean is no longer going ahead.",
+      "Mark this when a scheduled clean was not completed.",
   },
 ];
 
@@ -56,13 +55,13 @@ const MAINTENANCE_NOTE_OPTIONS = [
   "Captured photos for reported damage",
 ];
 
-const STATUS_VALUE_SET = new Set(["scheduled", "completed", "cancelled"]);
+const STATUS_VALUE_SET = new Set(["scheduled", "completed", "cancelled", "missed"]);
 
 const normalizeStatusValue = (
   value: string
-): "scheduled" | "completed" | "cancelled" => {
+): "scheduled" | "completed" | "cancelled" | "missed" => {
   return STATUS_VALUE_SET.has(value as any)
-    ? (value as "scheduled" | "completed" | "cancelled")
+    ? (value as "scheduled" | "completed" | "cancelled" | "missed")
     : "scheduled";
 };
 
@@ -99,7 +98,7 @@ export function CleanActionsModal({
     "details" | "actions" | "checklist" | "maintenance"
   >(canManageCleans ? "actions" : "details");
   const [selectedStatus, setSelectedStatus] = useState<
-    "scheduled" | "completed" | "cancelled"
+    "scheduled" | "completed" | "cancelled" | "missed"
   >("scheduled");
   const [selectedMaintenanceNotes, setSelectedMaintenanceNotes] = useState<
     string[]
@@ -461,6 +460,8 @@ export function CleanActionsModal({
               ? "rgba(16, 185, 129, 0.2)"
               : selectedStatus === "scheduled"
               ? "rgba(168, 85, 247, 0.2)"
+              : selectedStatus === "missed"
+              ? "rgba(251, 146, 60, 0.2)"
               : "#01161E",
         }}
       >
@@ -469,21 +470,14 @@ export function CleanActionsModal({
             key={option.value}
             value={option.value}
             style={{
-              backgroundColor:
-                option.value === "cancelled"
-                  ? "#1f1f1f"
-                  : option.value === "completed"
-                  ? "#1f1f1f"
-                  : option.value === "scheduled"
-                  ? "#1f1f1f"
-                  : "#01161E",
+              backgroundColor: "#1f1f1f",
               color:
-                option.value === "cancelled"
-                  ? "#ef4444"
-                  : option.value === "completed"
+                option.value === "completed"
                   ? "#10b981"
                   : option.value === "scheduled"
                   ? "#a855f7"
+                  : option.value === "missed"
+                  ? "#fb923c"
                   : "#EFF6E0",
             }}
           >

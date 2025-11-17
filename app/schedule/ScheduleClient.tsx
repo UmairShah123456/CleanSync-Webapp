@@ -743,10 +743,13 @@ function TimelineView({
                         {cleansForDay.map((clean) => {
                           const isCompleted = clean.status === "completed";
                           const isCancelled = clean.status === "cancelled";
+                          const isMissed = clean.status === "missed";
                           const completedBg = "rgba(16, 185, 129, 0.6)"; // emerald-500 with opacity
                           const completedBorder = "rgba(16, 185, 129, 0.9)"; // emerald-500 with higher opacity
                           const cancelledBg = "rgba(239, 68, 68, 0.6)"; // red-500 with opacity
                           const cancelledBorder = "rgba(239, 68, 68, 0.9)"; // red-500 with higher opacity
+                          const missedBg = "rgba(251, 146, 60, 0.6)"; // amber-500 with opacity
+                          const missedBorder = "rgba(251, 146, 60, 0.9)"; // amber-500 with higher opacity
 
                           return (
                         <div
@@ -757,6 +760,8 @@ function TimelineView({
                                   ? "border-emerald-400/80 bg-emerald-500/50 active:border-emerald-300 active:bg-emerald-500/60 sm:hover:border-emerald-300 sm:hover:bg-emerald-500/60"
                                   : isCancelled
                                   ? "border-red-400/80 bg-red-500/50 active:border-red-300 active:bg-red-500/60 sm:hover:border-red-300 sm:hover:bg-red-500/60"
+                                  : isMissed
+                                  ? "border-amber-400/80 bg-amber-500/50 active:border-amber-300 active:bg-amber-500/60 sm:hover:border-amber-300 sm:hover:bg-amber-500/60"
                                   : "active:border-[#EFF6E0]/60 active:bg-white/10 sm:hover:border-[#EFF6E0]/60 sm:hover:bg-white/10"
                               )}
                               style={
@@ -769,6 +774,11 @@ function TimelineView({
                                   ? {
                                       backgroundColor: cancelledBg,
                                       borderColor: cancelledBorder,
+                                    }
+                                  : isMissed
+                                  ? {
+                                      backgroundColor: missedBg,
+                                      borderColor: missedBorder,
                                     }
                                   : {
                             backgroundColor: pillBackground,
@@ -914,6 +924,7 @@ function CalendarView({
                 {entries.map((clean) => {
                   const isCompleted = clean.status === "completed";
                   const isCancelled = clean.status === "cancelled";
+                  const isMissed = clean.status === "missed";
                   const color =
                     propertyColors.get(clean.property_id) ?? PROPERTY_COLORS[0];
                   const property = propertyLookup.get(clean.property_id);
@@ -927,6 +938,8 @@ function CalendarView({
                           ? "border-emerald-400/80 bg-emerald-500/60 active:opacity-90 sm:hover:opacity-90"
                           : isCancelled
                           ? "border-red-400/80 bg-red-500/60 active:opacity-90 sm:hover:opacity-90"
+                          : isMissed
+                          ? "border-amber-400/80 bg-amber-500/60 active:opacity-90 sm:hover:opacity-90"
                           : "active:opacity-80",
                         property ? "cursor-pointer active:scale-95" : ""
                       )}
@@ -940,6 +953,11 @@ function CalendarView({
                           ? {
                               backgroundColor: "rgba(239, 68, 68, 0.6)",
                               borderColor: "rgba(239, 68, 68, 0.9)",
+                            }
+                          : isMissed
+                          ? {
+                              backgroundColor: "rgba(251, 146, 60, 0.6)",
+                              borderColor: "rgba(251, 146, 60, 0.9)",
                             }
                           : {
                         backgroundColor: hexToRgba(color, 0.55),
