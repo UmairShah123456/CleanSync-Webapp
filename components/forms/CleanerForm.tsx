@@ -17,7 +17,7 @@ const COUNTRIES = [
     name: "United Kingdom",
     dial: "+44",
     minLength: 10,
-    maxLength: 10,
+    maxLength: 11,
   },
   {
     code: "US",
@@ -26,9 +26,9 @@ const COUNTRIES = [
     minLength: 10,
     maxLength: 10,
   },
-  { code: "IE", name: "Ireland", dial: "+353", minLength: 9, maxLength: 9 },
+  { code: "IE", name: "Ireland", dial: "+353", minLength: 9, maxLength: 10 },
   { code: "ES", name: "Spain", dial: "+34", minLength: 9, maxLength: 9 },
-  { code: "FR", name: "France", dial: "+33", minLength: 9, maxLength: 9 },
+  { code: "FR", name: "France", dial: "+33", minLength: 9, maxLength: 10 },
   {
     code: "AE",
     name: "United Arab Emirates",
@@ -274,7 +274,7 @@ export function CleanerForm({
                   id="cleaner-phone"
                   value={formState.phone ?? ""}
                   onChange={handleChange("phone")}
-                  placeholder="7000000000"
+                  placeholder={selectedCountry.code === "GB" ? "07000000000" : "7000000000"}
                   inputMode="numeric"
                   className="h-full flex-1 rounded-r-xl bg-transparent px-4 py-3 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/40 focus:outline-none"
                 />
@@ -284,7 +284,8 @@ export function CleanerForm({
                 {selectedCountry.minLength === selectedCountry.maxLength
                   ? `${selectedCountry.minLength}`
                   : `${selectedCountry.minLength}-${selectedCountry.maxLength}`}{" "}
-                digits for {selectedCountry.name}.
+                digits for {selectedCountry.name}
+                {selectedCountry.code === "GB" ? " (including the leading 0)" : ""}.
               </p>
             </div>
           </div>

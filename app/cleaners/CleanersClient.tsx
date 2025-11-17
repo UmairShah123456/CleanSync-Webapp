@@ -107,9 +107,9 @@ export function CleanersClient({
       }
       await refreshCleaners();
       setAddModalOpen(false);
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to create cleaner");
-      throw err;
     } finally {
       setSubmitting(false);
     }
@@ -130,9 +130,9 @@ export function CleanersClient({
         throw new Error(message ?? "Unable to update cleaner");
       }
       await refreshCleaners();
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to update cleaner");
-      throw err;
     } finally {
       setSubmitting(false);
     }
@@ -166,9 +166,9 @@ export function CleanersClient({
       if (isMobile) {
         setDetailsPanelOpen(false);
       }
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to delete cleaner");
-      throw err;
     } finally {
       setDeleting(false);
     }
