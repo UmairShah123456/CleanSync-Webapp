@@ -454,7 +454,8 @@ export function ScheduleClient({
         </div>
 
         <div className="rounded-xl border-[#124559]/50 bg-[#124559]/20 p-3 shadow-lg shadow-[#01161E]/40 sm:rounded-2xl sm:p-6">
-          <div className="flex flex-col gap-3 sm:gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            {/* Left side: Date navigation */}
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <button
                 type="button"
@@ -491,6 +492,7 @@ export function ScheduleClient({
               </div>
             </div>
 
+            {/* Right side: Property dropdown and view toggle */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
               <div className="relative w-full sm:w-auto">
                 <select
