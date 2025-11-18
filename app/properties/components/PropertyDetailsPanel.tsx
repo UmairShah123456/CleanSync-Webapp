@@ -142,7 +142,7 @@ export function PropertyDetailsPanel({
       setEditingUtility(false);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Unable to save utility details"
+        err instanceof Error ? err.message : "Unable to save on-site details"
       );
     } finally {
       setUpdating(false);
@@ -268,7 +268,7 @@ export function PropertyDetailsPanel({
                   : "border-transparent text-[#EFF6E0]/70 hover:text-[#EFF6E0]"
               )}
             >
-              Utility Details
+              On-site Details
             </button>
             <button
               type="button"
@@ -527,7 +527,7 @@ export function PropertyDetailsPanel({
                     !property.bin_locations &&
                     !property.key_locations && (
                       <p className="text-sm text-[#EFF6E0]/60">
-                        No utility details recorded for this property yet.
+                        No on-site details recorded for this property yet.
                       </p>
                     )}
                 </>

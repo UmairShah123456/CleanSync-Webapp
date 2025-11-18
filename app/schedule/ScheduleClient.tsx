@@ -719,7 +719,7 @@ function TimelineView({
                     onPropertyClick(property);
                   }
                 }}
-                aria-label={`View utility information for ${property.name}`}
+                aria-label={`View on-site information for ${property.name}`}
               >
                   <div className="flex items-start gap-2 sm:gap-3">
                   <span

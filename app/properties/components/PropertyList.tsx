@@ -127,7 +127,7 @@ export const UtilityDetailsModal = ({
       });
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Unable to save utility details"
+        err instanceof Error ? err.message : "Unable to save on-site details"
       );
     } finally {
       setSaving(false);
@@ -138,7 +138,7 @@ export const UtilityDetailsModal = ({
 
   return (
     <Modal
-      title="Utility Details"
+      title="On-site Details"
       open={Boolean(property)}
       onClose={onClose}
       footer={null}
@@ -395,7 +395,7 @@ export function PropertyList({
                 type="button"
               >
                 <WrenchScrewdriverIcon className="h-4 w-4" />
-                Utility Details
+                On-site Details
               </button>
             </div>
             {expandedPropertyDetails.has(property.id) && (

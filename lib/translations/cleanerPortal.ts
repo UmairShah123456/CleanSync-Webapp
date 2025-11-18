@@ -56,7 +56,7 @@ export type Translations = {
   delete: string;
   cancel: string;
 
-  // Utility details
+  // On-site details
   address: string;
   accessCodes: string;
   binLocations: string;
@@ -155,7 +155,7 @@ const translations: Record<Language, Translations> = {
     binLocations: "Bin Locations",
     keyLocations: "Key Locations",
     noDetails: "No details available",
-    utilityDetails: "Utility details",
+    utilityDetails: "On-site details",
     manageClean: "Manage clean",
     cleanerActions: "Cleaner actions",
     scheduledFor: "Scheduled for",
@@ -165,7 +165,7 @@ const translations: Record<Language, Translations> = {
       "Choose the option that best reflects progress.",
     hostNote: "Host note",
     selectPropertyViewDetails:
-      "Select a property to view its utility information and cleans.",
+      "Select a property to view its on-site information and cleans.",
     pickNotesApplyToClean: "Pick the notes that apply to this clean.",
     hostWillSeeNotesSelected:
       "The host will see any notes you select alongside this clean.",

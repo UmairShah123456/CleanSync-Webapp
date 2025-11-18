@@ -23,7 +23,7 @@ const navItems = [
   { href: "/properties", label: "Properties", icon: BuildingOfficeIcon },
   { href: "/cleaners", label: "Cleaners", icon: UserGroupIcon },
   { href: "/logs", label: "Logs", icon: ChartBarIcon },
-  { href: "/settings", label: "Settings", icon: Cog6ToothIcon },
+  // { href: "/settings", label: "Settings", icon: Cog6ToothIcon }, // Temporarily hidden
 ];
 
 export function Sidebar({
@@ -120,6 +120,13 @@ export function Sidebar({
 
       {/* Footer Items */}
       <div className="mt-auto space-y-1">
+        {/* Demo Widget */}
+        <button
+          onClick={() => window.open("https://app.storylane.io/share/07jkbpodtmxn", "_blank", "noopener,noreferrer")}
+          className="w-full mb-4 rounded-lg border-2 border-[#598392]/40 bg-gradient-to-r from-[#124559]/60 to-[#598392]/40 px-4 py-3 text-center font-semibold text-[#EFF6E0] shadow-md transition-all duration-200 hover:border-[#598392]/60 hover:shadow-lg hover:scale-[1.02] active:scale-95"
+        >
+          Demo
+        </button>
         {/* User Avatar Section */}
         <div className="mt-4 flex items-center gap-3 rounded-lg px-3 py-2">
           <div className="h-8 w-8 rounded-full bg-[#598392] flex items-center justify-center text-sm font-semibold text-[#EFF6E0]">

@@ -500,7 +500,7 @@ export function CleanActionsModal({
       {!property ? (
         <p className="text-sm text-[#EFF6E0]/70">
           {translations?.selectPropertyViewDetails ||
-            "Select a property to view its utility information and cleans."}
+            "Select a property to view its on-site information and cleans."}
         </p>
       ) : (
         <div className="space-y-6">
@@ -520,7 +520,7 @@ export function CleanActionsModal({
                     : "text-[#EFF6E0]/70 active:text-[#EFF6E0] sm:hover:text-[#EFF6E0]"
                 )}
               >
-                {translations?.utilityDetails || "Utility details"}
+                {translations?.utilityDetails || "On-site details"}
               </button>
               {isCleanerContext ? (
                 <button
@@ -1045,7 +1045,7 @@ function UtilityDetails({ property }: { property: ScheduleProperty }) {
 
       {!hasDetails ? (
         <p className="text-xs text-[#EFF6E0]/60 sm:text-sm">
-          No utility details recorded for this property yet.
+          No on-site details recorded for this property yet.
         </p>
       ) : null}
     </div>
