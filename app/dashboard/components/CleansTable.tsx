@@ -278,10 +278,24 @@ export function CleansTable({
   };
 
   if (!cleans.length) {
+    const handleGetStarted = () => {
+      window.open("https://app.storylane.io/share/07jkbpodtmxn", "_blank", "noopener,noreferrer");
+    };
+
     return (
       <div className="rounded-xl bg-[#124559] p-12 text-center border border-[#124559]/50 animate-fadeIn">
-        <p className="text-sm text-[#EFF6E0]/70">
+        <p className="text-sm text-[#EFF6E0]/70 mb-6">
           No cleans found for the selected filters.
+        </p>
+        <button
+          type="button"
+          onClick={handleGetStarted}
+          className="rounded-lg bg-gradient-to-r from-[#124559] to-[#598392] px-6 py-3 text-sm font-semibold text-[#EFF6E0] shadow-lg transition-all duration-150 hover:shadow-xl hover:scale-105 active:scale-95"
+        >
+          Get Started
+        </button>
+        <p className="mt-4 text-xs text-[#EFF6E0]/60">
+          Check your junk mail — our emails sometimes land there.
         </p>
       </div>
     );

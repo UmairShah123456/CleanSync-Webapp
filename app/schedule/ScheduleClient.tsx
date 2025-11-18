@@ -92,9 +92,24 @@ const EmptyState = ({ t }: { t?: Translations }) => {
   const text =
     t?.emptyStateText ||
     "Add a property first to start exploring your schedule. Once synced, every clean will appear on this timeline and calendar.";
+
+  const handleGetStarted = () => {
+    window.open("https://app.storylane.io/share/07jkbpodtmxn", "_blank", "noopener,noreferrer");
+  };
+
   return (
-    <div className="rounded-xl border border-dashed border-[#598392]/30 bg-[#124559]/40 p-12 text-center text-sm text-[#EFF6E0]/70">
-      {text}
+    <div className="rounded-xl border border-dashed border-[#598392]/30 bg-[#124559]/40 p-12 text-center">
+      <p className="text-sm text-[#EFF6E0]/70 mb-6">{text}</p>
+      <button
+        type="button"
+        onClick={handleGetStarted}
+        className="rounded-lg bg-gradient-to-r from-[#124559] to-[#598392] px-6 py-3 text-sm font-semibold text-[#EFF6E0] shadow-lg transition-all duration-150 hover:shadow-xl hover:scale-105 active:scale-95"
+      >
+        Get Started
+      </button>
+      <p className="mt-4 text-xs text-[#EFF6E0]/60">
+        Check your junk mail — our emails sometimes land there.
+      </p>
     </div>
   );
 };
