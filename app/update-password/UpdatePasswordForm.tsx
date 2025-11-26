@@ -2,15 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
 import { getSupabaseBrowserClient } from "@/lib/supabaseClient";
 
-export function LoginForm() {
+export function UpdatePasswordForm() {
   const router = useRouter();
   const supabase = getSupabaseBrowserClient();
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,10 +16,23 @@ export function LoginForm() {
     event.preventDefault();
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      setLoading(false);
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({
+      password: password,
     });
+
     setLoading(false);
 
     if (error) {
@@ -37,16 +48,16 @@ export function LoginForm() {
       <div className="space-y-2">
         <label
           className="text-sm font-medium text-[#EFF6E0]/80"
-          htmlFor="email"
+          htmlFor="password"
         >
-          Email
+          New Password
         </label>
         <input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder="you@example.com"
+          id="password"
+          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          placeholder="••••••••"
           required
           suppressHydrationWarning
           className="w-full rounded-lg border border-[#124559]/50 bg-[#124559]/60 px-4 py-2.5 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/50 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392] transition-colors duration-200"
@@ -55,15 +66,15 @@ export function LoginForm() {
       <div className="space-y-2">
         <label
           className="text-sm font-medium text-[#EFF6E0]/80"
-          htmlFor="password"
+          htmlFor="confirmPassword"
         >
-          Password
+          Confirm New Password
         </label>
         <input
-          id="password"
+          id="confirmPassword"
           type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          value={confirmPassword}
+          onChange={(event) => setConfirmPassword(event.target.value)}
           placeholder="••••••••"
           required
           suppressHydrationWarning
@@ -80,27 +91,8 @@ export function LoginForm() {
         className="w-full rounded-lg bg-gradient-to-r from-[#124559] to-[#598392] px-4 py-2.5 text-sm font-medium text-[#EFF6E0] shadow-md transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         disabled={loading}
       >
-        {loading ? "Signing in..." : "Sign in"}
+        {loading ? "Updating password..." : "Update password"}
       </button>
-      <div className="space-y-3">
-        <p className="text-sm text-center text-[#EFF6E0]/70">
-          <a
-            className="font-medium text-[#598392] hover:text-[#598392]/80 transition-colors duration-200"
-            href="/reset-password"
-          >
-            Forgot your password?
-          </a>
-        </p>
-        <p className="text-sm text-center text-[#EFF6E0]/70">
-          Need an account?{" "}
-          <a
-            className="font-medium text-[#598392] hover:text-[#598392]/80 transition-colors duration-200"
-            href="/register"
-          >
-            Sign up
-          </a>
-        </p>
-      </div>
     </form>
   );
 }
