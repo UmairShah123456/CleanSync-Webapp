@@ -139,11 +139,13 @@ const calculateMetrics = (
 
 export function DashboardClient({
   email,
+  userName,
   properties,
   initialCleans,
   cleanerTypeMap,
 }: {
   email?: string | null;
+  userName?: string | null;
   properties: Array<{
     id: string;
     name: string;
@@ -471,7 +473,7 @@ export function DashboardClient({
   }, [filters, cleans.length]);
 
   return (
-    <AppShell email={email}>
+    <AppShell email={email} userName={userName}>
       <div className="space-y-6">
         <DashboardHeader />
 

@@ -14,6 +14,17 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  // Fetch user profile to get first and last name
+  const { data: profileData } = await supabase
+    .from("user_profiles")
+    .select("first_name, last_name")
+    .eq("id", user.id)
+    .single();
+
+  const userName = profileData
+    ? `${profileData.first_name} ${profileData.last_name}`.trim()
+    : null;
+
   const { data: propertiesData } = await supabase
     .from("properties")
     .select(
@@ -136,6 +147,7 @@ export default async function DashboardPage() {
   return (
     <DashboardClient
       email={user.email}
+      userName={userName}
       properties={properties.map((property) => ({
         id: property.id,
         name: property.name,

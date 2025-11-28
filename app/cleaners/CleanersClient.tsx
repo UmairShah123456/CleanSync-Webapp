@@ -29,9 +29,11 @@ export type CleanerWithAssignments = {
 
 export function CleanersClient({
   email,
+  userName,
   initialCleaners,
 }: {
   email?: string | null;
+  userName?: string | null;
   initialCleaners: CleanerWithAssignments[];
 }) {
   const [cleaners, setCleaners] =
@@ -233,7 +235,7 @@ export function CleanersClient({
     cleaners.find((c) => c.id === selectedCleanerId) || null;
 
   return (
-    <AppShell email={email}>
+    <AppShell email={email} userName={userName}>
       <div className="flex h-[calc(100vh-8rem)] flex-col">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">

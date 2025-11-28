@@ -8,6 +8,8 @@ import { getSupabaseBrowserClient } from "@/lib/supabaseClient";
 export function RegisterForm() {
   const router = useRouter();
   const supabase = getSupabaseBrowserClient();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -37,20 +39,71 @@ export function RegisterForm() {
       return;
     }
 
-    const { error } = await supabase.auth.signUp({ email, password });
-    setLoading(false);
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+        },
+      },
+    });
 
     if (error) {
+      setLoading(false);
       setError(error.message);
       return;
     }
 
+    // The user profile will be automatically created by the database trigger
+    // using the metadata we passed in the signup options above
+
+    setLoading(false);
     setMessage("Check your inbox to confirm your email.");
     setTimeout(() => router.replace("/login"), 2000);
   };
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2" suppressHydrationWarning>
+          <label
+            className="text-sm font-medium text-[#EFF6E0]/80"
+            htmlFor="first-name"
+          >
+            First Name
+          </label>
+          <input
+            id="first-name"
+            type="text"
+            value={firstName}
+            onChange={(event) => setFirstName(event.target.value)}
+            placeholder="John"
+            required
+            suppressHydrationWarning
+            className="w-full rounded-lg border border-[#124559]/50 bg-[#124559]/60 px-4 py-2.5 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/50 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392] transition-colors duration-200"
+          />
+        </div>
+        <div className="space-y-2" suppressHydrationWarning>
+          <label
+            className="text-sm font-medium text-[#EFF6E0]/80"
+            htmlFor="last-name"
+          >
+            Last Name
+          </label>
+          <input
+            id="last-name"
+            type="text"
+            value={lastName}
+            onChange={(event) => setLastName(event.target.value)}
+            placeholder="Doe"
+            required
+            suppressHydrationWarning
+            className="w-full rounded-lg border border-[#124559]/50 bg-[#124559]/60 px-4 py-2.5 text-sm text-[#EFF6E0] placeholder:text-[#EFF6E0]/50 focus:border-[#598392] focus:outline-none focus:ring-2 focus:ring-[#598392] transition-colors duration-200"
+          />
+        </div>
+      </div>
       <div className="space-y-2" suppressHydrationWarning>
         <label
           className="text-sm font-medium text-[#EFF6E0]/80"

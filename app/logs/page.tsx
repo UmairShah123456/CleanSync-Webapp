@@ -16,6 +16,17 @@ export default async function LogsPage() {
     redirect("/login");
   }
 
+  // Fetch user profile to get first and last name
+  const { data: profileData } = await supabase
+    .from("user_profiles")
+    .select("first_name, last_name")
+    .eq("id", user.id)
+    .single();
+
+  const userName = profileData
+    ? `${profileData.first_name} ${profileData.last_name}`.trim()
+    : null;
+
   const { data: propertiesData } = await supabase
     .from("properties")
     .select("id, name")
@@ -25,7 +36,7 @@ export default async function LogsPage() {
 
   if (!properties.length) {
     return (
-      <AppShell email={user.email}>
+      <AppShell email={user.email} userName={userName}>
         <div className="rounded-xl border border-dashed border-[#598392]/30 bg-[#124559] p-12 text-center text-sm text-[#EFF6E0]/70">
           Add a property to see sync activity logs.
         </div>
@@ -74,7 +85,7 @@ export default async function LogsPage() {
   };
 
   return (
-    <AppShell email={user.email}>
+    <AppShell email={user.email} userName={userName}>
       <div className="animate-fadeIn">
         <h2 className="text-2xl font-semibold text-[#EFF6E0]">Sync activity</h2>
         <p className="mt-1 text-[#EFF6E0]/70">

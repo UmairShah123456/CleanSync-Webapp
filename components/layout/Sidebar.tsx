@@ -28,9 +28,11 @@ const navItems = [
 
 export function Sidebar({
   email,
+  userName,
   onClose,
 }: {
   email?: string | null;
+  userName?: string | null;
   onClose?: () => void;
 }) {
   const pathname = usePathname();
@@ -130,11 +132,11 @@ export function Sidebar({
         {/* User Avatar Section */}
         <div className="mt-4 flex items-center gap-3 rounded-lg px-3 py-2">
           <div className="h-8 w-8 rounded-full bg-[#598392] flex items-center justify-center text-sm font-semibold text-[#EFF6E0]">
-            {email ? email.charAt(0).toUpperCase() : "U"}
+            {userName ? userName.charAt(0).toUpperCase() : email ? email.charAt(0).toUpperCase() : "U"}
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-medium text-[#EFF6E0]">
-              {email?.split("@")[0] || "User"}
+              {userName || email?.split("@")[0] || "User"}
             </span>
             <span className="text-xs text-[#EFF6E0]/70">Manager</span>
           </div>

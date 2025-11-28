@@ -14,6 +14,17 @@ export default async function CleanersPage() {
     redirect("/login");
   }
 
+  // Fetch user profile to get first and last name
+  const { data: profileData } = await supabase
+    .from("user_profiles")
+    .select("first_name, last_name")
+    .eq("id", user.id)
+    .single();
+
+  const userName = profileData
+    ? `${profileData.first_name} ${profileData.last_name}`.trim()
+    : null;
+
   const {
     data: cleanersData,
     error: cleanersError,
@@ -89,5 +100,5 @@ export default async function CleanersPage() {
     }
   );
 
-  return <CleanersClient email={user.email} initialCleaners={cleaners} />;
+  return <CleanersClient email={user.email} userName={userName} initialCleaners={cleaners} />;
 }

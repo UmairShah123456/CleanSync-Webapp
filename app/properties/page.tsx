@@ -15,6 +15,17 @@ export default async function PropertiesPage() {
     redirect("/login");
   }
 
+  // Fetch user profile to get first and last name
+  const { data: profileData } = await supabase
+    .from("user_profiles")
+    .select("first_name, last_name")
+    .eq("id", user.id)
+    .single();
+
+  const userName = profileData
+    ? `${profileData.first_name} ${profileData.last_name}`.trim()
+    : null;
+
   // Try to select all columns including utility fields
   let { data: propertiesData, error } = await supabase
     .from("properties")
@@ -63,6 +74,7 @@ export default async function PropertiesPage() {
   return (
     <PropertiesClient
       email={user.email}
+      userName={userName}
       initialProperties={properties as Property[]}
     />
   );

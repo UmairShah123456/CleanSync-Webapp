@@ -9,9 +9,11 @@ import { Bars3Icon } from "@heroicons/react/24/outline";
 export function AppShell({
   children,
   email,
+  userName,
 }: {
   children: ReactNode;
   email?: string | null;
+  userName?: string | null;
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -58,7 +60,7 @@ export function AppShell({
           )}
           aria-hidden={!isMobileMenuOpen}
         >
-          <Sidebar email={email} onClose={closeMobileMenu} />
+          <Sidebar email={email} userName={userName} onClose={closeMobileMenu} />
         </aside>
 
         {/* Main Content */}

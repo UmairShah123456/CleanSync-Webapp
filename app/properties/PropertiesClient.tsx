@@ -10,9 +10,11 @@ import type { PropertyPayload } from "@/components/forms/PropertyForm";
 
 export function PropertiesClient({
   email,
+  userName,
   initialProperties,
 }: {
   email?: string | null;
+  userName?: string | null;
   initialProperties: Property[];
 }) {
   const [properties, setProperties] = useState<Property[]>(initialProperties);
@@ -138,7 +140,7 @@ export function PropertiesClient({
     properties.find((p) => p.id === selectedPropertyId) || null;
 
   return (
-    <AppShell email={email}>
+    <AppShell email={email} userName={userName}>
       <div className="flex h-[calc(100vh-8rem)] flex-col">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
