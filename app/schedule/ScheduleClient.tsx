@@ -324,7 +324,7 @@ export function ScheduleClient({
       if (propertyId) {
         params.append("property_id", propertyId);
       }
-      return `/api/cleans?${params.toString()}`;
+      return `/api/schedule?${params.toString()}`;
     },
     [fetchUrlBuilder]
   );

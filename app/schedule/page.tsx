@@ -74,6 +74,7 @@ export default async function SchedulePage() {
       .gte("scheduled_for", fromIso)
       .lte("scheduled_for", toIso)
       .neq("status", "deleted")
+      .neq("status", "cancelled")
       .order("scheduled_for", { ascending: true });
 
     // Fetch bookings separately since we no longer have a foreign key relationship

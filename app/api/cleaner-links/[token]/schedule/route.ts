@@ -118,6 +118,7 @@ export async function GET(
     .gte("scheduled_for", from)
     .lte("scheduled_for", to)
     .neq("status", "deleted")
+    .neq("status", "cancelled")
     .order("scheduled_for", { ascending: true });
 
   if (cleansError) {

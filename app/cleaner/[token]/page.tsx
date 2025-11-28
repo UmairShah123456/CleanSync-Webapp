@@ -125,6 +125,7 @@ export default async function CleanerPortalPage({
         .gte("scheduled_for", fromIso)
         .lte("scheduled_for", toIso)
         .neq("status", "deleted")
+        .neq("status", "cancelled")
         .order("scheduled_for", { ascending: true })
     : { data: [] };
 
